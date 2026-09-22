@@ -1,0 +1,26 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.env
+
+# Datasets
+/data/
+
+# Fine-tuning models and checkpoints
+/artifacts/finetuning_sft_dpo/models/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Experiment tracking
+wandb/
+
+# personnel
+perso/

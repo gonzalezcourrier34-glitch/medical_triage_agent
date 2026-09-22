@@ -1,0 +1,58 @@
+[project]
+name = "medical-triage-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+
+dependencies = [
+    "accelerate>=1.10,<2",
+    "bitsandbytes>=0.48,<0.50",
+    "datasets>=4.4,<5",
+    "datasketch>=2.0.0",
+    "en-core-web-lg",
+    "en-core-web-md",
+    "fr-core-news-lg",
+    "fr-core-news-md",
+    "huggingface-hub>=1.28.0",
+    "langdetect>=1.0.9",
+    "lxml>=6.1.2",
+    "matplotlib>=3.11.1",
+    "mistralai>=2.9.4",
+    "nbformat>=5.11.1",
+    "numpy>=2.5.2",
+    "pandas>=3.0.5",
+    "peft>=0.18,<0.20",
+    "presidio-analyzer>=2.2.362",
+    "presidio-anonymizer>=2.2.364",
+    "python-dotenv>=1.2.3",
+    "rapidfuzz>=3.14.5",
+    "scikit-learn>=1.5,<2",
+    "seaborn>=0.13,<0.14",
+    "spacy>=3.8.16",
+    "tokenizers>=0.23.1",
+    "torch==2.13.0",
+    "tqdm>=4.70.0",
+    "transformers>=5,<6",
+    "triton-windows>=3.7,<3.8",
+    "trl==1.13.0",
+    "wandb>=0.22,<0.24",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.3.0",
+    "ipywidgets>=8.1.9",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu130" }
+en-core-web-lg = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl" }
+en-core-web-md = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl" }
+fr-core-news-lg = { url = "https://github.com/explosion/spacy-models/releases/download/fr_core_news_lg-3.8.0/fr_core_news_lg-3.8.0-py3-none-any.whl" }
+fr-core-news-md = { url = "https://github.com/explosion/spacy-models/releases/download/fr_core_news_md-3.8.0/fr_core_news_md-3.8.0-py3-none-any.whl" }
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true

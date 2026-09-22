@@ -1,0 +1,7 @@
+transition,count_sft,rate_pct_sft,count_sft_dpo,rate_pct_sft_dpo,count_delta,rate_delta
+P1 → INVALID,3,1.79,3,1.79,0,0.0
+P1 → P2,15,8.93,15,8.93,0,0.0
+P1 → P3,24,14.29,24,14.29,0,0.0
+P2 → INVALID,2,1.19,2,1.19,0,0.0
+P2 → P3,34,20.24,34,20.24,0,0.0
+P1 → priorité inférieure,39,23.21,39,23.21,0,0.0
