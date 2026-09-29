@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
-from src.api.schemas import HealthResponse
+from scr.api.schemas import HealthResponse
+from scr.api.services.inference import inference_service
 
 
 router = APIRouter(tags=["health"])
@@ -12,5 +13,5 @@ async def health() -> HealthResponse:
 
     return HealthResponse(
         status="ok",
-        model_ready=False
+        model_ready=inference_service.is_ready
     )

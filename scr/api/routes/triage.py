@@ -4,8 +4,8 @@ from uuid import uuid4
 
 from fastapi import APIRouter
 
-from src.api.schemas import TriageRequest, TriageResponse
-from src.api.services.inference import inference_service
+from scr.api.schemas import TriageRequest, TriageResponse
+from scr.api.services.inference import inference_service
 
 
 router = APIRouter(tags=["triage"])
@@ -14,9 +14,10 @@ router = APIRouter(tags=["triage"])
 @router.post("/triage", response_model=TriageResponse)
 async def triage(request: TriageRequest) -> TriageResponse:
     """Retourne une priorité de triage."""
-
     start = perf_counter()
+
     priority = await inference_service.predict(request)
+
     latency_ms = (perf_counter() - start) * 1000
 
     return TriageResponse(

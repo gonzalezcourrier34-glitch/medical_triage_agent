@@ -10,6 +10,7 @@ class TriageRequest(BaseModel):
     language: Literal["fr", "en"]
     question: str = Field(min_length=1)
     context: str = ""
+    answer: str = ""
 
 
 class TriageResponse(BaseModel):

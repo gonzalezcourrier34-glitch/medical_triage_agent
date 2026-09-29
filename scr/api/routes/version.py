@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
-from src.api.schemas import VersionResponse
+from scr.api.schemas import VersionResponse
+from scr.api.services.inference import inference_service
 
 
 router = APIRouter(tags=["version"])
@@ -12,6 +13,6 @@ async def version() -> VersionResponse:
 
     return VersionResponse(
         api_version="0.1.0",
-        model_version="pending",
+        model_version=inference_service.model_version,
         prompt_version="triage-classification-v2"
     )

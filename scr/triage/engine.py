@@ -71,8 +71,15 @@ class AutomaticTriageDecisionEngine:
 
     @staticmethod
     def _patient(record: dict) -> dict:
-        """Retourne les données patient extraites."""
-        return record.get("triage_clinical_enrichment") or {}
+        """Lit le schéma produit par GeneralMedicalExtractor."""
+        patient = record.get("patient")
+
+        if not isinstance(patient, dict):
+            raise ValueError(
+                f"Champ patient absent ou invalide : {record.get('id')}"
+            )
+
+        return patient
 
     @staticmethod
     def _medical_knowledge(record: dict) -> dict:
