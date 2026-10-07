@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Medical Triage AI | Projet AI Engineer</title>
+
+    <meta
+        name="description"
+        content="POC de triage médical basé sur Qwen3-1.7B, spécialisé par QLoRA, SFT et DPO."
+    >
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<header class="header">
+    <nav class="nav container">
+
+        <a href="index.html" class="logo">
+            MT<span>.</span>AI
+        </a>
+
+        <div class="nav-links">
+            <a href="index.html" class="active">Projet</a>
+            <a href="experiments.html">Expérimentations</a>
+            <a href="architecture.html">Architecture</a>
+            <a href="#" target="_blank">GitHub</a>
+        </div>
+
+    </nav>
+</header>
+
+
+<main>
+
+    <!-- HERO -->
+
+    <section class="hero project-hero">
+
+        <div class="container hero-content">
+
+            <p class="eyebrow">
+                PROJET IA • LLM • MEDICAL AI
+            </p>
+
+            <h1>
+                Medical Triage
+                <span>AI</span>
+            </h1>
+
+            <p class="hero-text">
+                Adapter Qwen3-1.7B à une tâche de triage médical
+                bilingue afin de produire une priorité P1, P2 ou P3
+                accompagnée d'une explication fondée sur le contexte patient.
+            </p>
+
+            <div class="hero-tags">
+                <span>Qwen3-1.7B</span>
+                <span>QLoRA</span>
+                <span>SFT</span>
+                <span>DPO</span>
+                <span>PyTorch</span>
+                <span>Unsloth</span>
+                <span>W&B</span>
+                <span>FastAPI</span>
+            </div>
+
+            <div class="hero-actions">
+
+                <a href="experiments.html" class="button primary">
+                    Voir les expérimentations
+                </a>
+
+                <a href="architecture.html" class="button secondary">
+                    Architecture
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CONTEXTE -->
+
+    <section class="section section-alt">
+
+        <div class="container">
+
+            <p class="section-number">01</p>
+
+            <h2>Le projet</h2>
+
+            <div class="about-grid">
+
+                <div class="large-text">
+                    Étudier la faisabilité d'un assistant IA capable
+                    d'accompagner le triage hospitalier sans remplacer
+                    la décision médicale.
+                </div>
+
+                <div>
+
+                    <p>
+                        Ce Proof of Concept est réalisé dans le cadre
+                        d'une mission fictive pour le Centre Hospitalier
+                        Saint-Aurélien.
+                    </p>
+
+                    <p>
+                        L'objectif est d'étudier la capacité d'un modèle
+                        de langage spécialisé à analyser un contexte médical,
+                        déterminer un niveau de priorité et produire une
+                        justification courte.
+                    </p>
+
+                    <p>
+                        Le système est conçu comme un prototype académique.
+                        Il ne constitue pas un dispositif médical et n'a pas
+                        vocation à remplacer un professionnel de santé.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- SORTIE -->
+
+    <section class="section">
+
+        <div class="container">
+
+            <p class="section-number">02</p>
+
+            <h2>Une double tâche</h2>
+
+            <p class="section-intro">
+                Le modèle doit simultanément prendre une décision de triage
+                et être capable de l'expliquer à partir des informations
+                présentes dans le cas clinique.
+            </p>
+
+            <div class="projects-grid">
+
+                <article class="project-card">
+
+                    <div class="project-top">
+                        <span class="project-type">CLASSIFICATION</span>
+                    </div>
+
+                    <h3>Priorité</h3>
+
+                    <p>
+                        Le modèle classe chaque situation clinique
+                        dans l'un des trois niveaux de priorité
+                        utilisés par le POC.
+                    </p>
+
+                    <div class="priority-list">
+
+                        <div class="priority-item">
+                            <strong>P1</strong>
+                            <span>Urgence maximale</span>
+                        </div>
+
+                        <div class="priority-item">
+                            <strong>P2</strong>
+                            <span>Urgence modérée</span>
+                        </div>
+
+                        <div class="priority-item">
+                            <strong>P3</strong>
+                            <span>Urgence différée</span>
+                        </div>
+
+                    </div>
+
+                </article>
+
+
+                <article class="project-card">
+
+                    <div class="project-top">
+                        <span class="project-type">GÉNÉRATION</span>
+                    </div>
+
+                    <h3>Explication</h3>
+
+                    <p>
+                        La priorité doit être accompagnée d'une justification
+                        concise et cohérente avec les éléments réellement
+                        présents dans le contexte clinique.
+                    </p>
+
+                    <div class="output-example">
+                        <code>
+                            PRIORITY: P2<br>
+                            EXPLANATION: ...
+                        </code>
+                    </div>
+
+                </article>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CONTRAINTES -->
+
+    <section class="section section-alt">
+
+        <div class="container">
+
+            <p class="section-number">03</p>
+
+            <h2>Contraintes du projet</h2>
+
+            <div class="skills-grid">
+
+                <div class="skill-group">
+
+                    <h3>Modèle</h3>
+
+                    <div class="constraint-value">
+                        Qwen3-1.7B-Base
+                    </div>
+
+                    <p class="constraint-text">
+                        Le modèle de départ est imposé par le cadre
+                        du projet. L'objectif n'est donc pas de comparer
+                        plusieurs LLM, mais de spécialiser celui-ci.
+                    </p>
+
+                </div>
+
+
+                <div class="skill-group">
+
+                    <h3>Matériel local</h3>
+
+                    <div class="constraint-value">
+                        RTX 4050 Laptop
+                    </div>
+
+                    <p class="constraint-text">
+                        6 Go de VRAM disponibles pour réaliser localement
+                        les expérimentations de fine-tuning.
+                    </p>
+
+                </div>
+
+
+                <div class="skill-group">
+
+                    <h3>Langues</h3>
+
+                    <div class="constraint-value">
+                        FR + EN
+                    </div>
+
+                    <p class="constraint-text">
+                        Le système doit pouvoir exploiter des contextes
+                        médicaux en français et en anglais.
+                    </p>
+
+                </div>
+
+
+                <div class="skill-group">
+
+                    <h3>Sortie</h3>
+
+                    <div class="constraint-value">
+                        P1 / P2 / P3
+                    </div>
+
+                    <p class="constraint-text">
+                        Une priorité structurée accompagnée
+                        d'une explication courte.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- APPROCHE -->
+
+    <section class="section">
+
+        <div class="container">
+
+            <p class="section-number">04</p>
+
+            <h2>Approche retenue</h2>
+
+            <p class="section-intro">
+                La contrainte mémoire a conduit à privilégier une adaptation
+                efficace du modèle plutôt qu'un fine-tuning complet.
+            </p>
+
+            <div class="timeline">
+
+                <div class="timeline-item">
+
+                    <span>01 • Données</span>
+
+                    <h3>Construire et auditer les datasets</h3>
+
+                    <p>
+                        Préparation, normalisation, contrôle des priorités,
+                        gestion des sources et création des jeux
+                        d'entraînement, validation et test.
+                    </p>
+
+                </div>
+
+
+                <div class="timeline-item">
+
+                    <span>02 • QLoRA</span>
+
+                    <h3>Adapter le modèle sous 6 Go de VRAM</h3>
+
+                    <p>
+                        Base quantifiée en 4 bits et entraînement
+                        d'adapters LoRA afin de réduire l'empreinte mémoire.
+                    </p>
+
+                </div>
+
+
+                <div class="timeline-item">
+
+                    <span>03 • SFT</span>
+
+                    <h3>Apprendre la tâche</h3>
+
+                    <p>
+                        Supervised Fine-Tuning pour apprendre le format,
+                        la classification P1/P2/P3 et la génération
+                        d'une explication.
+                    </p>
+
+                </div>
+
+
+                <div class="timeline-item">
+
+                    <span>04 • DPO</span>
+
+                    <h3>Affiner les préférences</h3>
+
+                    <p>
+                        Utilisation de paires chosen/rejected afin
+                        d'améliorer le comportement du modèle tout en
+                        contrôlant l'impact sur la classification.
+                    </p>
+
+                </div>
+
+
+                <div class="timeline-item">
+
+                    <span>05 • Évaluation</span>
+
+                    <h3>Mesurer avant de décider</h3>
+
+                    <p>
+                        Validation quantitative, matrices de confusion,
+                        analyse du sous-triage et contrôles qualitatifs
+                        des réponses générées.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- RESULTATS SFT -->
+
+    <section class="section section-alt">
+
+        <div class="container">
+
+            <p class="section-number">05</p>
+
+            <h2>Résultats SFT</h2>
+
+            <p class="section-intro">
+                Évaluation finale du modèle SFT sélectionné sur un jeu
+                de test gelé de 500 cas.
+            </p>
+
+            <div class="result-grid">
+
+                <div class="result-card">
+                    <strong>74,4 %</strong>
+                    <span>Accuracy</span>
+                </div>
+
+                <div class="result-card">
+                    <strong>78,6 %</strong>
+                    <span>Recall P1</span>
+                </div>
+
+                <div class="result-card">
+                    <strong>71,1 %</strong>
+                    <span>Recall P2</span>
+                </div>
+
+                <div class="result-card">
+                    <strong>73,5 %</strong>
+                    <span>Recall P3</span>
+                </div>
+
+            </div>
+
+
+            <div class="vision">
+
+                <p class="eyebrow">
+                    LECTURE DU RÉSULTAT
+                </p>
+
+                <h3>
+                    372 classifications correctes sur 500 cas
+                </h3>
+
+                <p>
+                    Le modèle obtient des performances relativement
+                    équilibrées entre les trois priorités.
+                    L'analyse détaillée montre néanmoins que les
+                    confusions P2/P3 et certains cas de sous-triage P1
+                    restent des points de vigilance.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- EXPERIMENTATION -->
+
+    <section class="section">
+
+        <div class="container">
+
+            <p class="section-number">06</p>
+
+            <h2>Le résultat n'est qu'une partie du projet</h2>
+
+            <div class="about-grid">
+
+                <div class="large-text">
+                    Les performances finales sont le résultat
+                    d'une succession d'hypothèses, d'expériences,
+                    d'erreurs, d'audits et de décisions.
+                </div>
+
+                <div>
+
+                    <p>
+                        Plusieurs entraînements SFT ont été réalisés
+                        afin d'étudier l'influence des données,
+                        des paramètres et de la stratégie de supervision.
+                    </p>
+
+                    <p>
+                        Les métriques quantitatives ont systématiquement
+                        été complétées par une analyse qualitative des
+                        réponses afin d'identifier des défauts invisibles
+                        dans une simple accuracy.
+                    </p>
+
+                    <a
+                        href="experiments.html"
+                        class="project-link"
+                    >
+                        Explorer le parcours expérimental →
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ENGINEERING -->
+
+    <section class="section section-alt">
+
+        <div class="container">
+
+            <p class="section-number">07</p>
+
+            <h2>Au-delà du modèle</h2>
+
+            <p class="section-intro">
+                Le POC est pensé comme un système IA complet et non
+                comme un modèle isolé dans un notebook.
+            </p>
+
+            <div class="soft-skills">
+
+                <span>Data Engineering</span>
+                <span>Fine-Tuning</span>
+                <span>Evaluation</span>
+                <span>Experiment Tracking</span>
+                <span>FastAPI</span>
+                <span>Docker</span>
+                <span>CI/CD</span>
+                <span>Cloud GPU</span>
+                <span>Monitoring</span>
+
+            </div>
+
+
+            <div class="hero-actions">
+
+                <a
+                    href="architecture.html"
+                    class="button primary"
+                >
+                    Explorer l'architecture
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- LIMITES -->
+
+    <section class="section">
+
+        <div class="container">
+
+            <p class="section-number">08</p>
+
+            <h2>Limites</h2>
+
+            <div class="reflection-grid">
+
+                <div class="reflection-card">
+
+                    <h3>Ce que démontre le POC</h3>
+
+                    <ul>
+                        <li>
+                            La possibilité d'adapter Qwen3-1.7B
+                            à une tâche spécialisée.
+                        </li>
+
+                        <li>
+                            La faisabilité d'un fine-tuning QLoRA
+                            sous forte contrainte VRAM.
+                        </li>
+
+                        <li>
+                            La capacité à produire une classification
+                            et une explication structurées.
+                        </li>
+
+                        <li>
+                            La mise en place d'une démarche expérimentale
+                            reproductible et mesurable.
+                        </li>
+                    </ul>
+
+                </div>
+
+
+                <div class="reflection-card">
+
+                    <h3>Ce qu'il ne démontre pas</h3>
+
+                    <ul>
+                        <li>
+                            Une validation clinique du système.
+                        </li>
+
+                        <li>
+                            Une sécurité suffisante pour une utilisation
+                            autonome auprès de patients.
+                        </li>
+
+                        <li>
+                            L'absence de biais ou d'hallucinations.
+                        </li>
+
+                        <li>
+                            La possibilité de remplacer une décision
+                            médicale humaine.
+                        </li>
+                    </ul>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- NAVIGATION -->
+
+    <section class="section section-alt contact">
+
+        <div class="container">
+
+            <p class="eyebrow">
+                ALLER PLUS LOIN
+            </p>
+
+            <h2>
+                Explorer le projet technique
+            </h2>
+
+            <p>
+                Découvrez le parcours expérimental complet ou
+                l'architecture conçue pour transformer le modèle
+                en service d'inférence.
+            </p>
+
+            <div class="hero-actions">
+
+                <a
+                    href="experiments.html"
+                    class="button primary"
+                >
+                    Expérimentations
+                </a>
+
+                <a
+                    href="architecture.html"
+                    class="button secondary"
+                >
+                    Architecture
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer>
+
+    <div class="container footer-content">
+
+        <span>
+            Medical Triage AI • POC académique
+        </span>
+
+        <span>
+            AI Engineering • 2026
+        </span>
+
+    </div>
+
+</footer>
+
+
+<script src="js/main.js"></script>
+
+</body>
+
+</html>

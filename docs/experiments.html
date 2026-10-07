@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Expérimentations SFT | Medical Triage AI</title>
+
+    <meta
+        name="description"
+        content="Parcours expérimental SFT du projet Medical Triage AI basé sur Qwen3-1.7B."
+    >
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<header class="header">
+
+    <nav class="nav container">
+
+        <a href="index.html" class="logo">
+            MT<span>.</span>AI
+        </a>
+
+        <div class="nav-links">
+            <a href="index.html">Projet</a>
+            <a href="experiments.html" class="active">SFT</a>
+            <a href="dpo.html">DPO</a>
+            <a href="architecture.html">Architecture</a>
+            <a href="#" target="_blank">GitHub</a>
+        </div>
+
+    </nav>
+
+</header>
+
+
+<main>
+
+
+    <!-- =====================================================
+         HERO
+         ===================================================== -->
+
+    <section class="hero project-hero">
+
+        <div class="container hero-content">
+
+            <p class="eyebrow">
+                PARCOURS EXPÉRIMENTAL SFT
+            </p>
+
+            <h1>
+                De l'expérimentation au
+                <span>SFT final.</span>
+            </h1>
+
+            <p class="hero-text">
+                Adapter Qwen3-1.7B au triage médical a nécessité plusieurs
+                cycles d'entraînement, d'analyse et de reconstruction
+                des données. Chaque run a permis d'identifier une nouvelle
+                problématique et d'orienter l'expérience suivante.
+            </p>
+
+            <div class="hero-tags">
+                <span>Qwen3-1.7B</span>
+                <span>QLoRA</span>
+                <span>LoRA</span>
+                <span>SFT</span>
+                <span>Unsloth</span>
+                <span>W&B</span>
+                <span>Evaluation</span>
+                <span>RTX 4050</span>
+            </div>
+
+            <div class="hero-actions">
+
+                <a href="#runs" class="button primary">
+                    Voir les runs
+                </a>
+
+                <a href="#final-sft" class="button secondary">
+                    Voir le SFT final
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         01 - DEMARCHE
+         ===================================================== -->
+
+    <section class="section section-alt">
+
+        <div class="container">
+
+            <p class="section-number">01</p>
+
+            <h2>Une démarche expérimentale</h2>
+
+            <p class="section-intro">
+                L'objectif n'était pas d'enchaîner les entraînements
+                jusqu'à obtenir le meilleur chiffre, mais de comprendre
+                pourquoi une configuration fonctionnait ou échouait.
+            </p>
+
+
+            <div class="experiment-method">
+
+                <div class="method-step">
+                    <span>01</span>
+                    <strong>Problématique</strong>
+                    <small>Quel problème dois-je résoudre ?</small>
+                </div>
+
+                <div class="method-arrow">→</div>
+
+                <div class="method-step">
+                    <span>02</span>
+                    <strong>Expérience</strong>
+                    <small>Quelle modification tester ?</small>
+                </div>
+
+                <div class="method-arrow">→</div>
+
+                <div class="method-step">
+                    <span>03</span>
+                    <strong>Mesure</strong>
+                    <small>Que disent les métriques ?</small>
+                </div>
+
+                <div class="method-arrow">→</div>
+
+                <div class="method-step">
+                    <span>04</span>
+                    <strong>Analyse</strong>
+                    <small>Que produit réellement le modèle ?</small>
+                </div>
+
+                <div class="method-arrow">→</div>
+
+                <div class="method-step">
+                    <span>05</span>
+                    <strong>Décision</strong>
+                    <small>Que conserver pour la suite ?</small>
+                </div>
+
+            </div>
+
+
+            <div class="callout">
+
+                <span class="eyebrow">PRINCIPE</span>
+
+                <strong>
+                    Une expérience utile n'est pas forcément
+                    une expérience qui améliore le score.
+                </strong>
+
+                <p>
+                    Une régression peut révéler une faiblesse du dataset,
+                    une mauvaise hypothèse ou une limite de la stratégie
+                    d'entraînement. Ces résultats ont également participé
+                    à la construction du modèle final.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         02 - CONTRAINTE GPU
+         ===================================================== -->
+
+    <section class="section">
+
+        <div class="container">
+
+            <p class="section-number">02</p>
+
+            <h2>Première problématique : 6 Go de VRAM</h2>
+
+            <div class="about-grid">
+
+                <div class="large-text">
+                    Comment spécialiser Qwen3-1.7B
+                    sur une RTX 4050 Laptop ?
+                </div>
+
+                <div>
+
+                    <p>
+                        Le modèle Qwen3-1.7B est imposé par le cadre
+                        du projet. Un fine-tuning complet n'est pas adapté
+                        aux 6 Go de VRAM disponibles localement.
+                    </p>
+
+                    <p>
+                        La solution retenue est QLoRA : la base est
+                        quantifiée en 4 bits tandis que seuls des adapters
+                        LoRA de faible rang sont entraînés.
+                    </p>
+
+                    <p>
+                        Le gradient checkpointing, un batch GPU de 1,
+                        l'accumulation de gradients et AdamW 8-bit
+                        complètent cette stratégie.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="config-grid">
+
+                <div class="config-card">
+                    <span>Base</span>
+                    <strong>Qwen3-1.7B</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>Quantification</span>
+                    <strong>4 bits</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>LoRA rank</span>
+                    <strong>16</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>LoRA alpha</span>
+                    <strong>32</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>LoRA dropout</span>
+                    <strong>0,05</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>GPU</span>
+                    <strong>RTX 4050 • 6 Go</strong>
+                </div>
+
+            </div>
+
+
+            <div class="callout subtle">
+
+                <span class="eyebrow">DÉCISION TECHNIQUE</span>
+
+                <strong>
+                    Adapter le modèle plutôt que réentraîner
+                    l'ensemble de ses poids.
+                </strong>
+
+                <p>
+                    QLoRA permet de mener les expérimentations localement
+                    malgré une contrainte matérielle forte, tout en conservant
+                    Qwen3-1.7B comme modèle de base.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         03 - RUNS HISTORIQUES
+         ===================================================== -->
+
+    <section class="section section-alt" id="runs">
+
+        <div class="container">
+
+            <p class="section-number">03</p>
+
+            <h2>Six runs, six étapes d'apprentissage</h2>
+
+            <p class="section-intro">
+                Ces runs retracent l'évolution du projet.
+                Les données, les cibles et certaines configurations ont évolué.
+                Ils constituent donc un historique expérimental et non
+                une ablation strictement contrôlée.
+            </p>
+
+
+            <!-- RUN 01 -->
+
+            <article class="experiment-card">
+
+                <div class="experiment-header">
+
+                    <div>
+                        <span class="experiment-number">RUN 01</span>
+                        <h3>Établir un premier baseline</h3>
+                    </div>
+
+                    <span class="experiment-status rejected">
+                        Non retenu
+                    </span>
+
+                </div>
+
+
+                <div class="callout subtle">
+
+                    <span class="eyebrow">PROBLÉMATIQUE</span>
+
+                    <strong>
+                        Qwen3 peut-il apprendre la tâche de triage
+                        avec la première version du dataset ?
+                    </strong>
+
+                </div>
+
+
+                <div class="experiment-metrics">
+
+                    <div>
+                        <strong>51,79 %</strong>
+                        <span>Accuracy</span>
+                    </div>
+
+                    <div>
+                        <strong>51,97 %</strong>
+                        <span>F1 macro</span>
+                    </div>
+
+                    <div>
+                        <strong>21,23 %</strong>
+                        <span>Sous-triage</span>
+                    </div>
+
+                    <div>
+                        <strong>3</strong>
+                        <span>Epochs</span>
+                    </div>
+
+                </div>
+
+
+                <div class="experiment-analysis">
+
+                    <div>
+
+                        <span>ANALYSE</span>
+
+                        <p>
+                            Le modèle apprend le format de sortie et une partie
+                            de la tâche, mais les performances restent faibles.
+                            Le taux de sous-triage de 21,23 % constitue
+                            notamment un signal défavorable.
+                        </p>
+
+                    </div>
+
+                    <div>
+
+                        <span>DÉCISION</span>
+
+                        <p>
+                            Ne pas simplement augmenter le nombre d'epochs.
+                            Revenir d'abord sur la construction des données,
+                            leur représentation et la supervision fournie
+                            au modèle.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- RUN 02 -->
+
+            <article class="experiment-card">
+
+                <div class="experiment-header">
+
+                    <div>
+                        <span class="experiment-number">RUN 02</span>
+                        <h3>Améliorer la supervision</h3>
+                    </div>
+
+                    <span class="experiment-status promising">
+                        Forte progression
+                    </span>
+
+                </div>
+
+
+                <div class="callout subtle">
+
+                    <span class="eyebrow">PROBLÉMATIQUE</span>
+
+                    <strong>
+                        La construction des données limite-t-elle
+                        davantage le modèle que les hyperparamètres ?
+                    </strong>
+
+                </div>
+
+
+                <div class="experiment-metrics">
+
+                    <div>
+                        <strong>78,20 %</strong>
+                        <span>Accuracy</span>
+                    </div>
+
+                    <div>
+                        <strong>78,04 %</strong>
+                        <span>F1 macro</span>
+                    </div>
+
+                    <div>
+                        <strong>10,80 %</strong>
+                        <span>Sous-triage</span>
+                    </div>
+
+                    <div>
+                        <strong>3</strong>
+                        <span>Epochs</span>
+                    </div>
+
+                </div>
+
+
+                <div class="experiment-analysis">
+
+                    <div>
+
+                        <span>ANALYSE</span>
+
+                        <p>
+                            La progression est très importante par rapport
+                            au premier run. Le F1 macro gagne environ
+                            26 points et le sous-triage est presque divisé
+                            par deux.
+                        </p>
+
+                    </div>
+
+                    <div>
+
+                        <span>DÉCISION</span>
+
+                        <p>
+                            La qualité du dataset devient un levier central.
+                            Le résultat reste néanmoins soumis à une analyse
+                            qualitative avant de pouvoir être considéré
+                            comme une référence définitive.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- RUN 03 -->
+
+            <article class="experiment-card">
+
+                <div class="experiment-header">
+
+                    <div>
+                        <span class="experiment-number">RUN 03</span>
+                        <h3>Une modification peut dégrader le modèle</h3>
+                    </div>
+
+                    <span class="experiment-status rejected">
+                        Régression
+                    </span>
+
+                </div>
+
+
+                <div class="callout subtle">
+
+                    <span class="eyebrow">PROBLÉMATIQUE</span>
+
+                    <strong>
+                        Les modifications suivantes améliorent-elles
+                        réellement la généralisation ?
+                    </strong>
+
+                </div>
+
+
+                <div class="experiment-metrics">
+
+                    <div>
+                        <strong>64,20 %</strong>
+                        <span>Accuracy</span>
+                    </div>
+
+                    <div>
+                        <strong>64,05 %</strong>
+                        <span>F1 macro</span>
+                    </div>
+
+                    <div>
+                        <strong>17,60 %</strong>
+                        <span>Sous-triage</span>
+                    </div>
+
+                    <div>
+                        <strong>3</strong>
+                        <span>Epochs</span>
+                    </div>
+
+                </div>
+
+
+                <div class="experiment-analysis">
+
+                    <div>
+
+                        <span>ANALYSE</span>
+
+                        <p>
+                            Les performances régressent fortement par rapport
+                            au run 02. Une modification méthodologique
+                            raisonnable en apparence ne garantit donc pas
+                            une amélioration réelle.
+                        </p>
+
+                    </div>
+
+                    <div>
+
+                        <span>DÉCISION</span>
+
+                        <p>
+                            Ne pas conserver cette expérience comme nouvelle
+                            référence. Identifier les changements responsables
+                            et conserver la capacité de revenir vers une
+                            configuration antérieure.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- RUN 04 -->
+
+            <article class="experiment-card">
+
+                <div class="experiment-header">
+
+                    <div>
+                        <span class="experiment-number">RUN 04</span>
+                        <h3>Optimiser l'entraînement sous contrainte</h3>
+                    </div>
+
+                    <span class="experiment-status rejected">
+                        Non retenu
+                    </span>
+
+                </div>
+
+
+                <div class="callout subtle">
+
+                    <span class="eyebrow">PROBLÉMATIQUE</span>
+
+                    <strong>
+                        Comment accélérer les expérimentations
+                        sans dépasser les 6 Go de VRAM ?
+                    </strong>
+
+                </div>
+
+
+                <div class="experiment-metrics">
+
+                    <div>
+                        <strong>66,20 %</strong>
+                        <span>Accuracy</span>
+                    </div>
+
+                    <div>
+                        <strong>66,27 %</strong>
+                        <span>F1 macro</span>
+                    </div>
+
+                    <div>
+                        <strong>18,00 %</strong>
+                        <span>Sous-triage</span>
+                    </div>
+
+                    <div>
+                        <strong>2</strong>
+                        <span>Epochs</span>
+                    </div>
+
+                </div>
+
+
+                <div class="experiment-analysis">
+
+                    <div>
+
+                        <span>ANALYSE</span>
+
+                        <p>
+                            Unsloth est introduit pour optimiser l'exécution
+                            du fine-tuning. L'amélioration du pipeline
+                            informatique ne se traduit cependant pas
+                            automatiquement par une meilleure qualité
+                            prédictive.
+                        </p>
+
+                    </div>
+
+                    <div>
+
+                        <span>DÉCISION</span>
+
+                        <p>
+                            Conserver les optimisations d'exécution utiles,
+                            tout en dissociant clairement performance
+                            informatique et performance du modèle.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- RUN 05 -->
+
+            <article class="experiment-card">
+
+                <div class="experiment-header">
+
+                    <div>
+                        <span class="experiment-number">RUN 05</span>
+                        <h3>Construire une référence intermédiaire</h3>
+                    </div>
+
+                    <span class="experiment-status selected">
+                        Référence historique
+                    </span>
+
+                </div>
+
+
+                <div class="callout subtle">
+
+                    <span class="eyebrow">PROBLÉMATIQUE</span>
+
+                    <strong>
+                        Peut-on obtenir un compromis plus robuste
+                        entre classification, sous-triage
+                        et qualité des explications ?
+                    </strong>
+
+                </div>
+
+
+                <div class="experiment-metrics">
+
+                    <div>
+                        <strong>71,40 %</strong>
+                        <span>Accuracy</span>
+                    </div>
+
+                    <div>
+                        <strong>71,60 %</strong>
+                        <span>F1 macro</span>
+                    </div>
+
+                    <div>
+                        <strong>17,20 %</strong>
+                        <span>Sous-triage</span>
+                    </div>
+
+                    <div>
+                        <strong>3</strong>
+                        <span>Epochs</span>
+                    </div>
+
+                </div>
+
+
+                <div class="experiment-analysis">
+
+                    <div>
+
+                        <span>ANALYSE</span>
+
+                        <p>
+                            Ce run fournit un compromis suffisamment stable
+                            pour devenir la référence SFT à cette étape
+                            du développement.
+                        </p>
+
+                    </div>
+
+                    <div>
+
+                        <span>DÉCISION</span>
+
+                        <p>
+                            Le conserver comme référence historique,
+                            mais poursuivre l'audit des explications.
+                            Les métriques de classification seules ne suffisent
+                            pas à juger la qualité globale du système.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- RUN 06 -->
+
+            <article class="experiment-card">
+
+                <div class="experiment-header">
+
+                    <div>
+                        <span class="experiment-number">RUN 06</span>
+                        <h3>Plus d'entraînement n'est pas toujours mieux</h3>
+                    </div>
+
+                    <span class="experiment-status rejected">
+                        Non retenu
+                    </span>
+
+                </div>
+
+
+                <div class="callout subtle">
+
+                    <span class="eyebrow">PROBLÉMATIQUE</span>
+
+                    <strong>
+                        Une nouvelle configuration et davantage
+                        d'entraînement peuvent-ils dépasser
+                        la référence précédente ?
+                    </strong>
+
+                </div>
+
+
+                <div class="experiment-metrics">
+
+                    <div>
+                        <strong>66,00 %</strong>
+                        <span>Accuracy</span>
+                    </div>
+
+                    <div>
+                        <strong>66,30 %</strong>
+                        <span>F1 macro</span>
+                    </div>
+
+                    <div>
+                        <strong>19,60 %</strong>
+                        <span>Sous-triage</span>
+                    </div>
+
+                    <div>
+                        <strong>2,6</strong>
+                        <span>Epochs réalisés</span>
+                    </div>
+
+                </div>
+
+
+                <div class="experiment-analysis">
+
+                    <div>
+
+                        <span>ANALYSE</span>
+
+                        <p>
+                            Cette configuration n'améliore pas la référence
+                            précédente. Augmenter le coût expérimental
+                            ne produit donc pas ici de gain utile.
+                        </p>
+
+                    </div>
+
+                    <div>
+
+                        <span>DÉCISION</span>
+
+                        <p>
+                            Arrêter cette piste et revenir sur la qualité
+                            du dataset et des cibles plutôt que multiplier
+                            les entraînements.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         04 - BILAN DES RUNS
+         ===================================================== -->
+
+    <section class="section">
+
+        <div class="container">
+
+            <p class="section-number">04</p>
+
+            <h2>Ce que les six runs ont révélé</h2>
+
+            <div class="about-grid">
+
+                <div class="large-text">
+                    Le principal levier n'était plus
+                    l'entraînement. C'était la donnée.
+                </div>
+
+                <div>
+
+                    <p>
+                        Les six expériences montrent que davantage d'epochs,
+                        une nouvelle configuration ou une optimisation
+                        technique ne suffisent pas à garantir une progression.
+                    </p>
+
+                    <p>
+                        L'analyse qualitative des sorties révèle ensuite
+                        un problème plus profond : certaines formulations
+                        incorrectes sont présentes directement dans
+                        les cibles d'entraînement.
+                    </p>
+
+                    <p>
+                        Le modèle peut donc apprendre correctement
+                        une formulation que je ne souhaite pas lui apprendre.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="callout">
+
+                <span class="eyebrow">PROBLÈME IDENTIFIÉ</span>
+
+                <strong>
+                    Une bonne métrique de classification
+                    peut masquer une mauvaise cible générative.
+                </strong>
+
+                <p>
+                    L'analyse qualitative a notamment permis d'identifier
+                    des formulations défectueuses reproduites par le modèle
+                    parce qu'elles étaient présentes dans les données
+                    de supervision.
+                </p>
+
+            </div>
+
+
+            <div class="callout">
+
+                <span class="eyebrow">DÉCISION</span>
+
+                <strong>
+                    Corriger les données avant de continuer
+                    à optimiser le modèle.
+                </strong>
+
+                <p>
+                    Les datasets sont audités et reconstruits.
+                    Les priorités et les contextes sont préservés,
+                    tandis que les cibles problématiques sont corrigées.
+                    Un nouvel entraînement SFT propre est ensuite lancé.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         05 - RUN FINAL
+         ===================================================== -->
+
+    <section class="section section-alt" id="final-sft">
+
+        <div class="container">
+
+            <p class="section-number">05</p>
+
+            <p class="eyebrow">
+                ★ RUN FINAL SFT
+            </p>
+
+            <h2>La nouvelle référence</h2>
+
+            <p class="section-intro">
+                Après la reconstruction des données, le modèle est
+                réentraîné sur la version corrigée du dataset.
+                Cette expérience remplace les runs historiques comme
+                référence SFT officielle du projet.
+            </p>
+
+
+            <div class="vision">
+
+                <p class="eyebrow">
+                    MODÈLE SFT RETENU
+                </p>
+
+                <h3>
+                    Qwen3-1.7B • QLoRA • checkpoint-950
+                </h3>
+
+                <p>
+                    Run <strong>20261007-003909</strong>.
+                    Le checkpoint 950 est sélectionné automatiquement
+                    selon le meilleur F1 macro obtenu sur le jeu
+                    de validation.
+                </p>
+
+            </div>
+
+
+            <div class="checkpoint-card">
+
+                <div>
+
+                    <span class="eyebrow">
+                        CHECKPOINT SÉLECTIONNÉ
+                    </span>
+
+                    <h3>checkpoint-950</h3>
+
+                    <p>
+                        La sélection est réalisée avant toute consultation
+                        du jeu de test final. Le checkpoint 950 devient
+                        le modèle SFT figé du projet.
+                    </p>
+
+                </div>
+
+
+                <div class="checkpoint-score">
+
+                    <strong>78,71 %</strong>
+                    <span>F1 macro validation</span>
+
+                </div>
+
+            </div>
+
+
+            <div class="config-grid">
+
+                <div class="config-card">
+                    <span>Run</span>
+                    <strong>20261007-003909</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>Checkpoint</span>
+                    <strong>950</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>Recall P1</span>
+                    <strong>86,14 %</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>Recall P2</span>
+                    <strong>70,83 %</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>Recall P3</span>
+                    <strong>78,92 %</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>Sous-triage</span>
+                    <strong>12,00 %</strong>
+                </div>
+
+            </div>
+
+
+            <div class="callout">
+
+                <span class="eyebrow">
+                    POURQUOI LE CHECKPOINT 950 ?
+                </span>
+
+                <strong>
+                    Parce qu'il maximise le critère défini pour
+                    la sélection : le F1 macro de validation.
+                </strong>
+
+                <p>
+                    L'entraînement s'est poursuivi après ce point,
+                    mais les checkpoints suivants n'ont pas amélioré
+                    le critère de sélection. Le modèle retenu n'est donc
+                    pas simplement le dernier modèle entraîné.
+                </p>
+
+            </div>
+
+
+            <div class="callout subtle">
+
+                <span class="eyebrow">
+                    PROTOCOLE
+                </span>
+
+                <strong>
+                    Validation pour choisir. Test pour mesurer.
+                </strong>
+
+                <p>
+                    Le jeu de test n'est pas utilisé pour décider
+                    quel checkpoint conserver. Il reste gelé jusqu'à
+                    la sélection définitive du modèle.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         06 - TEST FINAL
+         ===================================================== -->
+
+    <section class="section">
+
+        <div class="container">
+
+            <p class="section-number">06</p>
+
+            <h2>Test final gelé</h2>
+
+            <p class="section-intro">
+                Une fois le checkpoint 950 sélectionné, il est évalué
+                sur 500 cas indépendants. Cette évaluation constitue
+                la baseline SFT officielle du projet.
+            </p>
+
+
+            <div class="result-grid">
+
+                <div class="result-card">
+                    <strong>74,40 %</strong>
+                    <span>Accuracy</span>
+                </div>
+
+                <div class="result-card">
+                    <strong>74,71 %</strong>
+                    <span>F1 macro</span>
+                </div>
+
+                <div class="result-card">
+                    <strong>75,45 %</strong>
+                    <span>Précision macro</span>
+                </div>
+
+                <div class="result-card">
+                    <strong>74,38 %</strong>
+                    <span>Recall macro</span>
+                </div>
+
+                <div class="result-card">
+                    <strong>78,57 %</strong>
+                    <span>Recall P1</span>
+                </div>
+
+                <div class="result-card">
+                    <strong>71,08 %</strong>
+                    <span>Recall P2</span>
+                </div>
+
+                <div class="result-card">
+                    <strong>73,49 %</strong>
+                    <span>Recall P3</span>
+                </div>
+
+                <div class="result-card">
+                    <strong>14,40 %</strong>
+                    <span>Sous-triage</span>
+                </div>
+
+            </div>
+
+
+            <!-- RESULTATS PAR LANGUE -->
+
+            <div class="reflection-grid test-analysis">
+
+                <div class="reflection-card">
+
+                    <span class="eyebrow">
+                        FRANÇAIS
+                    </span>
+
+                    <h3>80,00 % accuracy</h3>
+
+                    <p>
+                        F1 macro :
+                        <strong>80,28 %</strong>
+                    </p>
+
+                </div>
+
+
+                <div class="reflection-card">
+
+                    <span class="eyebrow">
+                        ANGLAIS
+                    </span>
+
+                    <h3>68,80 % accuracy</h3>
+
+                    <p>
+                        F1 macro :
+                        <strong>69,03 %</strong>
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- MATRICE DE CONFUSION -->
+
+            <div class="matrix-wrapper">
+
+                <div>
+
+                    <span class="eyebrow">
+                        MATRICE DE CONFUSION
+                    </span>
+
+                    <h3>372 / 500</h3>
+
+                    <p>
+                        372 cas sont correctement classés.
+                        Les lignes représentent la priorité attendue
+                        et les colonnes la priorité prédite.
+                    </p>
+
+                </div>
+
+
+                <div class="confusion-matrix">
+
+                    <div></div>
+                    <div>P1</div>
+                    <div>P2</div>
+                    <div>P3</div>
+
+                    <div>P1</div>
+                    <strong>132</strong>
+                    <span>20</span>
+                    <span>16</span>
+
+                    <div>P2</div>
+                    <span>12</span>
+                    <strong>118</strong>
+                    <span>36</span>
+
+                    <div>P3</div>
+                    <span>1</span>
+                    <span>43</span>
+                    <strong>122</strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- METRIQUES PAR CLASSE -->
+
+            <div class="config-grid">
+
+                <div class="config-card">
+                    <span>P1 précision</span>
+                    <strong>91,03 %</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>P1 recall</span>
+                    <strong>78,57 %</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>P1 F1</span>
+                    <strong>84,35 %</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>P2 précision</span>
+                    <strong>65,19 %</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>P2 recall</span>
+                    <strong>71,08 %</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>P2 F1</span>
+                    <strong>68,01 %</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>P3 précision</span>
+                    <strong>70,11 %</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>P3 recall</span>
+                    <strong>73,49 %</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>P3 F1</span>
+                    <strong>71,76 %</strong>
+                </div>
+
+            </div>
+
+
+            <!-- ANALYSE -->
+
+            <div class="reflection-grid test-analysis">
+
+                <div class="reflection-card">
+
+                    <h3>P1 : meilleure classe</h3>
+
+                    <p>
+                        La classe P1 atteint une précision de
+                        <strong>91,03 %</strong> et un F1 de
+                        <strong>84,35 %</strong>.
+                        Lorsqu'une prédiction P1 est produite,
+                        elle est donc très souvent correcte.
+                    </p>
+
+                </div>
+
+
+                <div class="reflection-card">
+
+                    <h3>P2 / P3 : principale confusion</h3>
+
+                    <p>
+                        36 cas P2 sont classés P3 et 43 cas P3
+                        sont classés P2. Cette frontière constitue
+                        la principale zone de confusion du modèle.
+                    </p>
+
+                </div>
+
+
+                <div class="reflection-card">
+
+                    <h3>P1 → P3 : erreur sensible</h3>
+
+                    <p>
+                        16 cas réellement P1 sont classés P3.
+                        Ces erreurs de sous-triage constituent
+                        un point de vigilance important dans le cadre
+                        d'un système de triage.
+                    </p>
+
+                </div>
+
+
+                <div class="reflection-card">
+
+                    <h3>Écart FR / EN</h3>
+
+                    <p>
+                        Les performances sont supérieures en français :
+                        80,28 % de F1 macro contre 69,03 % en anglais.
+                        Cet écart doit rester visible dans l'analyse
+                        des limites du système.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="callout">
+
+                <span class="eyebrow">
+                    BASELINE SFT OFFICIELLE
+                </span>
+
+                <strong>
+                    checkpoint-950 • F1 test 74,71 %
+                </strong>
+
+                <p>
+                    À partir de ce point, le SFT est figé.
+                    Ces résultats constituent la référence utilisée
+                    pour les étapes suivantes du projet.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         07 - PASSAGE AU DPO
+         ===================================================== -->
+
+    <section class="section section-alt">
+
+        <div class="container">
+
+            <p class="section-number">07</p>
+
+            <p class="eyebrow">
+                ÉTAPE SUIVANTE
+            </p>
+
+            <h2>Du SFT au DPO</h2>
+
+
+            <div class="about-grid">
+
+                <div class="large-text">
+                    Le checkpoint-950 devient
+                    la baseline du DPO.
+                </div>
+
+                <div>
+
+                    <p>
+                        Le SFT est désormais figé.
+                        Le run 20261007-003909 et son checkpoint-950
+                        constituent la référence officielle utilisée
+                        pour l'étape d'optimisation par préférences.
+                    </p>
+
+                    <p>
+                        La construction du dataset de préférences,
+                        les problématiques spécifiques au DPO,
+                        ses entraînements et la comparaison finale
+                        avec le SFT sont documentés séparément.
+                    </p>
+
+                    <a href="dpo.html" class="project-link">
+                        Voir les expérimentations DPO →
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         08 - REPRODUCTIBILITE
+         ===================================================== -->
+
+    <section class="section">
+
+        <div class="container">
+
+            <p class="section-number">08</p>
+
+            <h2>Rendre l'expérience reproductible</h2>
+
+            <p class="section-intro">
+                La perte accidentelle d'anciens checkpoints a renforcé
+                un principe du projet : un résultat doit rester identifiable,
+                traçable et reproductible.
+            </p>
+
+
+            <div class="skills-grid">
+
+                <div class="skill-group">
+
+                    <h3>Weights & Biases</h3>
+
+                    <p>
+                        Runs, métriques, hyperparamètres
+                        et artefacts d'entraînement.
+                    </p>
+
+                </div>
+
+
+                <div class="skill-group">
+
+                    <h3>Checkpoints</h3>
+
+                    <p>
+                        Adapter, configuration et états nécessaires
+                        à la conservation ou à la reprise d'un modèle.
+                    </p>
+
+                </div>
+
+
+                <div class="skill-group">
+
+                    <h3>SHA-256</h3>
+
+                    <p>
+                        Empreintes des jeux train, validation et test
+                        afin de rattacher chaque résultat à une version
+                        précise des données.
+                    </p>
+
+                </div>
+
+
+                <div class="skill-group">
+
+                    <h3>Configuration</h3>
+
+                    <p>
+                        Seed 42, hyperparamètres, modèle source,
+                        environnement logiciel et matériel associés
+                        aux résultats.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="repro-flow">
+
+                <div>
+                    <strong>Dataset</strong>
+                    <span>SHA-256</span>
+                </div>
+
+                <span>+</span>
+
+                <div>
+                    <strong>Configuration</strong>
+                    <span>Hyperparamètres</span>
+                </div>
+
+                <span>+</span>
+
+                <div>
+                    <strong>Checkpoint</strong>
+                    <span>Adapter / état</span>
+                </div>
+
+                <span>+</span>
+
+                <div>
+                    <strong>W&B</strong>
+                    <span>Métriques / artefacts</span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         09 - RETOUR EXPERIENCE
+         ===================================================== -->
+
+    <section class="section section-alt">
+
+        <div class="container">
+
+            <p class="section-number">09</p>
+
+            <h2>Ce que ce parcours m'a appris</h2>
+
+
+            <div class="reflection-grid">
+
+                <div class="reflection-card">
+
+                    <h3>La donnée avant le modèle</h3>
+
+                    <p>
+                        Les plus grandes améliorations ne proviennent
+                        pas nécessairement d'un changement d'optimiseur
+                        ou de davantage d'epochs. La qualité de la
+                        supervision est déterminante.
+                    </p>
+
+                </div>
+
+
+                <div class="reflection-card">
+
+                    <h3>Les métriques ne suffisent pas</h3>
+
+                    <p>
+                        Un modèle peut obtenir une bonne classification
+                        tout en reproduisant une mauvaise formulation
+                        présente dans ses cibles.
+                    </p>
+
+                </div>
+
+
+                <div class="reflection-card">
+
+                    <h3>Validation et test ont deux rôles</h3>
+
+                    <p>
+                        La validation sert à prendre des décisions.
+                        Le test gelé sert à mesurer le résultat final.
+                        Mélanger les deux conduirait à biaiser
+                        l'évaluation.
+                    </p>
+
+                </div>
+
+
+                <div class="reflection-card">
+
+                    <h3>Tracer avant d'avoir un problème</h3>
+
+                    <p>
+                        Dataset, checkpoint, configuration, métriques
+                        et environnement doivent être associés dès
+                        l'expérience, et non reconstruits après coup.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="vision">
+
+                <p class="eyebrow">
+                    ÉVOLUTION DE MA VISION
+                </p>
+
+                <div class="vision-flow">
+
+                    <div>
+                        <small>Au début</small>
+                        <strong>
+                            Entraîner un bon modèle
+                        </strong>
+                    </div>
+
+                    <span>→</span>
+
+                    <div>
+                        <small>Aujourd'hui</small>
+                        <strong>
+                            Construire un système IA mesurable,
+                            reproductible et déployable
+                        </strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         NAVIGATION FINALE
+         ===================================================== -->
+
+    <section class="section contact">
+
+        <div class="container">
+
+            <p class="eyebrow">
+                SUITE DU PROJET
+            </p>
+
+            <h2>
+                Le SFT est terminé.
+            </h2>
+
+            <p>
+                Le checkpoint-950 devient maintenant le point de référence
+                pour l'optimisation par préférences et pour la suite
+                du pipeline d'AI Engineering.
+            </p>
+
+
+            <div class="hero-actions">
+
+                <a
+                    href="dpo.html"
+                    class="button primary"
+                >
+                    Expérimentations DPO
+                </a>
+
+                <a
+                    href="architecture.html"
+                    class="button secondary"
+                >
+                    Voir l'architecture
+                </a>
+
+                <a
+                    href="index.html"
+                    class="button secondary"
+                >
+                    Retour au projet
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+</main>
+
+
+<footer>
+
+    <div class="container footer-content">
+
+        <span>
+            Medical Triage AI • Expérimentations SFT
+        </span>
+
+        <span>
+            AI Engineering • 2026
+        </span>
+
+    </div>
+
+</footer>
+
+
+<script src="js/main.js"></script>
+
+</body>
+
+</html>

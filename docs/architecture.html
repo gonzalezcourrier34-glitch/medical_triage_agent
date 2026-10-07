@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Architecture | Medical Triage AI</title>
+
+    <meta
+        name="description"
+        content="Architecture AI Engineering et MLOps du projet Medical Triage AI."
+    >
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<header class="header">
+    <nav class="nav container">
+
+        <a href="index.html" class="logo">
+            MT<span>.</span>AI
+        </a>
+
+        <div class="nav-links">
+            <a href="index.html">Projet</a>
+            <a href="experiments.html">Expérimentations</a>
+            <a href="architecture.html" class="active">Architecture</a>
+            <a href="#" target="_blank">GitHub</a>
+        </div>
+
+    </nav>
+</header>
+
+
+<main>
+
+    <!-- HERO -->
+
+    <section class="hero project-hero">
+
+        <div class="container hero-content">
+
+            <p class="eyebrow">
+                AI ENGINEERING • MLOPS
+            </p>
+
+            <h1>
+                Du modèle au
+                <span>système.</span>
+            </h1>
+
+            <p class="hero-text">
+                Le modèle entraîné n'est qu'un composant du projet.
+                L'objectif est de construire une chaîne reproductible
+                allant des données jusqu'à l'exposition du modèle
+                sous forme de service d'inférence.
+            </p>
+
+            <div class="hero-tags">
+                <span>Data Engineering</span>
+                <span>Qwen3</span>
+                <span>QLoRA</span>
+                <span>FastAPI</span>
+                <span>vLLM</span>
+                <span>Docker</span>
+                <span>GitHub Actions</span>
+                <span>Monitoring</span>
+            </div>
+
+            <div class="hero-actions">
+
+                <a href="#pipeline" class="button primary">
+                    Voir le pipeline
+                </a>
+
+                <a href="#deployment" class="button secondary">
+                    Déploiement
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- VISION -->
+
+    <section class="section section-alt">
+
+        <div class="container">
+
+            <p class="section-number">01</p>
+
+            <h2>Une architecture de bout en bout</h2>
+
+            <div class="about-grid">
+
+                <div class="large-text">
+                    Data Engineering + Machine Learning +
+                    LLM Fine-Tuning + Evaluation + MLOps +
+                    Software Engineering.
+                </div>
+
+                <div>
+
+                    <p>
+                        Le POC ne se limite pas à entraîner un adapter
+                        LoRA dans un notebook.
+                    </p>
+
+                    <p>
+                        Les données doivent être préparées et contrôlées,
+                        les expériences tracées, le modèle évalué,
+                        les artefacts versionnés puis le résultat exposé
+                        à travers une interface exploitable.
+                    </p>
+
+                    <p>
+                        Cette séparation permet également de faire évoluer
+                        indépendamment les différentes briques du système.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- PIPELINE -->
+
+    <section class="section" id="pipeline">
+
+        <div class="container">
+
+            <p class="section-number">02</p>
+
+            <h2>Pipeline global</h2>
+
+            <p class="section-intro">
+                Le projet suit une chaîne allant des sources de données
+                jusqu'au service d'inférence.
+            </p>
+
+
+            <div class="architecture-flow">
+
+                <div class="architecture-node">
+                    <small>01</small>
+                    <strong>Datasets</strong>
+                    <span>Sources médicales FR / EN</span>
+                </div>
+
+                <div class="architecture-arrow">↓</div>
+
+                <div class="architecture-node">
+                    <small>02</small>
+                    <strong>Data Engineering</strong>
+                    <span>Extraction • nettoyage • audit</span>
+                </div>
+
+                <div class="architecture-arrow">↓</div>
+
+                <div class="architecture-node">
+                    <small>03</small>
+                    <strong>Datasets finaux</strong>
+                    <span>Train • Validation • Test</span>
+                </div>
+
+                <div class="architecture-arrow">↓</div>
+
+                <div class="architecture-node accent-node">
+                    <small>04</small>
+                    <strong>Qwen3-1.7B</strong>
+                    <span>Base quantifiée 4 bits</span>
+                </div>
+
+                <div class="architecture-arrow">↓</div>
+
+                <div class="architecture-node">
+                    <small>05</small>
+                    <strong>SFT / QLoRA</strong>
+                    <span>Apprentissage de la tâche</span>
+                </div>
+
+                <div class="architecture-arrow">↓</div>
+
+                <div class="architecture-node">
+                    <small>06</small>
+                    <strong>DPO</strong>
+                    <span>Affinement des préférences</span>
+                </div>
+
+                <div class="architecture-arrow">↓</div>
+
+                <div class="architecture-node">
+                    <small>07</small>
+                    <strong>Evaluation</strong>
+                    <span>Métriques • erreurs • génération</span>
+                </div>
+
+                <div class="architecture-arrow">↓</div>
+
+                <div class="architecture-node">
+                    <small>08</small>
+                    <strong>Serving</strong>
+                    <span>API • moteur d'inférence</span>
+                </div>
+
+                <div class="architecture-arrow">↓</div>
+
+                <div class="architecture-node">
+                    <small>09</small>
+                    <strong>Monitoring</strong>
+                    <span>Logs • métriques • traçabilité</span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- DATA -->
+
+    <section class="section section-alt">
+
+        <div class="container">
+
+            <p class="section-number">03</p>
+
+            <h2>Data Engineering</h2>
+
+            <p class="section-intro">
+                Avant l'entraînement, les données traversent plusieurs
+                étapes de préparation et de contrôle.
+            </p>
+
+
+            <div class="projects-grid">
+
+                <article class="project-card">
+
+                    <span class="project-type">INGESTION</span>
+
+                    <h3>Sources hétérogènes</h3>
+
+                    <p>
+                        Les différents datasets ne possèdent pas
+                        nécessairement la même structure ni le même
+                        type d'information médicale.
+                    </p>
+
+                    <div class="tags">
+                        <span>FR</span>
+                        <span>EN</span>
+                        <span>QCM</span>
+                        <span>Clinical QA</span>
+                    </div>
+
+                </article>
+
+
+                <article class="project-card">
+
+                    <span class="project-type">NORMALISATION</span>
+
+                    <h3>Schéma commun</h3>
+
+                    <p>
+                        Les sources sont transformées vers une
+                        représentation exploitable par les différentes
+                        étapes du pipeline.
+                    </p>
+
+                    <div class="tags">
+                        <span>JSONL</span>
+                        <span>Python</span>
+                        <span>Validation</span>
+                    </div>
+
+                </article>
+
+
+                <article class="project-card">
+
+                    <span class="project-type">QUALITÉ</span>
+
+                    <h3>Audit</h3>
+
+                    <p>
+                        Contrôle des contextes, des priorités,
+                        des explications, des doublons et des
+                        incohérences avant entraînement.
+                    </p>
+
+                    <div class="tags">
+                        <span>Audit</span>
+                        <span>Deduplication</span>
+                        <span>Quality checks</span>
+                    </div>
+
+                </article>
+
+
+                <article class="project-card">
+
+                    <span class="project-type">TRAÇABILITÉ</span>
+
+                    <h3>Empreintes SHA-256</h3>
+
+                    <p>
+                        Les versions utilisées pour les expériences
+                        peuvent être identifiées grâce aux empreintes
+                        des données.
+                    </p>
+
+                    <div class="tags">
+                        <span>SHA-256</span>
+                        <span>Reproductibilité</span>
+                    </div>
+
+                </article>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- TRAINING -->
+
+    <section class="section">
+
+        <div class="container">
+
+            <p class="section-number">04</p>
+
+            <h2>Architecture d'entraînement</h2>
+
+            <p class="section-intro">
+                La stratégie QLoRA permet de spécialiser le modèle
+                sous la contrainte des 6 Go de VRAM disponibles.
+            </p>
+
+
+            <div class="training-stack">
+
+                <div class="stack-layer">
+
+                    <span>BASE MODEL</span>
+
+                    <strong>
+                        Qwen3-1.7B
+                    </strong>
+
+                    <small>
+                        Poids principaux gelés • quantification 4 bits
+                    </small>
+
+                </div>
+
+
+                <div class="stack-plus">+</div>
+
+
+                <div class="stack-layer accent-layer">
+
+                    <span>ADAPTERS</span>
+
+                    <strong>
+                        LoRA
+                    </strong>
+
+                    <small>
+                        r=16 • alpha=32 • dropout=0,05
+                    </small>
+
+                </div>
+
+
+                <div class="stack-plus">+</div>
+
+
+                <div class="stack-layer">
+
+                    <span>OPTIMISATION MÉMOIRE</span>
+
+                    <strong>
+                        QLoRA
+                    </strong>
+
+                    <small>
+                        Gradient checkpointing • AdamW 8-bit
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <div class="config-grid architecture-config">
+
+                <div class="config-card">
+                    <span>GPU</span>
+                    <strong>RTX 4050</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>VRAM</span>
+                    <strong>6 Go</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>Quantification</span>
+                    <strong>4 bits</strong>
+                </div>
+
+                <div class="config-card">
+                    <span>Batch GPU</span>
+                    <strong>1</strong>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- EXPERIMENT TRACKING -->
+
+    <section class="section section-alt">
+
+        <div class="container">
+
+            <p class="section-number">05</p>
+
+            <h2>Traçabilité des expériences</h2>
+
+            <div class="about-grid">
+
+                <div class="large-text">
+                    Un modèle sans provenance n'est pas
+                    un résultat reproductible.
+                </div>
+
+                <div>
+
+                    <p>
+                        Chaque entraînement doit pouvoir être relié
+                        à sa configuration, ses données, ses métriques
+                        et ses artefacts.
+                    </p>
+
+                    <p>
+                        W&B est utilisé pour centraliser le suivi
+                        expérimental et conserver les informations
+                        nécessaires à l'analyse des runs.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="repro-flow">
+
+                <div>
+                    <strong>Dataset</strong>
+                    <span>SHA-256</span>
+                </div>
+
+                <span>+</span>
+
+                <div>
+                    <strong>Configuration</strong>
+                    <span>Hyperparamètres</span>
+                </div>
+
+                <span>+</span>
+
+                <div>
+                    <strong>Checkpoint</strong>
+                    <span>Adapter / état</span>
+                </div>
+
+                <span>+</span>
+
+                <div>
+                    <strong>W&B</strong>
+                    <span>Métriques / artefacts</span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- SERVING -->
+
+    <section class="section" id="deployment">
+
+        <div class="container">
+
+            <p class="section-number">06</p>
+
+            <h2>Architecture de serving</h2>
+
+            <p class="section-intro">
+                L'architecture cible sépare la logique applicative
+                du moteur chargé de l'inférence du modèle.
+            </p>
+
+
+            <div class="serving-flow">
+
+                <div class="architecture-node">
+                    <small>CLIENT</small>
+                    <strong>Application</strong>
+                    <span>Requête de triage</span>
+                </div>
+
+                <div class="architecture-arrow">↓</div>
+
+                <div class="architecture-node accent-node">
+                    <small>GATEWAY</small>
+                    <strong>FastAPI</strong>
+                    <span>Validation • logique métier</span>
+                </div>
+
+                <div class="architecture-arrow">↓</div>
+
+                <div class="architecture-node">
+                    <small>INFERENCE</small>
+                    <strong>vLLM</strong>
+                    <span>Serving GPU du modèle</span>
+                </div>
+
+                <div class="architecture-arrow">↓</div>
+
+                <div class="architecture-node">
+                    <small>MODEL</small>
+                    <strong>Qwen3 + Adapter</strong>
+                    <span>SFT / DPO</span>
+                </div>
+
+                <div class="architecture-arrow">↓</div>
+
+                <div class="architecture-node">
+                    <small>OUTPUT</small>
+                    <strong>Réponse structurée</strong>
+                    <span>PRIORITY + EXPLANATION</span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- API -->
+
+    <section class="section section-alt">
+
+        <div class="container">
+
+            <p class="section-number">07</p>
+
+            <h2>API</h2>
+
+            <div class="projects-grid">
+
+                <article class="project-card featured">
+
+                    <div class="project-top">
+
+                        <span class="project-type">
+                            ENDPOINT PRINCIPAL
+                        </span>
+
+                        <span>
+                            POST
+                        </span>
+
+                    </div>
+
+                    <h3>/api/v1/triage</h3>
+
+                    <p>
+                        Reçoit le contexte nécessaire à l'inférence,
+                        valide la requête puis transmet les données
+                        au moteur de génération.
+                    </p>
+
+
+                    <div class="api-example">
+
+                        <div>
+
+                            <span>INPUT</span>
+
+                            <pre><code>{
+  "context": "..."
+}</code></pre>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>OUTPUT</span>
+
+                            <pre><code>{
+  "priority": "P2",
+  "explanation": "..."
+}</code></pre>
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+
+                <article class="project-card">
+
+                    <span class="project-type">
+                        HEALTH
+                    </span>
+
+                    <h3>/health</h3>
+
+                    <p>
+                        Vérification de la disponibilité du service
+                        et de ses dépendances principales.
+                    </p>
+
+                </article>
+
+
+                <article class="project-card">
+
+                    <span class="project-type">
+                        OBSERVABILITÉ
+                    </span>
+
+                    <h3>/metrics</h3>
+
+                    <p>
+                        Point d'accès destiné aux métriques
+                        nécessaires au suivi technique du service.
+                    </p>
+
+                </article>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- DOCKER -->
+
+    <section class="section">
+
+        <div class="container">
+
+            <p class="section-number">08</p>
+
+            <h2>Conteneurisation</h2>
+
+            <div class="about-grid">
+
+                <div class="large-text">
+                    Séparer la couche métier
+                    du moteur d'inférence.
+                </div>
+
+                <div>
+
+                    <p>
+                        La conteneurisation permet de rendre
+                        l'environnement applicatif reproductible.
+                    </p>
+
+                    <p>
+                        L'API et le moteur d'inférence peuvent être
+                        isolés dans des services distincts afin de
+                        faciliter leur évolution et leur déploiement.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="docker-layout">
+
+                <div class="docker-service">
+
+                    <span>CONTAINER 01</span>
+
+                    <strong>FastAPI</strong>
+
+                    <small>
+                        API • validation • configuration
+                    </small>
+
+                </div>
+
+
+                <div class="docker-link">
+                    API
+                    <span>→</span>
+                </div>
+
+
+                <div class="docker-service">
+
+                    <span>CONTAINER 02</span>
+
+                    <strong>vLLM</strong>
+
+                    <small>
+                        GPU • modèle • inférence
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CONFIGURATION -->
+
+    <section class="section section-alt">
+
+        <div class="container">
+
+            <p class="section-number">09</p>
+
+            <h2>Configuration</h2>
+
+            <p class="section-intro">
+                Les paramètres dépendant de l'environnement
+                restent séparés du code applicatif.
+            </p>
+
+
+            <div class="code-panel">
+
+                <div class="code-panel-header">
+                    <span>.env</span>
+                    <small>Exemple</small>
+                </div>
+
+                <pre><code>MODEL_ID=...
+MODEL_VERSION=...
+VLLM_URL=...
+MAX_MODEL_LEN=...
+MAX_NEW_TOKENS=...
+LOG_LEVEL=...
+API_HOST=...
+API_PORT=...</code></pre>
+
+            </div>
+
+
+            <div class="callout">
+
+                <span class="eyebrow">
+                    SÉCURITÉ
+                </span>
+
+                <strong>
+                    Les secrets ne sont pas versionnés dans Git.
+                </strong>
+
+                <p>
+                    Tokens, mots de passe, clés API et identifiants
+                    cloud doivent être gérés séparément du code source.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CI/CD -->
+
+    <section class="section">
+
+        <div class="container">
+
+            <p class="section-number">10</p>
+
+            <h2>CI/CD</h2>
+
+            <p class="section-intro">
+                GitHub Actions automatise les contrôles nécessaires
+                avant la livraison d'une nouvelle version.
+            </p>
+
+
+            <div class="cicd-flow">
+
+                <div>
+                    <span>01</span>
+                    <strong>Git Push</strong>
+                </div>
+
+                <div>→</div>
+
+                <div>
+                    <span>02</span>
+                    <strong>Tests</strong>
+                </div>
+
+                <div>→</div>
+
+                <div>
+                    <span>03</span>
+                    <strong>Qualité</strong>
+                </div>
+
+                <div>→</div>
+
+                <div>
+                    <span>04</span>
+                    <strong>Build</strong>
+                </div>
+
+                <div>→</div>
+
+                <div>
+                    <span>05</span>
+                    <strong>Déploiement</strong>
+                </div>
+
+            </div>
+
+
+            <div class="callout subtle">
+
+                <span class="eyebrow">
+                    SÉPARATION DES CYCLES
+                </span>
+
+                <strong>
+                    Un commit applicatif ne déclenche pas
+                    automatiquement un réentraînement.
+                </strong>
+
+                <p>
+                    Le cycle d'entraînement du modèle et le cycle
+                    de livraison de l'application sont deux processus
+                    distincts.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CLOUD -->
+
+    <section class="section section-alt">
+
+        <div class="container">
+
+            <p class="section-number">11</p>
+
+            <h2>Architecture cible</h2>
+
+
+            <div class="cloud-architecture">
+
+                <div class="cloud-node">
+                    <small>UTILISATEUR</small>
+                    <strong>Client</strong>
+                </div>
+
+                <span>↓</span>
+
+                <div class="cloud-node">
+                    <small>APPLICATION</small>
+                    <strong>FastAPI</strong>
+                </div>
+
+                <span>↓</span>
+
+                <div class="cloud-node accent-node">
+                    <small>CLOUD GPU</small>
+                    <strong>vLLM + Qwen3</strong>
+                </div>
+
+                <span>↓</span>
+
+                <div class="cloud-node">
+                    <small>OBSERVABILITÉ</small>
+                    <strong>Monitoring</strong>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- MONITORING -->
+
+    <section class="section">
+
+        <div class="container">
+
+            <p class="section-number">12</p>
+
+            <h2>Monitoring et traçabilité</h2>
+
+            <div class="skills-grid">
+
+                <div class="skill-group">
+
+                    <h3>Disponibilité</h3>
+
+                    <p>
+                        Vérifier que l'API et le moteur d'inférence
+                        répondent correctement.
+                    </p>
+
+                </div>
+
+
+                <div class="skill-group">
+
+                    <h3>Latence</h3>
+
+                    <p>
+                        Mesurer le temps nécessaire pour traiter
+                        une requête et générer une réponse.
+                    </p>
+
+                </div>
+
+
+                <div class="skill-group">
+
+                    <h3>Erreurs</h3>
+
+                    <p>
+                        Identifier les échecs applicatifs,
+                        les réponses invalides et les incidents.
+                    </p>
+
+                </div>
+
+
+                <div class="skill-group">
+
+                    <h3>Traçabilité</h3>
+
+                    <p>
+                        Associer une réponse à une version du modèle
+                        et à une configuration identifiables.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- LIMITES -->
+
+    <section class="section section-alt">
+
+        <div class="container">
+
+            <p class="section-number">13</p>
+
+            <h2>Un POC, pas un dispositif médical</h2>
+
+            <div class="reflection-grid">
+
+                <div class="reflection-card">
+
+                    <h3>Risques modèle</h3>
+
+                    <ul>
+                        <li>Sous-triage</li>
+                        <li>Hallucinations</li>
+                        <li>Biais linguistiques</li>
+                        <li>Erreurs de généralisation</li>
+                    </ul>
+
+                </div>
+
+
+                <div class="reflection-card">
+
+                    <h3>Risques système</h3>
+
+                    <ul>
+                        <li>Indisponibilité du service</li>
+                        <li>Erreur d'intégration</li>
+                        <li>Traçabilité insuffisante</li>
+                        <li>Mauvaise version du modèle</li>
+                    </ul>
+
+                </div>
+
+
+                <div class="reflection-card">
+
+                    <h3>Enjeu médical</h3>
+
+                    <p>
+                        Une performance expérimentale ne constitue
+                        pas une validation clinique.
+                    </p>
+
+                </div>
+
+
+                <div class="reflection-card">
+
+                    <h3>Supervision humaine</h3>
+
+                    <p>
+                        Le système est étudié comme outil d'assistance.
+                        La décision médicale reste sous responsabilité
+                        humaine.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CONCLUSION -->
+
+    <section class="section">
+
+        <div class="container">
+
+            <p class="section-number">14</p>
+
+            <h2>Le modèle n'est qu'une brique</h2>
+
+
+            <div class="vision">
+
+                <p class="eyebrow">
+                    AI ENGINEERING
+                </p>
+
+                <div class="vision-flow">
+
+                    <div>
+                        <small>Entrée</small>
+                        <strong>Données</strong>
+                    </div>
+
+                    <span>→</span>
+
+                    <div>
+                        <small>Intelligence</small>
+                        <strong>Modèle</strong>
+                    </div>
+
+                    <span>→</span>
+
+                    <div>
+                        <small>Engineering</small>
+                        <strong>API + MLOps</strong>
+                    </div>
+
+                    <span>→</span>
+
+                    <div>
+                        <small>Production</small>
+                        <strong>Service</strong>
+                    </div>
+
+                </div>
+
+
+                <p>
+                    Le POC complet correspond à la capacité
+                    de construire, entraîner, évaluer, versionner
+                    et servir un modèle dans une architecture
+                    reproductible.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- NAVIGATION -->
+
+    <section class="section section-alt contact">
+
+        <div class="container">
+
+            <p class="eyebrow">
+                PARCOURS DU PROJET
+            </p>
+
+            <h2>
+                Comment le modèle est-il arrivé jusque-là ?
+            </h2>
+
+            <p>
+                Retrouvez les différentes expériences SFT et DPO,
+                les résultats, les erreurs rencontrées et les
+                décisions prises au cours du projet.
+            </p>
+
+            <div class="hero-actions">
+
+                <a
+                    href="experiments.html"
+                    class="button primary"
+                >
+                    Voir les expérimentations
+                </a>
+
+                <a
+                    href="index.html"
+                    class="button secondary"
+                >
+                    Retour au projet
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer>
+
+    <div class="container footer-content">
+
+        <span>
+            Medical Triage AI • Architecture
+        </span>
+
+        <span>
+            AI Engineering • 2026
+        </span>
+
+    </div>
+
+</footer>
+
+
+<script src="js/main.js"></script>
+
+</body>
+
+</html>

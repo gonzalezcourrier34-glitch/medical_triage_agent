@@ -3,12 +3,12 @@ name = "medical-triage-agent"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.13,<3.14"
 
 dependencies = [
     "accelerate>=1.10,<2",
     "bitsandbytes>=0.48,<0.50",
-    "datasets>=4.4,<5",
+    "datasets>=4.1.1,<4.4",
     "en-core-web-lg",
     "en-core-web-md",
     "fastapi>=0.141.1",
@@ -27,12 +27,13 @@ dependencies = [
     "rapidfuzz>=3.14.5",
     "scikit-learn>=1.5,<2",
     "spacy>=3.8.16",
-    "tokenizers>=0.23.1",
-    "torch==2.13.0",
+    "tokenizers>=0.22.0,<=0.23.0",
+    "torch==2.11.0",
     "tqdm>=4.70.0",
-    "transformers>=5,<6",
+    "transformers>=4.56.2,<=5.5.0",
     "triton-windows>=3.7,<3.8",
-    "trl==1.13.0",
+    "unsloth>=2026.9.1",
+    "unsloth-zoo>=2025.7.4",
     "uvicorn[standard]>=0.53.0",
     "wandb>=0.22,<0.24",
 ]
