@@ -1088,7 +1088,8 @@
 </body>
 </html>
 
-run 2
+decisions pou rle run 2
+
 Reconstruction des explanations chosen/rejected
 
 🟢 OUI, priorité n°1
@@ -1193,3 +1194,105 @@ dpo_train_v2.jsonl         → 2 081 records
 dpo_validation_v2.jsonl    →   226 records
 
 Cela donne au Run DPO 2 un corpus de 2 307 paires de préférence, équilibré P1/P2/P3, dont le signal d’apprentissage repose sur la qualité comparative des explications plutôt que sur une différence artificielle de priorité ou sur un rejected volontairement incorrect.
+
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>DPO Qwen3-1.7B - Run final et décisions prochain run</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:1100px;margin:40px auto;padding:0 24px;line-height:1.55;color:#202124;background:#fff}
+h1,h2,h3{color:#178f80}h1{border-bottom:3px solid #48C9B0;padding-bottom:10px}h2{margin-top:34px;border-bottom:1px solid #d9eeea;padding-bottom:6px}
+table{border-collapse:collapse;width:100%;margin:16px 0 24px}th,td{border:1px solid #cfd8dc;padding:8px 10px;text-align:right}th:first-child,td:first-child{text-align:left}th{background:#edf9f7}.good{color:#087f5b;font-weight:700}.bad{color:#c92a2a;font-weight:700}.neutral{color:#495057;font-weight:700}
+code,pre{font-family:Consolas,monospace;background:#f5f7f8}code{padding:2px 5px}pre{padding:14px;overflow:auto;border-left:4px solid #48C9B0}
+.note{border-left:5px solid #48C9B0;background:#f2fbf9;padding:14px 18px;margin:18px 0}.warn{border-left:5px solid #f59f00;background:#fff9db;padding:14px 18px;margin:18px 0}
+.small{font-size:.92em;color:#5f6368}
+</style>
+</head>
+<body>
+<h1>Fine-tuning DPO de Qwen3-1.7B</h1>
+<p><strong>Complément expérimental : run DPO final, comparaison avec le SFT checkpoint-950 et décisions pour le prochain run.</strong></p>
+
+<h2>1. Contexte du run</h2>
+<p>Le DPO est appliqué après le SFT de référence <code>20261007-003909 / checkpoint-950</code>. Le modèle de base est Qwen3-1.7B, chargé en 4-bit avec adapters PEFT/LoRA. Le dataset DPO nettoyé contient 1 153 paires au total, avec une distribution proche de l'équilibre : P1=392, P2=368 et P3=393.</p>
+<div class="note"><strong>Point structurel du dataset DPO.</strong> Les paires utilisées dans ce run conservent la même priorité dans <code>chosen</code> et <code>rejected</code>. Le signal DPO porte donc principalement sur la qualité relative de l'explication. Il n'est pas conçu pour réapprendre directement les frontières P1/P2/P3.</div>
+
+<h2>2. Comportement observé pendant l'entraînement</h2>
+<table><thead><tr><th>Step</th><th>Training loss</th><th>Validation loss</th><th>F1 macro</th><th>Recall macro</th><th>Recall P1</th><th>Recall P2</th><th>Recall P3</th><th>Undertriage</th></tr></thead>
+<tbody>
+<tr><td>50</td><td>0.002796</td><td>0.539433</td><td>0.392929</td><td>0.435727</td><td>0.828571</td><td>0.272727</td><td>0.205882</td><td>0.053097</td></tr>
+<tr><td>100</td><td>0.000992</td><td>0.561331</td><td>0.383521</td><td>0.428151</td><td>0.828571</td><td>0.250000</td><td>0.205882</td><td>0.053097</td></tr>
+</tbody></table>
+<p>Entre les steps 50 et 100, la loss d'entraînement continue de diminuer alors que la loss de validation augmente et que les métriques métier stagnent ou reculent légèrement. Ce profil indique qu'une deuxième epoch apporte peu de bénéfice et augmente le risque de sur-apprentissage. Les faibles recalls P2/P3 observés sur cette validation ne se retrouvent toutefois pas sur le test final figé.</p>
+
+<h2>3. Benchmark final sur le test figé</h2>
+<p>Le SFT et le DPO sont évalués sur exactement le même <strong>test de 500 cas</strong>. Cette comparaison constitue la référence pour mesurer l'effet du DPO sur la capacité de triage.</p>
+<table><thead><tr><th>Métrique</th><th>SFT final</th><th>DPO final</th><th>Delta</th></tr></thead><tbody>
+<tr><td>Accuracy</td><td>0.744000</td><td>0.742000</td><td class="bad">-0.002000</td></tr>
+<tr><td>Precision macro</td><td>0.754476</td><td>0.754256</td><td class="neutral">-0.000220</td></tr>
+<tr><td>Recall macro</td><td>0.743832</td><td>0.741824</td><td class="bad">-0.002008</td></tr>
+<tr><td>F1 macro</td><td>0.747071</td><td>0.745393</td><td class="bad">-0.001677</td></tr>
+<tr><td>F1 weighted</td><td>0.747456</td><td>0.745797</td><td class="bad">-0.001660</td></tr>
+<tr><td>Undertriage rate</td><td>0.144000</td><td>0.138000</td><td class="good">-0.006000</td></tr>
+<tr><td>Precision P1</td><td>0.910345</td><td>0.916667</td><td class="good">+0.006322</td></tr>
+<tr><td>Recall P1</td><td>0.785714</td><td>0.785714</td><td class="neutral">0.000000</td></tr>
+<tr><td>F1 P1</td><td>0.843450</td><td>0.846154</td><td class="good">+0.002703</td></tr>
+<tr><td>Precision P2</td><td>0.651934</td><td>0.645503</td><td class="bad">-0.006431</td></tr>
+<tr><td>Recall P2</td><td>0.710843</td><td>0.734940</td><td class="good">+0.024096</td></tr>
+<tr><td>F1 P2</td><td>0.680115</td><td>0.687324</td><td class="good">+0.007209</td></tr>
+<tr><td>Precision P3</td><td>0.701149</td><td>0.700599</td><td class="neutral">-0.000551</td></tr>
+<tr><td>Recall P3</td><td>0.734940</td><td>0.704819</td><td class="bad">-0.030120</td></tr>
+<tr><td>F1 P3</td><td>0.717647</td><td>0.702703</td><td class="bad">-0.014944</td></tr>
+</tbody></table>
+
+<h2>4. Lecture du résultat</h2>
+<p>Le DPO conserve pratiquement la performance globale du SFT. L'accuracy passe de 74,40 % à 74,20 % et le F1 macro de 74,71 % à 74,54 %. Ces écarts sont très faibles et ne suffisent pas, seuls, à conclure à une dégradation substantielle.</p>
+<p>La classe P1 reste stable en recall à 78,57 %, avec une légère amélioration de la précision et du F1. Le principal déplacement concerne la frontière P2/P3 : le recall P2 gagne 2,41 points tandis que le recall P3 perd 3,01 points. Le DPO favorise donc légèrement davantage P2 au détriment de P3.</p>
+<p>Le taux de sous-triage diminue de 14,40 % à 13,80 %, soit une amélioration de 0,60 point. Sur 500 cas, cela correspond à trois cas de sous-triage de moins. Dans un POC de triage, cette évolution est favorable, mais elle doit être interprétée avec les autres métriques et avec l'audit des erreurs individuelles.</p>
+<div class="note"><strong>Conclusion du run.</strong> Le DPO n'améliore pas l'accuracy globale, mais il ne détruit pas non plus la compétence de triage apprise par le SFT. Il préserve P1, améliore P2, réduit légèrement le sous-triage et déplace une partie des décisions P3 vers P2. Pour un DPO dont les paires conservent la même priorité, ce comportement est cohérent avec l'objectif principal : améliorer la préférence/qualité des réponses sans casser la classification.</div>
+
+<h2>5. Décisions pour le prochain run</h2>
+<table><thead><tr><th>Paramètre / décision</th><th>Run suivant</th><th>Justification</th></tr></thead><tbody>
+<tr><td>Epochs</td><td><strong>1.0</strong></td><td>La deuxième epoch n'apporte pas de gain métier visible et la validation commence à se dégrader après le step 50.</td></tr>
+<tr><td>Train batch size</td><td><strong>1</strong></td><td>Conservé pour respecter la limite de 6 Go de VRAM.</td></tr>
+<tr><td>Gradient accumulation</td><td><strong>8</strong></td><td>Batch effectif 8 au lieu de 16, réduction du coût par optimizer step et accélération du run.</td></tr>
+<tr><td>Gradient checkpointing</td><td><strong>True</strong></td><td>Maintenu pour sécuriser la VRAM sur RTX 4050 6 Go, malgré le coût en calcul.</td></tr>
+<tr><td>Learning rate</td><td><strong>5e-6</strong></td><td>Valeur conservatrice adaptée à un ajustement après SFT. Aucun signal actuel ne justifie de l'augmenter.</td></tr>
+<tr><td>DPO beta</td><td><strong>0.10</strong></td><td>Conservé pour isoler l'effet de la réduction d'epochs et du batch effectif.</td></tr>
+<tr><td>Scheduler</td><td><strong>cosine</strong></td><td>Conservé pour éviter de modifier plusieurs facteurs simultanément.</td></tr>
+<tr><td>Warmup ratio</td><td><strong>0.05</strong></td><td>Warmup court conservé.</td></tr>
+<tr><td>Max length</td><td><strong>2048 pour référence</strong></td><td>Ne réduire à 1600 qu'après confirmation par l'audit des longueurs réelles. Le dataset audité a affiché un maximum de 1600 tokens.</td></tr>
+<tr><td>DPO fraction</td><td><strong>0.5 comme run contrôlé</strong></td><td>Conserver d'abord les 1 153 paires pour comparer proprement avec le run précédent. Tester 1.0 dans un run séparé ensuite.</td></tr>
+<tr><td>Eval / save steps</td><td><strong>50 / 50</strong></td><td>Permet de conserver un point de comparaison avec le run précédent et de sélectionner le meilleur checkpoint.</td></tr>
+<tr><td>Reference log-probs</td><td><strong>Pré-calculées</strong></td><td>Évite de conserver un modèle de référence actif pendant l'entraînement et économise la VRAM.</td></tr>
+</tbody></table>
+
+<h2>6. Protocole expérimental du prochain run</h2>
+<p>Le prochain run doit être un run de contrôle, pas une accumulation de changements. Les variables principales modifiées sont donc limitées à <strong>1 epoch</strong> et <strong>gradient accumulation = 8</strong>. Le learning rate, beta, scheduler, warmup et dataset restent identiques afin d'attribuer correctement les différences observées.</p>
+<pre>Run actuel
+2 epochs / accumulation 16 / batch effectif 16
+        ↓
+Run suivant contrôlé
+1 epoch / accumulation 8 / batch effectif 8
+        ↓
+Même SFT source + même dataset + même beta + même LR
+        ↓
+Comparaison temps / préférence / F1 / recalls / undertriage</pre>
+
+<h2>7. Critères de décision après le prochain run</h2>
+<p>Le prochain run ne sera pas jugé uniquement sur l'accuracy. La décision devra combiner : F1 macro, recall P1, recall P2/P3, taux de sous-triage, préférence chosen/rejected, marge moyenne de log-probabilité et temps total d'entraînement.</p>
+<div class="warn"><strong>Critère métier prioritaire.</strong> Une hausse de préférence DPO n'est intéressante que si la compétence de triage reste stable. Toute amélioration rédactionnelle doit donc être accompagnée d'un contrôle du recall P1 et du sous-triage sur le test figé.</div>
+
+<h2>8. Expériences suivantes, uniquement après le run contrôlé</h2>
+<p>Si le run 1 epoch / accumulation 8 conserve les performances tout en réduisant fortement le temps, il devient la nouvelle baseline DPO. À partir de cette baseline, les expériences suivantes peuvent être menées une par une : tester <code>dpo_fraction=1.0</code>, tester une longueur maximale réduite si l'audit confirme qu'aucune séquence utile n'est tronquée, puis éventuellement comparer une implémentation Flash Attention 2 si l'environnement matériel et logiciel la supporte.</p>
+<p>Une autre évolution, plus structurelle, consisterait à construire un dataset de préférences explicitement destiné aux frontières de triage, avec des priorités chosen/rejected différentes mais médicalement validées. Cette expérience doit rester séparée du DPO actuel, dont l'objectif est principalement la qualité de l'explication.</p>
+
+<p class="small">Document complété à partir des résultats du run DPO final et de la comparaison SFT checkpoint-950 / DPO sur le test figé de 500 cas.</p>
+</body></html>
+
+run suivant 
+epoch 2
+dpo_gradient_accumulation 8 
+ajout de 
+score_completion
+et score_dpo_preferences
