@@ -1,1298 +1,1593 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>DPO | Medical Triage AI</title>
-
-    <link rel="stylesheet" href="css/style.css">
-</head>
-
-<body>
-
-<header class="site-header">
-    <div class="container nav">
-        <a class="logo" href="index.html">MT<span>.</span>AI</a>
-
-        <nav class="nav-links">
-            <a href="index.html">Projet</a>
-            <a href="experiments.html">SFT</a>
-            <a href="dpo.html" class="active">DPO</a>
-            <a href="architecture.html">Architecture</a>
-            <a href="#" target="_blank">GitHub</a>
-        </nav>
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>
+   Expérimentations DPO | Medical Triage AI
+  </title>
+  <link href="css/style.css" rel="stylesheet"/>
+  <style>
+   .dpo-table-scroll{width:100%;overflow-x:auto;margin:25px 0 35px}.dpo-table{width:100%;border-collapse:collapse;min-width:640px;font-size:.94rem}.dpo-table th,.dpo-table td{text-align:left;padding:13px 16px;border-bottom:1px solid rgba(125,190,183,.23)}.dpo-table th{color:#48c9b0;background:rgba(72,201,176,.08);white-space:nowrap}.dpo-table tbody tr:hover{background:rgba(72,201,176,.055)}.dpo-table td:first-child{font-weight:600}.experiment-card{margin-bottom:28px}.experiment-analysis{margin-top:24px}.reflection-grid{margin-top:25px}@media(max-width:700px){.dpo-table{font-size:.85rem}.dpo-table th,.dpo-table td{padding:10px}}
+  </style>
+ </head>
+ <body>
+  <header class="header">
+   <nav class="nav container">
+    <a class="logo" href="index.html">
+     MT
+     <span>
+      .
+     </span>
+     AI
+    </a>
+    <div class="nav-links">
+     <a href="index.html">
+      Projet
+     </a>
+     <a class="" href="experiments.html">
+      SFT
+     </a>
+     <a class="active" href="dpo.html">
+      DPO
+     </a>
+     <a href="architecture.html">
+      Architecture
+     </a>
+     <a href="#" target="_blank">
+      GitHub
+     </a>
     </div>
-</header>
-
-
-<main>
-
-<!-- ========================================================= -->
-<!-- HERO                                                      -->
-<!-- ========================================================= -->
-
-<section class="hero project-hero">
+   </nav>
+  </header>
+  <main>
+   <section class="hero project-hero">
     <div class="container hero-content">
-
-        <p class="eyebrow">ALIGNEMENT PAR PRÉFÉRENCE</p>
-
-        <h1>
-            DPO :
-            <span>améliorer sans dégrader</span>
-        </h1>
-
-        <p class="hero-text">
-            Après le fine-tuning supervisé, une phase de
-            Direct Preference Optimization est utilisée pour améliorer
-            la qualité des réponses tout en cherchant à préserver
-            les performances de triage acquises par le modèle SFT.
-        </p>
-
-        <div class="hero-tags">
-            <span>DPO</span>
-            <span>QLoRA</span>
-            <span>Qwen3-1.7B</span>
-            <span>Unsloth</span>
-            <span>RTX 4050 6 Go</span>
-            <span>W&amp;B</span>
-        </div>
-
-        <div class="hero-actions">
-            <a class="button primary" href="#run-01">
-                Voir le premier run
-            </a>
-
-            <a class="button secondary" href="#decisions">
-                Décisions suivantes
-            </a>
-        </div>
-
+     <p class="eyebrow">
+      PARCOURS EXPÉRIMENTAL DPO
+     </p>
+     <h1>
+      Du SFT aux
+      <span>
+       préférences cliniques.
+      </span>
+     </h1>
+     <p class="hero-text">
+      Deux étapes de DPO pour apprendre à mieux expliquer le triage sans perdre les compétences de classification. Des hypothèses, des mesures, des limites et des décisions documentées.
+     </p>
+     <div class="hero-tags">
+      <span>
+       Qwen3-1.7B
+      </span>
+      <span>
+       DPO
+      </span>
+      <span>
+       QLoRA
+      </span>
+      <span>
+       LoRA
+      </span>
+      <span>
+       RTX 4050 • 6 Go
+      </span>
+      <span>
+       Évaluation
+      </span>
+     </div>
+     <div class="hero-actions">
+      <a class="button primary" href="#runs">
+       Voir les runs
+      </a>
+      <a class="button secondary" href="#benchmark">
+       Comparer au SFT
+      </a>
+     </div>
     </div>
-</section>
-
-
-<!-- ========================================================= -->
-<!-- 01 OBJECTIF                                               -->
-<!-- ========================================================= -->
-
-<section class="section">
+   </section>
+   <section class="section section-alt">
     <div class="container">
-
-        <p class="section-number">01 — OBJECTIF</p>
-
-        <h2>Pourquoi ajouter une phase DPO ?</h2>
-
-        <p class="section-intro">
-            Le SFT apprend au modèle à produire la structure attendue et
-            à résoudre la tâche de triage. Le DPO intervient ensuite pour
-            orienter le comportement du modèle vers des réponses préférées.
-        </p>
-
-        <div class="experiment-method">
-
-            <div class="method-step">
-                <strong>SFT</strong>
-                <span>Apprentissage supervisé</span>
-            </div>
-
-            <div class="method-arrow">→</div>
-
-            <div class="method-step">
-                <strong>DPO</strong>
-                <span>Optimisation des préférences</span>
-            </div>
-
-            <div class="method-arrow">→</div>
-
-            <div class="method-step">
-                <strong>Modèle final</strong>
-                <span>Priorité + explication</span>
-            </div>
-
-        </div>
-
-        <div class="callout">
-            <strong>Hypothèse expérimentale</strong>
-            <p>
-                Le DPO doit principalement améliorer la qualité de
-                l'explication sans détériorer significativement
-                la classification P1 / P2 / P3 déjà acquise pendant le SFT.
-            </p>
-        </div>
-
+     <p class="section-number">
+      01
+     </p>
+     <h2>
+      Une démarche expérimentale
+     </h2>
+     <p class="section-intro">
+      Comme pour le SFT, chaque décision répond à un problème identifié. Le DPO optimise des préférences entre deux réponses, pas directement le F1 de classification.
+     </p>
+     <div class="experiment-method">
+      <div class="method-step">
+       <span>
+        01
+       </span>
+       <strong>
+        Problématique
+       </strong>
+       <small>
+        Quel comportement améliorer ?
+       </small>
+      </div>
+      <div class="method-arrow">
+       →
+      </div>
+      <div class="method-step">
+       <span>
+        02
+       </span>
+       <strong>
+        Hypothèse
+       </strong>
+       <small>
+        Quel signal de préférence ?
+       </small>
+      </div>
+      <div class="method-arrow">
+       →
+      </div>
+      <div class="method-step">
+       <span>
+        03
+       </span>
+       <strong>
+        Expérience
+       </strong>
+       <small>
+        Quel corpus et quels réglages ?
+       </small>
+      </div>
+      <div class="method-arrow">
+       →
+      </div>
+      <div class="method-step">
+       <span>
+        04
+       </span>
+       <strong>
+        Mesure
+       </strong>
+       <small>
+        Quelles métriques observées ?
+       </small>
+      </div>
+      <div class="method-arrow">
+       →
+      </div>
+      <div class="method-step">
+       <span>
+        05
+       </span>
+       <strong>
+        Décision
+       </strong>
+       <small>
+        Quelle suite justifiée ?
+       </small>
+      </div>
+     </div>
+     <div class="callout">
+      <span class="eyebrow">
+       PRINCIPE
+      </span>
+      <p>
+       Une loss DPO qui diminue démontre une optimisation du signal de préférence. Elle ne démontre ni la qualité clinique des explications ni la sécurité du triage.
+      </p>
+     </div>
     </div>
-</section>
-
-
-<!-- ========================================================= -->
-<!-- 02 POINT DE DÉPART                                        -->
-<!-- ========================================================= -->
-
-<section class="section section-alt">
+   </section>
+   <section class="section">
     <div class="container">
-
-        <p class="section-number">02 — POINT DE DÉPART</p>
-
-        <h2>Le meilleur modèle SFT devient la référence</h2>
-
-        <p class="section-intro">
-            Le checkpoint DPO n'est pas choisi arbitrairement.
-            Il part du meilleur checkpoint SFT sélectionné sur la validation,
-            avant toute consultation du test final.
-        </p>
-
-        <div class="checkpoint-card">
-
-            <div>
-                <span class="experiment-status selected">
-                    SOURCE DPO
-                </span>
-
-                <h3>SFT checkpoint-950</h3>
-
-                <p>
-                    Checkpoint sélectionné selon le F1 macro de validation.
-                    Le test reste gelé jusqu'à la comparaison finale.
-                </p>
-            </div>
-
-            <div class="checkpoint-score">
-                <strong>78,7 %</strong>
-                <span>F1 macro validation SFT</span>
-            </div>
-
-        </div>
-
-        <div class="config-grid">
-
-            <div class="config-card">
-                <span>Base</span>
-                <strong>Qwen3-1.7B</strong>
-            </div>
-
-            <div class="config-card">
-                <span>Adaptation</span>
-                <strong>QLoRA</strong>
-            </div>
-
-            <div class="config-card">
-                <span>LoRA rank</span>
-                <strong>16</strong>
-            </div>
-
-            <div class="config-card">
-                <span>LoRA alpha</span>
-                <strong>32</strong>
-            </div>
-
-        </div>
-
+     <p class="section-number">
+      02
+     </p>
+     <h2>
+      Le checkpoint SFT comme point de départ
+     </h2>
+     <p class="section-intro">
+      Le run SFT
+      <strong>
+       20261007-003909
+      </strong>
+      a sélectionné le
+      <strong>
+       checkpoint-950
+      </strong>
+      sur la validation, sans utiliser le test gelé pour ce choix.
+     </p>
+     <div class="checkpoint-card">
+      <div>
+       <span class="experiment-status selected">
+        RÉFÉRENCE SFT
+       </span>
+       <h3>
+        Qwen3-1.7B • checkpoint-950
+       </h3>
+       <p>
+        La priorité P1/P2/P3 est déjà apprise. Le DPO cherche surtout à privilégier des explications plus utiles à priorité constante.
+       </p>
+      </div>
+      <div class="checkpoint-score">
+       <strong>
+        78,71 %
+       </strong>
+       <span>
+        F1 macro validation SFT
+       </span>
+      </div>
+     </div>
+     <div class="config-grid">
+      <div class="config-card">
+       <span>
+        F1 macro test SFT
+       </span>
+       <strong>
+        74,71 %
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Accuracy test SFT
+       </span>
+       <strong>
+        74,40 %
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Test gelé
+       </span>
+       <strong>
+        500 cas
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Sous-triage SFT
+       </span>
+       <strong>
+        14,40 %
+       </strong>
+      </div>
+     </div>
     </div>
-</section>
-
-
-<!-- ========================================================= -->
-<!-- 03 DATASET DPO                                            -->
-<!-- ========================================================= -->
-
-<section class="section">
+   </section>
+   <section class="section section-alt">
     <div class="container">
-
-        <p class="section-number">03 — DONNÉES DE PRÉFÉRENCE</p>
-
-        <h2>Construire le signal DPO</h2>
-
-        <p class="section-intro">
-            Chaque exemple DPO associe un contexte clinique à deux réponses :
-            une réponse préférée <strong>chosen</strong> et une réponse
-            non préférée <strong>rejected</strong>.
-        </p>
-
-        <div class="experiment-method">
-
-            <div class="method-step">
-                <strong>Contexte clinique</strong>
-                <span>Entrée identique</span>
-            </div>
-
-            <div class="method-arrow">→</div>
-
-            <div class="method-step">
-                <strong>Chosen</strong>
-                <span>Explication préférée</span>
-            </div>
-
-            <div class="method-step">
-                <strong>Rejected</strong>
-                <span>Explication moins adaptée</span>
-            </div>
-
-        </div>
-
-        <div class="callout">
-            <strong>Décision importante</strong>
-            <p>
-                Chosen et rejected utilisent volontairement la même priorité.
-                Le signal DPO porte donc principalement sur la qualité de
-                l'explication et non sur un changement artificiel de classe.
-            </p>
-        </div>
-
-        <div class="about-grid">
-
-            <article>
-                <h3>Ce que voit le modèle</h3>
-                <p>
-                    Le contexte clinique ainsi que les réponses chosen et
-                    rejected nécessaires au calcul de la préférence.
-                </p>
-            </article>
-
-            <article>
-                <h3>Ce qui reste hors modèle</h3>
-                <p>
-                    Les champs chosen_brut et rejected_brut sont conservés
-                    uniquement pour la provenance et l'audit des transformations.
-                </p>
-            </article>
-
-        </div>
-
+     <p class="section-number">
+      03
+     </p>
+     <h2>
+      Faire du DPO sur 6 Go de VRAM
+     </h2>
+     <div class="about-grid">
+      <div class="large-text">
+       Une politique entraînable, une référence et seulement 6 Go de VRAM.
+      </div>
+      <div>
+       <p>
+        Le modèle Qwen3-1.7B est chargé en 4 bits avec QLoRA. Les log-probabilités du modèle de référence sont pré-calculées pour éviter de conserver deux modèles complets simultanément sur le GPU.
+       </p>
+       <p>
+        Seuls les adapters LoRA sont entraînés, ce qui limite la mémoire nécessaire sans supprimer le coût de calcul du DPO.
+       </p>
+      </div>
+     </div>
+     <div class="config-grid">
+      <div class="config-card">
+       <span>
+        GPU
+       </span>
+       <strong>
+        RTX 4050 • 6 Go
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Quantification
+       </span>
+       <strong>
+        4 bits
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        LoRA rank
+       </span>
+       <strong>
+        16
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        LoRA alpha
+       </span>
+       <strong>
+        32
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Paramètres entraînables
+       </span>
+       <strong>
+        17 432 576
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Part entraînable
+       </span>
+       <strong>
+        ≈ 1 %
+       </strong>
+      </div>
+     </div>
+     <div class="callout">
+      <span class="eyebrow">
+       CHOIX D’INGÉNIERIE
+      </span>
+      <p>
+       Pré-calculer les log-probabilités de référence, libérer la VRAM puis entraîner la politique QLoRA.
+      </p>
+     </div>
     </div>
-</section>
-
-
-<!-- ========================================================= -->
-<!-- 04 CONTRAINTE VRAM                                        -->
-<!-- ========================================================= -->
-
-<section class="section section-alt">
+   </section>
+   <section class="section" id="runs">
     <div class="container">
-
-        <p class="section-number">04 — CONTRAINTE MATÉRIELLE</p>
-
-        <h2>Faire du DPO avec 6 Go de VRAM</h2>
-
-        <p class="section-intro">
-            Un DPO classique nécessite une policy et un modèle de référence.
-            Les conserver simultanément en mémoire est problématique sur
-            une RTX 4050 Laptop limitée à 6 Go de VRAM.
-        </p>
-
-        <div class="vision-flow">
-
-            <div>
-                <strong>1</strong>
-                <span>Chargement SFT référence</span>
-            </div>
-
-            <div>→</div>
-
-            <div>
-                <strong>2</strong>
-                <span>Pré-calcul des log-probabilités</span>
-            </div>
-
-            <div>→</div>
-
-            <div>
-                <strong>3</strong>
-                <span>Libération VRAM</span>
-            </div>
-
-            <div>→</div>
-
-            <div>
-                <strong>4</strong>
-                <span>Chargement policy entraînable</span>
-            </div>
-
-        </div>
-
-        <div class="callout">
-            <strong>Choix d'ingénierie</strong>
-            <p>
-                Les log-probabilités du modèle de référence sont calculées
-                avant l'entraînement puis réutilisées pendant le DPO.
-                Cette stratégie évite de conserver simultanément deux modèles
-                complets sur le GPU.
-            </p>
-        </div>
-
-    </div>
-</section>
-
-
-<!-- ========================================================= -->
-<!-- 05 CONFIGURATION                                          -->
-<!-- ========================================================= -->
-
-<section class="section">
-    <div class="container">
-
-        <p class="section-number">05 — CONFIGURATION</p>
-
-        <h2>Premier run DPO</h2>
-
-        <div class="config-grid">
-
-            <div class="config-card">
-                <span>Train</span>
-                <strong>1 040</strong>
-            </div>
-
-            <div class="config-card">
-                <span>Epochs</span>
-                <strong>2</strong>
-            </div>
-
-            <div class="config-card">
-                <span>Steps</span>
-                <strong>130</strong>
-            </div>
-
-            <div class="config-card">
-                <span>Learning rate</span>
-                <strong>5 × 10⁻⁶</strong>
-            </div>
-
-            <div class="config-card">
-                <span>β DPO</span>
-                <strong>0,10</strong>
-            </div>
-
-            <div class="config-card">
-                <span>Batch GPU</span>
-                <strong>1</strong>
-            </div>
-
-            <div class="config-card">
-                <span>Gradient accumulation</span>
-                <strong>16</strong>
-            </div>
-
-            <div class="config-card">
-                <span>Batch effectif</span>
-                <strong>16</strong>
-            </div>
-
-            <div class="config-card">
-                <span>Scheduler</span>
-                <strong>Cosine</strong>
-            </div>
-
-            <div class="config-card">
-                <span>Warmup</span>
-                <strong>5 %</strong>
-            </div>
-
-            <div class="config-card">
-                <span>Paramètres entraînés</span>
-                <strong>1,00 %</strong>
-            </div>
-
-            <div class="config-card">
-                <span>Temps</span>
-                <strong>≈ 1 h 40</strong>
-            </div>
-
-        </div>
-
+     <p class="section-number">
+      04
+     </p>
+     <h2>
+      Deux runs, deux questions différentes
+     </h2>
+     <p class="section-intro">
+      Le premier run vérifie la faisabilité et la préservation du triage. Le second améliore d’abord la construction du signal de préférence. Les résultats absents ne sont pas estimés.
+     </p>
+     <article class="experiment-card">
+      <div class="experiment-header">
+       <div>
+        <span class="experiment-number">
+         EXPÉRIENCE DPO
+        </span>
+        <h3>
+         Run 01 : établir une baseline DPO
+        </h3>
+       </div>
+       <span class="experiment-status selected">
+        MESURÉ
+       </span>
+      </div>
+      <div class="callout">
+       <span class="eyebrow">
+        PROBLÉMATIQUE
+       </span>
+       <p>
+        Peut-on apprendre une préférence pour de meilleures explications sans dégrader la classification P1/P2/P3 ?
+       </p>
+      </div>
+      <div class="experiment-metrics">
+       <div>
+        <strong>
+         1 040
+        </strong>
+        <span>
+         Train
+        </span>
+       </div>
+       <div>
+        <strong>
+         2
+        </strong>
+        <span>
+         Epochs
+        </span>
+       </div>
+       <div>
+        <strong>
+         130
+        </strong>
+        <span>
+         Steps
+        </span>
+       </div>
+       <div>
+        <strong>
+         ≈ 1 h 40
+        </strong>
+        <span>
+         Durée
+        </span>
+       </div>
+       <div>
+        <strong>
+         5 × 10⁻⁶
+        </strong>
+        <span>
+         LR
+        </span>
+       </div>
+       <div>
+        <strong>
+         0,10
+        </strong>
+        <span>
+         β DPO
+        </span>
+       </div>
+       <div>
+        <strong>
+         16
+        </strong>
+        <span>
+         Accumulation
+        </span>
+       </div>
+       <div>
+        <strong>
+         16
+        </strong>
+        <span>
+         Batch effectif
+        </span>
+       </div>
+      </div>
+      <div class="experiment-analysis">
+       <div>
+        <span>
+         ANALYSE
+        </span>
         <p>
-            17 432 576 paramètres sont entraînables sur environ
-            1,738 milliard de paramètres, soit seulement 1 % du modèle.
+         Le premier relevé montre une validation loss décroissante jusqu’à 0,5388. Le test gelé montre un F1 macro pratiquement conservé, mais un recul de P3.
         </p>
-
-    </div>
-</section>
-
-
-<!-- ========================================================= -->
-<!-- 06 RUN                                                    -->
-<!-- ========================================================= -->
-
-<section class="section section-alt" id="run-01">
-    <div class="container">
-
-        <p class="section-number">06 — RUN DPO 01</p>
-
-        <h2>Le signal de préférence est bien appris</h2>
-
-        <div class="experiment-card">
-
-            <div class="experiment-header">
-
-                <div>
-                    <span class="experiment-number">RUN DPO 01</span>
-                    <h3>Premier entraînement complet</h3>
-                </div>
-
-                <span class="experiment-status selected">
-                    TERMINÉ
-                </span>
-
-            </div>
-
-            <div class="experiment-metrics">
-
-                <div>
-                    <span>Train loss final</span>
-                    <strong>0,3633</strong>
-                </div>
-
-                <div>
-                    <span>Validation loss</span>
-                    <strong>0,5388</strong>
-                </div>
-
-                <div>
-                    <span>Epochs</span>
-                    <strong>2</strong>
-                </div>
-
-                <div>
-                    <span>Durée</span>
-                    <strong>1 h 40</strong>
-                </div>
-
-            </div>
-
-            <div class="experiment-analysis">
-
-                <h4>Lecture du run</h4>
-
-                <p>
-                    La loss d'entraînement diminue fortement tandis que la
-                    validation loss passe de 0,5619 au step 50 à 0,5388
-                    au step 130.
-                </p>
-
-                <p>
-                    Le modèle apprend donc effectivement le signal de préférence.
-                    Aucun effondrement de la validation loss n'est observé sur
-                    les deux epochs.
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <div class="config-grid">
-
-            <div class="config-card">
-                <span>Step 50</span>
-                <strong>0,5619</strong>
-                <small>Validation loss</small>
-            </div>
-
-            <div class="config-card">
-                <span>Step 100</span>
-                <strong>0,5405</strong>
-                <small>Validation loss</small>
-            </div>
-
-            <div class="config-card">
-                <span>Step 130</span>
-                <strong>0,5388</strong>
-                <small>Validation loss</small>
-            </div>
-
-        </div>
-
-        <div class="callout">
-            <strong>Attention à l'interprétation</strong>
-            <p>
-                Le F1 d'environ 44,4 % observé pendant cette validation DPO
-                n'est pas directement comparable au F1 de validation SFT.
-                Les jeux d'évaluation et leur fonction dans l'expérience
-                ne sont pas identiques.
-            </p>
-        </div>
-
-    </div>
-</section>
-
-
-<!-- ========================================================= -->
-<!-- 07 TEST GELÉ                                              -->
-<!-- ========================================================= -->
-
-<section class="section">
-    <div class="container">
-
-        <p class="section-number">07 — TEST GELÉ</p>
-
-        <h2>Le DPO préserve presque totalement le triage</h2>
-
-        <p class="section-intro">
-            La vraie comparaison est effectuée après entraînement sur exactement
-            les mêmes 500 cas du test gelé utilisés pour le modèle SFT.
-        </p>
-
-        <div class="experiment-metrics">
-
-            <div>
-                <span>SFT F1 macro</span>
-                <strong>74,71 %</strong>
-            </div>
-
-            <div>
-                <span>DPO F1 macro</span>
-                <strong>74,54 %</strong>
-            </div>
-
-            <div>
-                <span>SFT accuracy</span>
-                <strong>74,40 %</strong>
-            </div>
-
-            <div>
-                <span>DPO accuracy</span>
-                <strong>74,20 %</strong>
-            </div>
-
-        </div>
-
-
-        <div class="about-grid">
-
-            <article>
-                <h3>F1 macro</h3>
-
-                <p class="large-text">
-                    74,71 % → 74,54 %
-                </p>
-
-                <p>
-                    Variation : -0,17 point.
-                    Les performances globales de classification restent
-                    pratiquement inchangées.
-                </p>
-            </article>
-
-
-            <article>
-                <h3>Sous-triage</h3>
-
-                <p class="large-text">
-                    14,4 % → 13,8 %
-                </p>
-
-                <p>
-                    Le taux diminue de 0,6 point, mais cette variation
-                    doit rester interprétée avec prudence.
-                </p>
-            </article>
-
-        </div>
-
-
-        <div class="config-grid">
-
-            <div class="config-card">
-                <span>P1 F1 SFT</span>
-                <strong>84,35 %</strong>
-            </div>
-
-            <div class="config-card">
-                <span>P1 F1 DPO</span>
-                <strong>84,62 %</strong>
-            </div>
-
-            <div class="config-card">
-                <span>P2 F1 SFT</span>
-                <strong>68,01 %</strong>
-            </div>
-
-            <div class="config-card">
-                <span>P2 F1 DPO</span>
-                <strong>68,73 %</strong>
-            </div>
-
-            <div class="config-card">
-                <span>P3 F1 SFT</span>
-                <strong>71,76 %</strong>
-            </div>
-
-            <div class="config-card">
-                <span>P3 F1 DPO</span>
-                <strong>70,27 %</strong>
-            </div>
-
-        </div>
-
-    </div>
-</section>
-
-
-<!-- ========================================================= -->
-<!-- 08 TEST STATISTIQUE                                       -->
-<!-- ========================================================= -->
-
-<section class="section section-alt">
-    <div class="container">
-
-        <p class="section-number">08 — COMPARAISON APPARIÉE</p>
-
-        <h2>Le DPO ne modifie que peu les décisions de triage</h2>
-
-        <div class="config-grid">
-
-            <div class="config-card">
-                <span>Test</span>
-                <strong>500 cas</strong>
-            </div>
-
-            <div class="config-card">
-                <span>Accord correct</span>
-                <strong>361</strong>
-            </div>
-
-            <div class="config-card">
-                <span>SFT seul correct</span>
-                <strong>11</strong>
-            </div>
-
-            <div class="config-card">
-                <span>DPO seul correct</span>
-                <strong>10</strong>
-            </div>
-
-            <div class="config-card">
-                <span>Discordances</span>
-                <strong>21</strong>
-            </div>
-
-            <div class="config-card">
-                <span>McNemar p-value</span>
-                <strong>1,000</strong>
-            </div>
-
-        </div>
-
-        <div class="callout">
-            <strong>Conclusion statistique</strong>
-
-            <p>
-                Les 11 cas gagnés par le SFT contre 10 gagnés par le DPO
-                produisent un test exact de McNemar avec p = 1,0.
-                Aucune différence significative de performance de triage
-                n'est mise en évidence entre les deux modèles.
-            </p>
-        </div>
-
-    </div>
-</section>
-
-
-<!-- ========================================================= -->
-<!-- 09 DIAGNOSTIC                                             -->
-<!-- ========================================================= -->
-
-<section class="section">
-    <div class="container">
-
-        <p class="section-number">09 — DIAGNOSTIC</p>
-
-        <h2>Ce que le premier run nous apprend</h2>
-
-        <div class="about-grid">
-
-            <article>
-                <h3>✓ Le DPO apprend</h3>
-                <p>
-                    La loss DPO diminue clairement sur le train et sur la
-                    validation. L'optimisation fonctionne.
-                </p>
-            </article>
-
-            <article>
-                <h3>✓ Le triage est préservé</h3>
-                <p>
-                    Le F1 macro ne perd que 0,17 point sur le test gelé.
-                    Le DPO ne détruit donc pas l'apprentissage SFT.
-                </p>
-            </article>
-
-            <article>
-                <h3>≈ Le sous-triage baisse légèrement</h3>
-                <p>
-                    14,4 % devient 13,8 %, mais l'écart est trop faible
-                    pour être présenté comme un gain démontré.
-                </p>
-            </article>
-
-            <article>
-                <h3>⚠ P3 recule</h3>
-                <p>
-                    Le F1 P3 passe d'environ 71,8 % à 70,3 %.
-                    Le comportement P2 / P3 devra être surveillé.
-                </p>
-            </article>
-
-        </div>
-
-        <div class="callout">
-            <strong>Point essentiel</strong>
-
-            <p>
-                Le DPO n'avait pas pour objectif principal d'augmenter
-                le score de classification. La prochaine question n'est donc
-                pas « pourquoi le F1 n'a pas augmenté ? », mais
-                « les explications DPO sont-elles réellement meilleures ? ».
-            </p>
-        </div>
-
-    </div>
-</section>
-
-
-<!-- ========================================================= -->
-<!-- 10 DÉCISIONS                                              -->
-<!-- ========================================================= -->
-
-<section class="section section-alt" id="decisions">
-    <div class="container">
-
-        <p class="section-number">10 — DÉCISIONS POUR LA SUITE</p>
-
-        <h2>Ne pas modifier les hyperparamètres au hasard</h2>
-
-        <p class="section-intro">
-            Le premier run fournit maintenant une baseline.
-            Avant un second entraînement, les prochaines expériences doivent
-            identifier si la limite vient des données, du signal de préférence
-            ou des hyperparamètres.
-        </p>
-
-
-        <div class="experiment-card">
-
-            <div class="experiment-header">
-                <div>
-                    <span class="experiment-number">DÉCISION 01</span>
-                    <h3>Évaluer réellement les explications</h3>
-                </div>
-
-                <span class="experiment-status selected">
-                    PRIORITAIRE
-                </span>
-            </div>
-
-            <div class="experiment-analysis">
-
-                <p>
-                    Comparer SFT et DPO sur exactement les mêmes cas :
-                    pertinence clinique, fidélité au contexte, concision,
-                    clarté patient et absence d'informations inventées.
-                </p>
-
-                <p>
-                    Si le DPO améliore ces dimensions tout en conservant
-                    le F1 actuel, le run remplit déjà son objectif.
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <div class="experiment-card">
-
-            <div class="experiment-header">
-                <div>
-                    <span class="experiment-number">DÉCISION 02</span>
-                    <h3>Auditer chosen / rejected</h3>
-                </div>
-
-                <span class="experiment-status promising">
-                    IMPORTANT
-                </span>
-            </div>
-
-            <div class="experiment-analysis">
-
-                <p>
-                    Vérifier que chosen est réellement préférable à rejected.
-                    Une paire dans laquelle les deux réponses sont également
-                    bonnes fournit un signal DPO faible ou arbitraire.
-                </p>
-
-                <p>
-                    Contrôler également les répétitions, les formulations
-                    stéréotypées et les différences systématiques de longueur.
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <div class="experiment-card">
-
-            <div class="experiment-header">
-                <div>
-                    <span class="experiment-number">DÉCISION 03</span>
-                    <h3>Analyser les 21 discordances</h3>
-                </div>
-
-                <span class="experiment-status promising">
-                    DIAGNOSTIC
-                </span>
-            </div>
-
-            <div class="experiment-analysis">
-
-                <p>
-                    Le DPO modifie seulement 21 décisions sur 500.
-                    Ces cas contiennent beaucoup plus d'information que
-                    le score global.
-                </p>
-
-                <p>
-                    Il faut identifier les 10 cas corrigés par le DPO,
-                    les 11 cas dégradés, leur langue, leur priorité et
-                    les transitions P1/P2/P3 concernées.
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <div class="experiment-card">
-
-            <div class="experiment-header">
-                <div>
-                    <span class="experiment-number">DÉCISION 04</span>
-                    <h3>Vérifier le biais linguistique</h3>
-                </div>
-
-                <span class="experiment-status promising">
-                    À CONTRÔLER
-                </span>
-            </div>
-
-            <div class="experiment-analysis">
-
-                <p>
-                    Comparer les résultats SFT et DPO séparément en français
-                    et en anglais afin de vérifier qu'une amélioration globale
-                    ne masque pas une régression sur une langue.
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <div class="experiment-card">
-
-            <div class="experiment-header">
-                <div>
-                    <span class="experiment-number">DÉCISION 05</span>
-                    <h3>Seulement ensuite tester les hyperparamètres</h3>
-                </div>
-
-                <span class="experiment-status rejected">
-                    PAS EN PREMIER
-                </span>
-            </div>
-
-            <div class="experiment-analysis">
-
-                <p>
-                    Augmenter immédiatement les epochs, le learning rate
-                    ou β risquerait simplement de renforcer un signal de
-                    préférence imparfait.
-                </p>
-
-                <p>
-                    Les paramètres ne seront modifiés qu'après avoir démontré
-                    que les données DPO sont suffisamment discriminantes.
-                </p>
-
-            </div>
-
-        </div>
-
-    </div>
-</section>
-
-
-<!-- ========================================================= -->
-<!-- 11 PLAN EXPÉRIMENTAL                                      -->
-<!-- ========================================================= -->
-
-<section class="section">
-    <div class="container">
-
-        <p class="section-number">11 — RUN DPO 02</p>
-
-        <h2>Conditions pour lancer une seconde expérience</h2>
-
-        <div class="vision">
-
-            <div class="vision-flow">
-
-                <div>
-                    <strong>1</strong>
-                    <span>Audit qualitatif</span>
-                </div>
-
-                <div>→</div>
-
-                <div>
-                    <strong>2</strong>
-                    <span>Audit chosen / rejected</span>
-                </div>
-
-                <div>→</div>
-
-                <div>
-                    <strong>3</strong>
-                    <span>Analyse des discordances</span>
-                </div>
-
-                <div>→</div>
-
-                <div>
-                    <strong>4</strong>
-                    <span>Nouvelle hypothèse</span>
-                </div>
-
-                <div>→</div>
-
-                <div>
-                    <strong>5</strong>
-                    <span>DPO 02</span>
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="callout">
-            <strong>Règle expérimentale</strong>
-
-            <p>
-                Un deuxième run ne sera lancé que pour tester une hypothèse
-                précise. Une seule variable importante devra idéalement être
-                modifiée à la fois afin de pouvoir attribuer le résultat
-                à la décision testée.
-            </p>
-        </div>
-
-    </div>
-</section>
-
-
-<!-- ========================================================= -->
-<!-- 12 BILAN                                                  -->
-<!-- ========================================================= -->
-
-<section class="section section-alt">
-    <div class="container">
-
-        <p class="section-number">12 — BILAN</p>
-
-        <h2>Un premier DPO utile, même sans gain de F1</h2>
-
-        <p class="section-intro">
-            Le premier run montre qu'il est possible d'appliquer une optimisation
-            par préférence à Qwen3-1.7B sur une machine disposant de seulement
-            6 Go de VRAM, tout en conservant pratiquement les performances
-            de triage du modèle supervisé.
-        </p>
-
-        <div class="checkpoint-card">
-
-            <div>
-                <span class="experiment-status selected">
-                    RÉSULTAT
-                </span>
-
-                <h3>Triage préservé</h3>
-
-                <p>
-                    Le DPO modifie peu la classification.
-                    La décision de conserver ou non cette adaptation dépend
-                    maintenant principalement de la qualité mesurée des
-                    explications produites.
-                </p>
-            </div>
-
-            <div class="checkpoint-score">
-                <strong>-0,17 pt</strong>
-                <span>F1 macro SFT → DPO</span>
-            </div>
-
-        </div>
-
-        <div class="callout">
-            <strong>Leçon d'AI Engineering</strong>
-
-            <p>
-                Une loss qui diminue prouve que l'optimisation apprend son
-                objectif, pas que le produit final est meilleur.
-                La décision doit être prise à partir de plusieurs niveaux
-                d'évaluation : optimisation, classification, sécurité,
-                qualité des explications et analyse statistique.
-            </p>
-        </div>
-
-    </div>
-</section>
-
-
-<!-- ========================================================= -->
-<!-- NEXT                                                      -->
-<!-- ========================================================= -->
-
-<section class="contact">
-    <div class="container">
-
-        <p class="eyebrow">ÉTAPE SUIVANTE</p>
-
-        <h2>Du diagnostic à la prochaine expérience.</h2>
-
+       </div>
+       <div>
+        <span>
+         DÉCISION
+        </span>
         <p>
-            Audit qualitatif des explications, analyse des 21 discordances
-            et validation du signal chosen / rejected avant toute modification
-            des hyperparamètres.
+         Conserver ce run comme référence mesurée, puis auditer les explications, les paires et les erreurs individuelles.
         </p>
-
-        <a class="button primary" href="architecture.html">
-            Voir l'architecture
-        </a>
-
-    </div>
-</section>
-
-</main>
-
-
-<footer>
-    <div class="container">
+       </div>
+      </div>
+     </article>
+     <article class="experiment-card">
+      <div class="experiment-header">
+       <div>
+        <span class="experiment-number">
+         EXPÉRIENCE DPO
+        </span>
+        <h3>
+         Run 02 : reconstruire le signal de préférence
+        </h3>
+       </div>
+       <span class="experiment-status promising">
+        PRÉPARÉ · NON MESURÉ
+       </span>
+      </div>
+      <div class="callout">
+       <span class="eyebrow">
+        PROBLÉMATIQUE
+       </span>
+       <p>
+        Des préférences trop faciles à distinguer enseignent-elles réellement une meilleure justification clinique ?
+       </p>
+      </div>
+      <div class="experiment-metrics">
+       <div>
+        <strong>
+         2 307
+        </strong>
+        <span>
+         Paires totales
+        </span>
+       </div>
+       <div>
+        <strong>
+         2 081
+        </strong>
+        <span>
+         Train
+        </span>
+       </div>
+       <div>
+        <strong>
+         226
+        </strong>
+        <span>
+         Validation
+        </span>
+       </div>
+       <div>
+        <strong>
+         769 / 769 / 769
+        </strong>
+        <span>
+         P1 / P2 / P3
+        </span>
+       </div>
+       <div>
+        <strong>
+         2
+        </strong>
+        <span>
+         Epochs prévues
+        </span>
+       </div>
+       <div>
+        <strong>
+         8
+        </strong>
+        <span>
+         Accumulation
+        </span>
+       </div>
+      </div>
+      <div class="experiment-analysis">
+       <div>
+        <span>
+         ANALYSE
+        </span>
         <p>
-            Medical Triage AI — Projet académique d'AI Engineering
+         Le corpus v2 atteint 2 307 paires et un équilibre exact entre P1, P2 et P3. Les contrôles d’intégrité documentés sont satisfaits. Aucune métrique d’entraînement du Run 02 n’a été fournie.
         </p>
+       </div>
+       <div>
+        <span>
+         DÉCISION
+        </span>
+        <p>
+         Dernière configuration consignée : 2 epochs, accumulation 8 et ajout de score_completion / score_dpo_preferences. Comparer sur le même test gelé avant de conclure.
+        </p>
+       </div>
+      </div>
+     </article>
     </div>
-</footer>
-
-<script src="js/main.js"></script>
-
-</body>
+   </section>
+   <section class="section section-alt">
+    <div class="container">
+     <p class="section-number">
+      05
+     </p>
+     <h2>
+      Run 01 : configuration et convergence
+     </h2>
+     <div class="config-grid">
+      <div class="config-card">
+       <span>
+        Batch GPU
+       </span>
+       <strong>
+        1
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Accumulation
+       </span>
+       <strong>
+        16
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Scheduler
+       </span>
+       <strong>
+        Cosine
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Warmup
+       </span>
+       <strong>
+        5 %
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Train loss finale
+       </span>
+       <strong>
+        0,3633
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Validation loss finale
+       </span>
+       <strong>
+        0,5388
+       </strong>
+      </div>
+     </div>
+     <h3>
+      Relevé principal
+     </h3>
+     <div class="dpo-table-scroll">
+      <table class="dpo-table">
+       <thead>
+        <tr>
+         <th>
+          Step
+         </th>
+         <th>
+          Validation loss
+         </th>
+        </tr>
+       </thead>
+       <tbody>
+        <tr>
+         <td>
+          50
+         </td>
+         <td>
+          0,5619
+         </td>
+        </tr>
+        <tr>
+         <td>
+          100
+         </td>
+         <td>
+          0,5405
+         </td>
+        </tr>
+        <tr>
+         <td>
+          130
+         </td>
+         <td>
+          0,5388
+         </td>
+        </tr>
+       </tbody>
+      </table>
+     </div>
+     <h3>
+      Autre relevé du compte rendu complémentaire
+     </h3>
+     <div class="dpo-table-scroll">
+      <table class="dpo-table">
+       <thead>
+        <tr>
+         <th>
+          Step
+         </th>
+         <th>
+          Train loss
+         </th>
+         <th>
+          Validation loss
+         </th>
+         <th>
+          F1 macro validation
+         </th>
+        </tr>
+       </thead>
+       <tbody>
+        <tr>
+         <td>
+          50
+         </td>
+         <td>
+          0,002796
+         </td>
+         <td>
+          0,539433
+         </td>
+         <td>
+          39,2929 %
+         </td>
+        </tr>
+        <tr>
+         <td>
+          100
+         </td>
+         <td>
+          0,000992
+         </td>
+         <td>
+          0,561331
+         </td>
+         <td>
+          38,3521 %
+         </td>
+        </tr>
+       </tbody>
+      </table>
+     </div>
+     <div class="callout">
+      <span class="eyebrow">
+       PRÉCAUTION DE LECTURE
+      </span>
+      <p>
+       Les deux séries de losses proviennent de relevés distincts dont l’identité expérimentale exacte n’est pas établie. Elles ne sont pas fusionnées. La hausse de la validation loss du relevé complémentaire est un signal de vigilance, pas une preuve isolée de surapprentissage.
+      </p>
+     </div>
+    </div>
+   </section>
+   <section class="section" id="benchmark">
+    <div class="container">
+     <p class="section-number">
+      06
+     </p>
+     <h2>
+      Le test gelé : le triage est globalement préservé
+     </h2>
+     <p class="section-intro">
+      Les deux modèles sont évalués sur les mêmes 500 cas. Les écarts sont exprimés en points de pourcentage.
+     </p>
+     <div class="config-grid">
+      <div class="config-card">
+       <span>
+        F1 macro SFT
+       </span>
+       <strong>
+        74,71 %
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        F1 macro DPO
+       </span>
+       <strong>
+        74,54 %
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Accuracy DPO
+       </span>
+       <strong>
+        74,20 %
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Sous-triage DPO
+       </span>
+       <strong>
+        13,80 %
+       </strong>
+      </div>
+     </div>
+     <div class="dpo-table-scroll">
+      <table class="dpo-table">
+       <thead>
+        <tr>
+         <th>
+          Métrique
+         </th>
+         <th>
+          SFT
+         </th>
+         <th>
+          DPO
+         </th>
+         <th>
+          Écart
+         </th>
+        </tr>
+       </thead>
+       <tbody>
+        <tr>
+         <td>
+          Accuracy
+         </td>
+         <td>
+          74,40 %
+         </td>
+         <td>
+          74,20 %
+         </td>
+         <td>
+          −0,20 pt
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Précision macro
+         </td>
+         <td>
+          75,4476 %
+         </td>
+         <td>
+          75,4256 %
+         </td>
+         <td>
+          −0,0220 pt
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Recall macro
+         </td>
+         <td>
+          74,3832 %
+         </td>
+         <td>
+          74,1824 %
+         </td>
+         <td>
+          −0,2008 pt
+         </td>
+        </tr>
+        <tr>
+         <td>
+          F1 macro
+         </td>
+         <td>
+          74,7071 %
+         </td>
+         <td>
+          74,5393 %
+         </td>
+         <td>
+          −0,1678 pt
+         </td>
+        </tr>
+        <tr>
+         <td>
+          F1 pondéré
+         </td>
+         <td>
+          74,7456 %
+         </td>
+         <td>
+          74,5797 %
+         </td>
+         <td>
+          −0,1660 pt
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Sous-triage
+         </td>
+         <td>
+          14,40 %
+         </td>
+         <td>
+          13,80 %
+         </td>
+         <td>
+          −0,60 pt
+         </td>
+        </tr>
+        <tr>
+         <td>
+          F1 P1
+         </td>
+         <td>
+          84,3450 %
+         </td>
+         <td>
+          84,6154 %
+         </td>
+         <td>
+          +0,2704 pt
+         </td>
+        </tr>
+        <tr>
+         <td>
+          F1 P2
+         </td>
+         <td>
+          68,0115 %
+         </td>
+         <td>
+          68,7324 %
+         </td>
+         <td>
+          +0,7209 pt
+         </td>
+        </tr>
+        <tr>
+         <td>
+          F1 P3
+         </td>
+         <td>
+          71,7647 %
+         </td>
+         <td>
+          70,2703 %
+         </td>
+         <td>
+          −1,4944 pt
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Recall P1
+         </td>
+         <td>
+          78,5714 %
+         </td>
+         <td>
+          78,5714 %
+         </td>
+         <td>
+          0 pt
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Recall P2
+         </td>
+         <td>
+          71,0843 %
+         </td>
+         <td>
+          73,4940 %
+         </td>
+         <td>
+          +2,4097 pt
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Recall P3
+         </td>
+         <td>
+          73,4940 %
+         </td>
+         <td>
+          70,4819 %
+         </td>
+         <td>
+          −3,0121 pt
+         </td>
+        </tr>
+       </tbody>
+      </table>
+     </div>
+     <div class="callout">
+      <span class="eyebrow">
+       INTERPRÉTATION
+      </span>
+      <p>
+       Le F1 macro recule de 0,17 point. Le recall P1 est stable, P2 progresse et P3 recule. La diminution de sous-triage de 0,60 point représente trois cas sur 500, sans démonstration d’un gain de sécurité robuste.
+      </p>
+     </div>
+    </div>
+   </section>
+   <section class="section section-alt">
+    <div class="container">
+     <p class="section-number">
+      07
+     </p>
+     <h2>
+      L’analyse appariée des décisions
+     </h2>
+     <div class="config-grid">
+      <div class="config-card">
+       <span>
+        Cas testés
+       </span>
+       <strong>
+        500
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Corrects pour les deux
+       </span>
+       <strong>
+        361
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        SFT seul correct
+       </span>
+       <strong>
+        11
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        DPO seul correct
+       </span>
+       <strong>
+        10
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Discordances de justesse
+       </span>
+       <strong>
+        21
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        McNemar exact • p
+       </span>
+       <strong>
+        1,000
+       </strong>
+      </div>
+     </div>
+     <div class="callout">
+      <span class="eyebrow">
+       LIMITE STATISTIQUE
+      </span>
+      <p>
+       Le test exact de McNemar ne met pas en évidence de différence significative de justesse. Les 21 discordances de justesse ne représentent pas nécessairement toutes les prédictions différentes. L’absence de significativité ne prouve pas l’équivalence clinique.
+      </p>
+     </div>
+    </div>
+   </section>
+   <section class="section" id="dataset-v2">
+    <div class="container">
+     <p class="section-number">
+      08
+     </p>
+     <h2>
+      Pourquoi reconstruire le dataset DPO ?
+     </h2>
+     <div class="about-grid">
+      <div class="large-text">
+       Un rejected crédible vaut mieux qu’une erreur évidente.
+      </div>
+      <div>
+       <p>
+        Le
+        <strong>
+         chosen
+        </strong>
+        doit être plus informatif et directement justifié par le contexte clinique. Le
+        <strong>
+         rejected
+        </strong>
+        reste plausible et correct, mais moins utile.
+       </p>
+       <p>
+        La priorité est identique dans les deux réponses. Les contextes, priorités et empreintes restent inchangés ; les champs bruts sont conservés pour l’audit.
+       </p>
+      </div>
+     </div>
+     <div class="dpo-table-scroll">
+      <table class="dpo-table">
+       <thead>
+        <tr>
+         <th>
+          Corpus DPO v2
+         </th>
+         <th>
+          P1
+         </th>
+         <th>
+          P2
+         </th>
+         <th>
+          P3
+         </th>
+         <th>
+          Total
+         </th>
+        </tr>
+       </thead>
+       <tbody>
+        <tr>
+         <td>
+          Train
+         </td>
+         <td>
+          694
+         </td>
+         <td>
+          694
+         </td>
+         <td>
+          693
+         </td>
+         <td>
+          2 081
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Validation
+         </td>
+         <td>
+          75
+         </td>
+         <td>
+          75
+         </td>
+         <td>
+          76
+         </td>
+         <td>
+          226
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Total
+         </td>
+         <td>
+          769
+         </td>
+         <td>
+          769
+         </td>
+         <td>
+          769
+         </td>
+         <td>
+          2 307
+         </td>
+        </tr>
+       </tbody>
+      </table>
+     </div>
+     <div class="config-grid">
+      <div class="config-card">
+       <span>
+        Priorités modifiées
+       </span>
+       <strong>
+        0
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Contextes modifiés
+       </span>
+       <strong>
+        0
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Hash invalides
+       </span>
+       <strong>
+        0
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        IDs dupliqués
+       </span>
+       <strong>
+        0
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Chosen = rejected
+       </span>
+       <strong>
+        0
+       </strong>
+      </div>
+      <div class="config-card">
+       <span>
+        Priorités divergentes
+       </span>
+       <strong>
+        0
+       </strong>
+      </div>
+     </div>
+     <div class="callout">
+      <span class="eyebrow">
+       DISTINCTION
+      </span>
+      <p>
+       Le corpus de 1 153 paires décrit dans le compte rendu du Run 01 et les 2 307 paires de la version 2 sont deux états différents des données. Le bilan FR/EN du corpus v2 n’est pas chiffré dans les sources.
+      </p>
+     </div>
+    </div>
+   </section>
+   <section class="section section-alt" id="run-02">
+    <div class="container">
+     <p class="section-number">
+      09
+     </p>
+     <h2>
+      Run 02 : paramètres décidés et mesures attendues
+     </h2>
+     <div class="dpo-table-scroll">
+      <table class="dpo-table">
+       <thead>
+        <tr>
+         <th>
+          Élément
+         </th>
+         <th>
+          Run 01
+         </th>
+         <th>
+          Run 02 / statut
+         </th>
+        </tr>
+       </thead>
+       <tbody>
+        <tr>
+         <td>
+          Dataset
+         </td>
+         <td>
+          1 153 paires (compte rendu)
+         </td>
+         <td>
+          2 307 paires v2
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Epochs
+         </td>
+         <td>
+          2
+         </td>
+         <td>
+          2 (dernière décision)
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Gradient accumulation
+         </td>
+         <td>
+          16
+         </td>
+         <td>
+          8 (dernière décision)
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Learning rate
+         </td>
+         <td>
+          5 × 10⁻⁶
+         </td>
+         <td>
+          À confirmer
+         </td>
+        </tr>
+        <tr>
+         <td>
+          β DPO
+         </td>
+         <td>
+          0,10
+         </td>
+         <td>
+          À confirmer
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Score des complétions
+         </td>
+         <td>
+          Non documenté
+         </td>
+         <td>
+          score_completion prévu
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Score de préférence
+         </td>
+         <td>
+          Non documenté
+         </td>
+         <td>
+          score_dpo_preferences prévu
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Loss / F1 / sous-triage
+         </td>
+         <td>
+          Mesurés
+         </td>
+         <td>
+          Non renseignés
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Durée
+         </td>
+         <td>
+          ≈ 1 h 40
+         </td>
+         <td>
+          Non renseignée
+         </td>
+        </tr>
+       </tbody>
+      </table>
+     </div>
+     <div class="callout">
+      <span class="eyebrow">
+       CHRONOLOGIE
+      </span>
+      <p>
+       Une proposition intermédiaire prévoyait 1 epoch et accumulation 8. La dernière annotation retient 2 epochs et accumulation 8. Aucun résultat d’exécution de ce nouveau run n’est présent dans les sources.
+      </p>
+     </div>
+    </div>
+   </section>
+   <section class="section" id="comparaison">
+    <div class="container">
+     <p class="section-number">
+      10
+     </p>
+     <h2>
+      Comparer les runs sans inventer les résultats
+     </h2>
+     <div class="dpo-table-scroll">
+      <table class="dpo-table">
+       <thead>
+        <tr>
+         <th>
+          Métrique
+         </th>
+         <th>
+          SFT
+         </th>
+         <th>
+          DPO documenté
+         </th>
+         <th>
+          Run 02
+         </th>
+        </tr>
+       </thead>
+       <tbody>
+        <tr>
+         <td>
+          Accuracy
+         </td>
+         <td>
+          74,40 %
+         </td>
+         <td>
+          74,20 %
+         </td>
+         <td>
+          Non renseigné
+         </td>
+        </tr>
+        <tr>
+         <td>
+          F1 macro
+         </td>
+         <td>
+          74,71 %
+         </td>
+         <td>
+          74,54 %
+         </td>
+         <td>
+          Non renseigné
+         </td>
+        </tr>
+        <tr>
+         <td>
+          F1 P1
+         </td>
+         <td>
+          84,35 %
+         </td>
+         <td>
+          84,62 %
+         </td>
+         <td>
+          Non renseigné
+         </td>
+        </tr>
+        <tr>
+         <td>
+          F1 P2
+         </td>
+         <td>
+          68,01 %
+         </td>
+         <td>
+          68,73 %
+         </td>
+         <td>
+          Non renseigné
+         </td>
+        </tr>
+        <tr>
+         <td>
+          F1 P3
+         </td>
+         <td>
+          71,76 %
+         </td>
+         <td>
+          70,27 %
+         </td>
+         <td>
+          Non renseigné
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Sous-triage
+         </td>
+         <td>
+          14,40 %
+         </td>
+         <td>
+          13,80 %
+         </td>
+         <td>
+          Non renseigné
+         </td>
+        </tr>
+        <tr>
+         <td>
+          Évaluation qualitative
+         </td>
+         <td>
+          Non fournie
+         </td>
+         <td>
+          Non fournie
+         </td>
+         <td>
+          Non renseignée
+         </td>
+        </tr>
+       </tbody>
+      </table>
+     </div>
+     <div class="reflection-grid">
+      <div class="reflection-card">
+       <h3>
+        Ce qui est démontré
+       </h3>
+       <p>
+        Le DPO est faisable sur 6 Go et le premier modèle documenté conserve approximativement le F1 macro du SFT.
+       </p>
+      </div>
+      <div class="reflection-card">
+       <h3>
+        Ce qui reste à démontrer
+       </h3>
+       <p>
+        Le bénéfice réel des explications, la généralisation du Run 02, les résultats FR/EN et l’effet du nouveau corpus sur les erreurs de triage.
+       </p>
+      </div>
+     </div>
+    </div>
+   </section>
+   <section class="section section-alt">
+    <div class="container">
+     <p class="section-number">
+      11
+     </p>
+     <h2>
+      Les décisions pour la suite
+     </h2>
+     <div class="reflection-grid">
+      <div class="reflection-card">
+       <h3>
+        Évaluer les explications
+       </h3>
+       <p>
+        Fidélité au contexte, pertinence clinique, clarté patient, concision et absence d’invention.
+       </p>
+      </div>
+      <div class="reflection-card">
+       <h3>
+        Auditer les erreurs
+       </h3>
+       <p>
+        Examiner les cas gagnés/perdus, notamment les transitions P2/P3 et les erreurs P1.
+       </p>
+      </div>
+      <div class="reflection-card">
+       <h3>
+        Contrôler les langues
+       </h3>
+       <p>
+        Comparer les performances françaises et anglaises séparément.
+       </p>
+      </div>
+      <div class="reflection-card">
+       <h3>
+        Mesurer les préférences
+       </h3>
+       <p>
+        Analyser score_completion, score_dpo_preferences, losses et marges, sans confondre optimisation et bénéfice clinique.
+       </p>
+      </div>
+      <div class="reflection-card">
+       <h3>
+        Isoler les variables
+       </h3>
+       <p>
+        Le dataset et l’accumulation changent ensemble : une ablation sera nécessaire pour attribuer un gain à une cause.
+       </p>
+      </div>
+     </div>
+     <div class="callout">
+      <span class="eyebrow">
+       RÈGLE DE DÉCISION
+      </span>
+      <p>
+       Ne retenir un nouveau DPO qu’après une évaluation sur le test gelé identique et un audit qualitatif des explications. Aucun résultat du Run 02 n’est présumé.
+      </p>
+     </div>
+    </div>
+   </section>
+   <section class="section">
+    <div class="container">
+     <p class="section-number">
+      12
+     </p>
+     <h2>
+      Ce que le DPO m’a appris
+     </h2>
+     <div class="about-grid">
+      <div class="large-text">
+       Une optimisation qui converge n’est pas automatiquement une amélioration du produit.
+      </div>
+      <div>
+       <p>
+        Le premier run a validé une méthode techniquement réalisable et a montré les limites d’une évaluation centrée sur la loss.
+       </p>
+       <p>
+        La reconstruction du corpus de préférences améliore la qualité du protocole expérimental. Elle ne constitue pas encore un gain mesuré du modèle.
+       </p>
+       <p>
+        La suite repose sur des mesures comparables, un audit clinique et une traçabilité des configurations et des données.
+       </p>
+      </div>
+     </div>
+    </div>
+   </section>
+   <section class="section contact">
+    <div class="container">
+     <p class="eyebrow">
+      SUITE DU PROJET
+     </p>
+     <h2>
+      Du signal de préférence au système évalué.
+     </h2>
+     <p>
+      Le DPO doit maintenant être jugé sur les explications, la stabilité du triage et la reproductibilité des résultats.
+     </p>
+     <div class="hero-actions">
+      <a class="button secondary" href="experiments.html">
+       Revoir le SFT
+      </a>
+      <a class="button primary" href="architecture.html">
+       Voir l’architecture
+      </a>
+     </div>
+    </div>
+   </section>
+  </main>
+  <footer>
+   <div class="container footer-content">
+    <span>
+     Medical Triage AI • Expérimentations SFT
+    </span>
+    <span>
+     AI Engineering • 2026
+    </span>
+   </div>
+  </footer>
+  <script src="js/main.js">
+  </script>
+ </body>
 </html>
-
-decisions pou rle run 2
-
-Reconstruction des explanations chosen/rejected
-
-🟢 OUI, priorité n°1
-
-Améliore directement le signal appris par DPO
-
-Filtrer les mauvaises paires
-
-🟢 OUI
-
-Une excellente paire vaut mieux qu'une préférence ambiguë
-
-Réduire les formulations stéréotypées
-
-🟢 OUI
-
-Empêche le modèle d'apprendre des raccourcis stylistiques
-
-Équilibrer FR/EN
-
-🟢 OUI si possible
-
-Ton modèle final doit être bilingue
-
-Dataset DPO v2
-
-Le premier entraînement DPO a montré que l’optimisation fonctionnait techniquement, mais que le gain sur la tâche de triage restait faible. Le dataset a donc été retravaillé afin d’augmenter la qualité du signal de préférence chosen > rejected.
-
-Principe retenu :
-
-model_context
-      │
-      ├── chosen_explanation
-      │      réponse la plus informative
-      │      et directement justifiée par le contexte
-      │
-      └── rejected_explanation
-             réponse plausible et correcte
-             mais moins informative
-
-Le rejected n’est volontairement ni faux, ni absurde. La paire doit apprendre au modèle à préférer une meilleure justification du triage plutôt qu’à simplement distinguer une bonne réponse d’une mauvaise réponse.
-
-Contraintes appliquées
-
-Pour chaque paire :
-
-chosen_priority == rejected_priority
-
-model_context           → jamais modifié
-chosen_priority         → jamais modifié
-rejected_priority       → jamais modifié
-context_hash            → vérifié
-chosen_brut             → conservé pour traçabilité
-rejected_brut           → conservé pour traçabilité
-
-model_context constitue la seule source clinique autorisée pour les nouvelles explications. chosen_brut et rejected_brut restent des données de provenance et ne servent pas à introduire des informations médicales absentes du contexte.
-
-Le chosen_explanation doit donc être cohérent simultanément avec :
-
-model_context
-      +
-priorité déjà validée
-      +
-orientation du chosen_brut
-
-sans ajouter de nouveau diagnostic, symptôme, traitement, constante ou autre information clinique.
-
-Répartition finale
-Split	Total	P1	P2	P3
-Train	2 081	694	694	693
-Validation	226	75	75	76
-Total	2 307	769	769	769
-
-C’est un point intéressant à mettre en évidence dans ton HTML : le dataset DPO final est parfaitement équilibré entre les trois priorités, avec exactement 769 exemples P1, 769 P2 et 769 P3.
-
-Contrôles d’intégrité
-
-Les contrôles effectués avant l’entraînement vérifient notamment :
-
-priorités modifiées                    = 0
-model_context modifiés                 = 0
-context_hash invalides                 = 0
-IDs dupliqués                          = 0
-chosen == rejected                     = 0
-priorité chosen != priorité rejected   = 0
-contextes vides                        = 0
-Reconstruction des splits
-
-Les fichiers intermédiaires sont volontairement séparés par priorité :
-
-dpo_train_p1_v2.jsonl
-dpo_train_p2_v2.jsonl
-dpo_train_p3_v2.jsonl
-
-dpo_validation_p1_v2.jsonl
-dpo_validation_p2_v2.jsonl
-dpo_validation_p3_v2.jsonl
-
-Ils sont ensuite concaténés sans transformation supplémentaire pour produire :
-
-dpo_train_v2.jsonl         → 2 081 records
-dpo_validation_v2.jsonl    →   226 records
-
-Cela donne au Run DPO 2 un corpus de 2 307 paires de préférence, équilibré P1/P2/P3, dont le signal d’apprentissage repose sur la qualité comparative des explications plutôt que sur une différence artificielle de priorité ou sur un rejected volontairement incorrect.
-
-<!doctype html>
-<html lang="fr">
-<head>
-<meta charset="utf-8">
-<title>DPO Qwen3-1.7B - Run final et décisions prochain run</title>
-<style>
-body{font-family:Arial,sans-serif;max-width:1100px;margin:40px auto;padding:0 24px;line-height:1.55;color:#202124;background:#fff}
-h1,h2,h3{color:#178f80}h1{border-bottom:3px solid #48C9B0;padding-bottom:10px}h2{margin-top:34px;border-bottom:1px solid #d9eeea;padding-bottom:6px}
-table{border-collapse:collapse;width:100%;margin:16px 0 24px}th,td{border:1px solid #cfd8dc;padding:8px 10px;text-align:right}th:first-child,td:first-child{text-align:left}th{background:#edf9f7}.good{color:#087f5b;font-weight:700}.bad{color:#c92a2a;font-weight:700}.neutral{color:#495057;font-weight:700}
-code,pre{font-family:Consolas,monospace;background:#f5f7f8}code{padding:2px 5px}pre{padding:14px;overflow:auto;border-left:4px solid #48C9B0}
-.note{border-left:5px solid #48C9B0;background:#f2fbf9;padding:14px 18px;margin:18px 0}.warn{border-left:5px solid #f59f00;background:#fff9db;padding:14px 18px;margin:18px 0}
-.small{font-size:.92em;color:#5f6368}
-</style>
-</head>
-<body>
-<h1>Fine-tuning DPO de Qwen3-1.7B</h1>
-<p><strong>Complément expérimental : run DPO final, comparaison avec le SFT checkpoint-950 et décisions pour le prochain run.</strong></p>
-
-<h2>1. Contexte du run</h2>
-<p>Le DPO est appliqué après le SFT de référence <code>20261007-003909 / checkpoint-950</code>. Le modèle de base est Qwen3-1.7B, chargé en 4-bit avec adapters PEFT/LoRA. Le dataset DPO nettoyé contient 1 153 paires au total, avec une distribution proche de l'équilibre : P1=392, P2=368 et P3=393.</p>
-<div class="note"><strong>Point structurel du dataset DPO.</strong> Les paires utilisées dans ce run conservent la même priorité dans <code>chosen</code> et <code>rejected</code>. Le signal DPO porte donc principalement sur la qualité relative de l'explication. Il n'est pas conçu pour réapprendre directement les frontières P1/P2/P3.</div>
-
-<h2>2. Comportement observé pendant l'entraînement</h2>
-<table><thead><tr><th>Step</th><th>Training loss</th><th>Validation loss</th><th>F1 macro</th><th>Recall macro</th><th>Recall P1</th><th>Recall P2</th><th>Recall P3</th><th>Undertriage</th></tr></thead>
-<tbody>
-<tr><td>50</td><td>0.002796</td><td>0.539433</td><td>0.392929</td><td>0.435727</td><td>0.828571</td><td>0.272727</td><td>0.205882</td><td>0.053097</td></tr>
-<tr><td>100</td><td>0.000992</td><td>0.561331</td><td>0.383521</td><td>0.428151</td><td>0.828571</td><td>0.250000</td><td>0.205882</td><td>0.053097</td></tr>
-</tbody></table>
-<p>Entre les steps 50 et 100, la loss d'entraînement continue de diminuer alors que la loss de validation augmente et que les métriques métier stagnent ou reculent légèrement. Ce profil indique qu'une deuxième epoch apporte peu de bénéfice et augmente le risque de sur-apprentissage. Les faibles recalls P2/P3 observés sur cette validation ne se retrouvent toutefois pas sur le test final figé.</p>
-
-<h2>3. Benchmark final sur le test figé</h2>
-<p>Le SFT et le DPO sont évalués sur exactement le même <strong>test de 500 cas</strong>. Cette comparaison constitue la référence pour mesurer l'effet du DPO sur la capacité de triage.</p>
-<table><thead><tr><th>Métrique</th><th>SFT final</th><th>DPO final</th><th>Delta</th></tr></thead><tbody>
-<tr><td>Accuracy</td><td>0.744000</td><td>0.742000</td><td class="bad">-0.002000</td></tr>
-<tr><td>Precision macro</td><td>0.754476</td><td>0.754256</td><td class="neutral">-0.000220</td></tr>
-<tr><td>Recall macro</td><td>0.743832</td><td>0.741824</td><td class="bad">-0.002008</td></tr>
-<tr><td>F1 macro</td><td>0.747071</td><td>0.745393</td><td class="bad">-0.001677</td></tr>
-<tr><td>F1 weighted</td><td>0.747456</td><td>0.745797</td><td class="bad">-0.001660</td></tr>
-<tr><td>Undertriage rate</td><td>0.144000</td><td>0.138000</td><td class="good">-0.006000</td></tr>
-<tr><td>Precision P1</td><td>0.910345</td><td>0.916667</td><td class="good">+0.006322</td></tr>
-<tr><td>Recall P1</td><td>0.785714</td><td>0.785714</td><td class="neutral">0.000000</td></tr>
-<tr><td>F1 P1</td><td>0.843450</td><td>0.846154</td><td class="good">+0.002703</td></tr>
-<tr><td>Precision P2</td><td>0.651934</td><td>0.645503</td><td class="bad">-0.006431</td></tr>
-<tr><td>Recall P2</td><td>0.710843</td><td>0.734940</td><td class="good">+0.024096</td></tr>
-<tr><td>F1 P2</td><td>0.680115</td><td>0.687324</td><td class="good">+0.007209</td></tr>
-<tr><td>Precision P3</td><td>0.701149</td><td>0.700599</td><td class="neutral">-0.000551</td></tr>
-<tr><td>Recall P3</td><td>0.734940</td><td>0.704819</td><td class="bad">-0.030120</td></tr>
-<tr><td>F1 P3</td><td>0.717647</td><td>0.702703</td><td class="bad">-0.014944</td></tr>
-</tbody></table>
-
-<h2>4. Lecture du résultat</h2>
-<p>Le DPO conserve pratiquement la performance globale du SFT. L'accuracy passe de 74,40 % à 74,20 % et le F1 macro de 74,71 % à 74,54 %. Ces écarts sont très faibles et ne suffisent pas, seuls, à conclure à une dégradation substantielle.</p>
-<p>La classe P1 reste stable en recall à 78,57 %, avec une légère amélioration de la précision et du F1. Le principal déplacement concerne la frontière P2/P3 : le recall P2 gagne 2,41 points tandis que le recall P3 perd 3,01 points. Le DPO favorise donc légèrement davantage P2 au détriment de P3.</p>
-<p>Le taux de sous-triage diminue de 14,40 % à 13,80 %, soit une amélioration de 0,60 point. Sur 500 cas, cela correspond à trois cas de sous-triage de moins. Dans un POC de triage, cette évolution est favorable, mais elle doit être interprétée avec les autres métriques et avec l'audit des erreurs individuelles.</p>
-<div class="note"><strong>Conclusion du run.</strong> Le DPO n'améliore pas l'accuracy globale, mais il ne détruit pas non plus la compétence de triage apprise par le SFT. Il préserve P1, améliore P2, réduit légèrement le sous-triage et déplace une partie des décisions P3 vers P2. Pour un DPO dont les paires conservent la même priorité, ce comportement est cohérent avec l'objectif principal : améliorer la préférence/qualité des réponses sans casser la classification.</div>
-
-<h2>5. Décisions pour le prochain run</h2>
-<table><thead><tr><th>Paramètre / décision</th><th>Run suivant</th><th>Justification</th></tr></thead><tbody>
-<tr><td>Epochs</td><td><strong>1.0</strong></td><td>La deuxième epoch n'apporte pas de gain métier visible et la validation commence à se dégrader après le step 50.</td></tr>
-<tr><td>Train batch size</td><td><strong>1</strong></td><td>Conservé pour respecter la limite de 6 Go de VRAM.</td></tr>
-<tr><td>Gradient accumulation</td><td><strong>8</strong></td><td>Batch effectif 8 au lieu de 16, réduction du coût par optimizer step et accélération du run.</td></tr>
-<tr><td>Gradient checkpointing</td><td><strong>True</strong></td><td>Maintenu pour sécuriser la VRAM sur RTX 4050 6 Go, malgré le coût en calcul.</td></tr>
-<tr><td>Learning rate</td><td><strong>5e-6</strong></td><td>Valeur conservatrice adaptée à un ajustement après SFT. Aucun signal actuel ne justifie de l'augmenter.</td></tr>
-<tr><td>DPO beta</td><td><strong>0.10</strong></td><td>Conservé pour isoler l'effet de la réduction d'epochs et du batch effectif.</td></tr>
-<tr><td>Scheduler</td><td><strong>cosine</strong></td><td>Conservé pour éviter de modifier plusieurs facteurs simultanément.</td></tr>
-<tr><td>Warmup ratio</td><td><strong>0.05</strong></td><td>Warmup court conservé.</td></tr>
-<tr><td>Max length</td><td><strong>2048 pour référence</strong></td><td>Ne réduire à 1600 qu'après confirmation par l'audit des longueurs réelles. Le dataset audité a affiché un maximum de 1600 tokens.</td></tr>
-<tr><td>DPO fraction</td><td><strong>0.5 comme run contrôlé</strong></td><td>Conserver d'abord les 1 153 paires pour comparer proprement avec le run précédent. Tester 1.0 dans un run séparé ensuite.</td></tr>
-<tr><td>Eval / save steps</td><td><strong>50 / 50</strong></td><td>Permet de conserver un point de comparaison avec le run précédent et de sélectionner le meilleur checkpoint.</td></tr>
-<tr><td>Reference log-probs</td><td><strong>Pré-calculées</strong></td><td>Évite de conserver un modèle de référence actif pendant l'entraînement et économise la VRAM.</td></tr>
-</tbody></table>
-
-<h2>6. Protocole expérimental du prochain run</h2>
-<p>Le prochain run doit être un run de contrôle, pas une accumulation de changements. Les variables principales modifiées sont donc limitées à <strong>1 epoch</strong> et <strong>gradient accumulation = 8</strong>. Le learning rate, beta, scheduler, warmup et dataset restent identiques afin d'attribuer correctement les différences observées.</p>
-<pre>Run actuel
-2 epochs / accumulation 16 / batch effectif 16
-        ↓
-Run suivant contrôlé
-1 epoch / accumulation 8 / batch effectif 8
-        ↓
-Même SFT source + même dataset + même beta + même LR
-        ↓
-Comparaison temps / préférence / F1 / recalls / undertriage</pre>
-
-<h2>7. Critères de décision après le prochain run</h2>
-<p>Le prochain run ne sera pas jugé uniquement sur l'accuracy. La décision devra combiner : F1 macro, recall P1, recall P2/P3, taux de sous-triage, préférence chosen/rejected, marge moyenne de log-probabilité et temps total d'entraînement.</p>
-<div class="warn"><strong>Critère métier prioritaire.</strong> Une hausse de préférence DPO n'est intéressante que si la compétence de triage reste stable. Toute amélioration rédactionnelle doit donc être accompagnée d'un contrôle du recall P1 et du sous-triage sur le test figé.</div>
-
-<h2>8. Expériences suivantes, uniquement après le run contrôlé</h2>
-<p>Si le run 1 epoch / accumulation 8 conserve les performances tout en réduisant fortement le temps, il devient la nouvelle baseline DPO. À partir de cette baseline, les expériences suivantes peuvent être menées une par une : tester <code>dpo_fraction=1.0</code>, tester une longueur maximale réduite si l'audit confirme qu'aucune séquence utile n'est tronquée, puis éventuellement comparer une implémentation Flash Attention 2 si l'environnement matériel et logiciel la supporte.</p>
-<p>Une autre évolution, plus structurelle, consisterait à construire un dataset de préférences explicitement destiné aux frontières de triage, avec des priorités chosen/rejected différentes mais médicalement validées. Cette expérience doit rester séparée du DPO actuel, dont l'objectif est principalement la qualité de l'explication.</p>
-
-<p class="small">Document complété à partir des résultats du run DPO final et de la comparaison SFT checkpoint-950 / DPO sur le test figé de 500 cas.</p>
-</body></html>
-
-run suivant 
-epoch 2
-dpo_gradient_accumulation 8 
-ajout de 
-score_completion
-et score_dpo_preferences
