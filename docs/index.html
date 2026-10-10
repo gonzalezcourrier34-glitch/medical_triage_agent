@@ -1,701 +1,361 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Medical Triage AI | Projet AI Engineer</title>
-
-    <meta
-        name="description"
-        content="POC de triage médical basé sur Qwen3-1.7B, spécialisé par QLoRA, SFT et DPO."
-    >
-
-    <link rel="stylesheet" href="css/style.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Medical Triage AI | Projet AI Engineer</title>
+<meta content="POC de triage médical bilingue : Qwen3-1.7B spécialisé par QLoRA, SFT et DPO, puis exposé par une API FastAPI." name="description"/>
+<link href="css/style.css" rel="stylesheet"/>
 </head>
-
 <body>
-
 <header class="header">
-    <nav class="nav container">
-
-        <a href="index.html" class="logo">
-            MT<span>.</span>AI
-        </a>
-
-        <div class="nav-links">
-            <a href="index.html" class="active">Projet</a>
-            <a href="experiments.html">Expérimentations</a>
-            <a href="architecture.html">Architecture</a>
-            <a href="#" target="_blank">GitHub</a>
-        </div>
-
-    </nav>
+<nav class="nav container">
+<a class="logo" href="index.html">MT<span>.</span>AI</a>
+<div class="nav-links"><a class="active" href="index.html">Projet</a><a href="data.html">Données</a><a href="experiments.html">SFT</a><a href="dpo.html">DPO</a><a href="architecture.html">Architecture</a></div>
+</nav>
 </header>
-
-
 <main>
 
-    <!-- HERO -->
-
-    <section class="hero project-hero">
-
-        <div class="container hero-content">
-
-            <p class="eyebrow">
-                PROJET IA • LLM • MEDICAL AI
-            </p>
-
-            <h1>
-                Medical Triage
-                <span>AI</span>
-            </h1>
-
-            <p class="hero-text">
-                Adapter Qwen3-1.7B à une tâche de triage médical
-                bilingue afin de produire une priorité P1, P2 ou P3
-                accompagnée d'une explication fondée sur le contexte patient.
-            </p>
-
-            <div class="hero-tags">
-                <span>Qwen3-1.7B</span>
-                <span>QLoRA</span>
-                <span>SFT</span>
-                <span>DPO</span>
-                <span>PyTorch</span>
-                <span>Unsloth</span>
-                <span>W&B</span>
-                <span>FastAPI</span>
-            </div>
-
-            <div class="hero-actions">
-
-                <a href="experiments.html" class="button primary">
-                    Voir les expérimentations
-                </a>
-
-                <a href="architecture.html" class="button secondary">
-                    Architecture
-                </a>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- CONTEXTE -->
-
-    <section class="section section-alt">
-
-        <div class="container">
-
-            <p class="section-number">01</p>
-
-            <h2>Le projet</h2>
-
-            <div class="about-grid">
-
-                <div class="large-text">
-                    Étudier la faisabilité d'un assistant IA capable
-                    d'accompagner le triage hospitalier sans remplacer
-                    la décision médicale.
-                </div>
-
-                <div>
-
-                    <p>
-                        Ce Proof of Concept est réalisé dans le cadre
-                        d'une mission fictive pour le Centre Hospitalier
-                        Saint-Aurélien.
-                    </p>
-
-                    <p>
-                        L'objectif est d'étudier la capacité d'un modèle
-                        de langage spécialisé à analyser un contexte médical,
-                        déterminer un niveau de priorité et produire une
-                        justification courte.
-                    </p>
-
-                    <p>
-                        Le système est conçu comme un prototype académique.
-                        Il ne constitue pas un dispositif médical et n'a pas
-                        vocation à remplacer un professionnel de santé.
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- SORTIE -->
-
-    <section class="section">
-
-        <div class="container">
-
-            <p class="section-number">02</p>
-
-            <h2>Une double tâche</h2>
-
-            <p class="section-intro">
-                Le modèle doit simultanément prendre une décision de triage
-                et être capable de l'expliquer à partir des informations
-                présentes dans le cas clinique.
-            </p>
-
-            <div class="projects-grid">
-
-                <article class="project-card">
-
-                    <div class="project-top">
-                        <span class="project-type">CLASSIFICATION</span>
-                    </div>
-
-                    <h3>Priorité</h3>
-
-                    <p>
-                        Le modèle classe chaque situation clinique
-                        dans l'un des trois niveaux de priorité
-                        utilisés par le POC.
-                    </p>
-
-                    <div class="priority-list">
-
-                        <div class="priority-item">
-                            <strong>P1</strong>
-                            <span>Urgence maximale</span>
-                        </div>
-
-                        <div class="priority-item">
-                            <strong>P2</strong>
-                            <span>Urgence modérée</span>
-                        </div>
-
-                        <div class="priority-item">
-                            <strong>P3</strong>
-                            <span>Urgence différée</span>
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <article class="project-card">
-
-                    <div class="project-top">
-                        <span class="project-type">GÉNÉRATION</span>
-                    </div>
-
-                    <h3>Explication</h3>
-
-                    <p>
-                        La priorité doit être accompagnée d'une justification
-                        concise et cohérente avec les éléments réellement
-                        présents dans le contexte clinique.
-                    </p>
-
-                    <div class="output-example">
-                        <code>
-                            PRIORITY: P2<br>
-                            EXPLANATION: ...
-                        </code>
-                    </div>
-
-                </article>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- CONTRAINTES -->
-
-    <section class="section section-alt">
-
-        <div class="container">
-
-            <p class="section-number">03</p>
-
-            <h2>Contraintes du projet</h2>
-
-            <div class="skills-grid">
-
-                <div class="skill-group">
-
-                    <h3>Modèle</h3>
-
-                    <div class="constraint-value">
-                        Qwen3-1.7B-Base
-                    </div>
-
-                    <p class="constraint-text">
-                        Le modèle de départ est imposé par le cadre
-                        du projet. L'objectif n'est donc pas de comparer
-                        plusieurs LLM, mais de spécialiser celui-ci.
-                    </p>
-
-                </div>
-
-
-                <div class="skill-group">
-
-                    <h3>Matériel local</h3>
-
-                    <div class="constraint-value">
-                        RTX 4050 Laptop
-                    </div>
-
-                    <p class="constraint-text">
-                        6 Go de VRAM disponibles pour réaliser localement
-                        les expérimentations de fine-tuning.
-                    </p>
-
-                </div>
-
-
-                <div class="skill-group">
-
-                    <h3>Langues</h3>
-
-                    <div class="constraint-value">
-                        FR + EN
-                    </div>
-
-                    <p class="constraint-text">
-                        Le système doit pouvoir exploiter des contextes
-                        médicaux en français et en anglais.
-                    </p>
-
-                </div>
-
-
-                <div class="skill-group">
-
-                    <h3>Sortie</h3>
-
-                    <div class="constraint-value">
-                        P1 / P2 / P3
-                    </div>
-
-                    <p class="constraint-text">
-                        Une priorité structurée accompagnée
-                        d'une explication courte.
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- APPROCHE -->
-
-    <section class="section">
-
-        <div class="container">
-
-            <p class="section-number">04</p>
-
-            <h2>Approche retenue</h2>
-
-            <p class="section-intro">
-                La contrainte mémoire a conduit à privilégier une adaptation
-                efficace du modèle plutôt qu'un fine-tuning complet.
-            </p>
-
-            <div class="timeline">
-
-                <div class="timeline-item">
-
-                    <span>01 • Données</span>
-
-                    <h3>Construire et auditer les datasets</h3>
-
-                    <p>
-                        Préparation, normalisation, contrôle des priorités,
-                        gestion des sources et création des jeux
-                        d'entraînement, validation et test.
-                    </p>
-
-                </div>
-
-
-                <div class="timeline-item">
-
-                    <span>02 • QLoRA</span>
-
-                    <h3>Adapter le modèle sous 6 Go de VRAM</h3>
-
-                    <p>
-                        Base quantifiée en 4 bits et entraînement
-                        d'adapters LoRA afin de réduire l'empreinte mémoire.
-                    </p>
-
-                </div>
-
-
-                <div class="timeline-item">
-
-                    <span>03 • SFT</span>
-
-                    <h3>Apprendre la tâche</h3>
-
-                    <p>
-                        Supervised Fine-Tuning pour apprendre le format,
-                        la classification P1/P2/P3 et la génération
-                        d'une explication.
-                    </p>
-
-                </div>
-
-
-                <div class="timeline-item">
-
-                    <span>04 • DPO</span>
-
-                    <h3>Affiner les préférences</h3>
-
-                    <p>
-                        Utilisation de paires chosen/rejected afin
-                        d'améliorer le comportement du modèle tout en
-                        contrôlant l'impact sur la classification.
-                    </p>
-
-                </div>
-
-
-                <div class="timeline-item">
-
-                    <span>05 • Évaluation</span>
-
-                    <h3>Mesurer avant de décider</h3>
-
-                    <p>
-                        Validation quantitative, matrices de confusion,
-                        analyse du sous-triage et contrôles qualitatifs
-                        des réponses générées.
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- RESULTATS SFT -->
-
-    <section class="section section-alt">
-
-        <div class="container">
-
-            <p class="section-number">05</p>
-
-            <h2>Résultats SFT</h2>
-
-            <p class="section-intro">
-                Évaluation finale du modèle SFT sélectionné sur un jeu
-                de test gelé de 500 cas.
-            </p>
-
-            <div class="result-grid">
-
-                <div class="result-card">
-                    <strong>74,4 %</strong>
-                    <span>Accuracy</span>
-                </div>
-
-                <div class="result-card">
-                    <strong>78,6 %</strong>
-                    <span>Recall P1</span>
-                </div>
-
-                <div class="result-card">
-                    <strong>71,1 %</strong>
-                    <span>Recall P2</span>
-                </div>
-
-                <div class="result-card">
-                    <strong>73,5 %</strong>
-                    <span>Recall P3</span>
-                </div>
-
-            </div>
-
-
-            <div class="vision">
-
-                <p class="eyebrow">
-                    LECTURE DU RÉSULTAT
-                </p>
-
-                <h3>
-                    372 classifications correctes sur 500 cas
-                </h3>
-
-                <p>
-                    Le modèle obtient des performances relativement
-                    équilibrées entre les trois priorités.
-                    L'analyse détaillée montre néanmoins que les
-                    confusions P2/P3 et certains cas de sous-triage P1
-                    restent des points de vigilance.
-                </p>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- EXPERIMENTATION -->
-
-    <section class="section">
-
-        <div class="container">
-
-            <p class="section-number">06</p>
-
-            <h2>Le résultat n'est qu'une partie du projet</h2>
-
-            <div class="about-grid">
-
-                <div class="large-text">
-                    Les performances finales sont le résultat
-                    d'une succession d'hypothèses, d'expériences,
-                    d'erreurs, d'audits et de décisions.
-                </div>
-
-                <div>
-
-                    <p>
-                        Plusieurs entraînements SFT ont été réalisés
-                        afin d'étudier l'influence des données,
-                        des paramètres et de la stratégie de supervision.
-                    </p>
-
-                    <p>
-                        Les métriques quantitatives ont systématiquement
-                        été complétées par une analyse qualitative des
-                        réponses afin d'identifier des défauts invisibles
-                        dans une simple accuracy.
-                    </p>
-
-                    <a
-                        href="experiments.html"
-                        class="project-link"
-                    >
-                        Explorer le parcours expérimental →
-                    </a>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- ENGINEERING -->
-
-    <section class="section section-alt">
-
-        <div class="container">
-
-            <p class="section-number">07</p>
-
-            <h2>Au-delà du modèle</h2>
-
-            <p class="section-intro">
-                Le POC est pensé comme un système IA complet et non
-                comme un modèle isolé dans un notebook.
-            </p>
-
-            <div class="soft-skills">
-
-                <span>Data Engineering</span>
-                <span>Fine-Tuning</span>
-                <span>Evaluation</span>
-                <span>Experiment Tracking</span>
-                <span>FastAPI</span>
-                <span>Docker</span>
-                <span>CI/CD</span>
-                <span>Cloud GPU</span>
-                <span>Monitoring</span>
-
-            </div>
-
-
-            <div class="hero-actions">
-
-                <a
-                    href="architecture.html"
-                    class="button primary"
-                >
-                    Explorer l'architecture
-                </a>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- LIMITES -->
-
-    <section class="section">
-
-        <div class="container">
-
-            <p class="section-number">08</p>
-
-            <h2>Limites</h2>
-
-            <div class="reflection-grid">
-
-                <div class="reflection-card">
-
-                    <h3>Ce que démontre le POC</h3>
-
-                    <ul>
-                        <li>
-                            La possibilité d'adapter Qwen3-1.7B
-                            à une tâche spécialisée.
-                        </li>
-
-                        <li>
-                            La faisabilité d'un fine-tuning QLoRA
-                            sous forte contrainte VRAM.
-                        </li>
-
-                        <li>
-                            La capacité à produire une classification
-                            et une explication structurées.
-                        </li>
-
-                        <li>
-                            La mise en place d'une démarche expérimentale
-                            reproductible et mesurable.
-                        </li>
-                    </ul>
-
-                </div>
-
-
-                <div class="reflection-card">
-
-                    <h3>Ce qu'il ne démontre pas</h3>
-
-                    <ul>
-                        <li>
-                            Une validation clinique du système.
-                        </li>
-
-                        <li>
-                            Une sécurité suffisante pour une utilisation
-                            autonome auprès de patients.
-                        </li>
-
-                        <li>
-                            L'absence de biais ou d'hallucinations.
-                        </li>
-
-                        <li>
-                            La possibilité de remplacer une décision
-                            médicale humaine.
-                        </li>
-                    </ul>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- NAVIGATION -->
-
-    <section class="section section-alt contact">
-
-        <div class="container">
-
-            <p class="eyebrow">
-                ALLER PLUS LOIN
-            </p>
-
-            <h2>
-                Explorer le projet technique
-            </h2>
-
-            <p>
-                Découvrez le parcours expérimental complet ou
-                l'architecture conçue pour transformer le modèle
-                en service d'inférence.
-            </p>
-
-            <div class="hero-actions">
-
-                <a
-                    href="experiments.html"
-                    class="button primary"
-                >
-                    Expérimentations
-                </a>
-
-                <a
-                    href="architecture.html"
-                    class="button secondary"
-                >
-                    Architecture
-                </a>
-
-            </div>
-
-        </div>
-
-    </section>
-
+<!-- HERO -->
+<section class="hero project-hero">
+<div class="container hero-content">
+<p class="eyebrow">PROJET AI ENGINEER · LLM · TRIAGE MÉDICAL</p>
+<h1>Medical Triage<span>AI</span></h1>
+<p class="hero-text">
+J'ai spécialisé un petit modèle de langage, Qwen3-1.7B, pour qu'il classe un patient en P1, P2 ou P3
+et justifie sa décision, en français comme en anglais. Le tout sur un ordinateur portable avec 6 Go de VRAM.
+Sur un test gelé de 500 cas, mon modèle final atteint <strong>88,60 % de F1 macro</strong> avec <strong>6,40 % de sous-triage</strong>.
+</p>
+<div class="hero-tags">
+<span>Qwen3-1.7B</span><span>QLoRA</span><span>SFT</span><span>DPO</span><span>Unsloth</span><span>W&amp;B</span><span>FastAPI</span><span>Docker</span><span>GitHub Actions</span>
+</div>
+<div class="hero-actions">
+<a class="button primary" href="experiments.html">Voir les expérimentations</a>
+<a class="button secondary" href="architecture.html">Voir l'architecture</a>
+</div>
+</div>
+</section>
+
+<!-- 01 LE PROJET -->
+<section class="section section-alt">
+<div class="container">
+<p class="section-number">01</p>
+<h2>Le projet</h2>
+<div class="about-grid">
+<div class="large-text">Étudier si une IA peut aider au triage aux urgences, sans remplacer la décision médicale.</div>
+<div>
+<p>Ce Proof of Concept répond à une mission fictive pour le Centre Hospitalier Saint-Aurélien. Ma question de départ : un modèle de langage spécialisé peut-il lire un cas clinique, lui attribuer un niveau de priorité et expliquer ce choix ?</p>
+<p>J'ai dû construire toute la chaîne : préparer les données, entraîner et évaluer le modèle, puis l'exposer derrière une API conteneurisée, testée et surveillée.</p>
+<p>C'est un prototype académique. Il ne constitue pas un dispositif médical et ne doit pas servir à une décision clinique réelle.</p>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 02 LA TACHE -->
+<section class="section">
+<div class="container">
+<p class="section-number">02</p>
+<h2>Ce que le modèle doit faire</h2>
+<p class="section-intro">Le modèle prend une décision et l'explique. Les priorités ne sont pas inventées : elles viennent de la grille de triage FRENCH (version 1.2, 115 motifs de recours), que j'ai regroupée en trois niveaux.</p>
+<div class="projects-grid">
+<article class="project-card">
+<div class="project-top"><span class="project-type">DÉCISION</span></div>
+<h3>Priorité</h3>
+<p>Chaque cas reçoit un des trois niveaux du POC, construits à partir des niveaux FRENCH.</p>
+<div class="priority-list">
+<div class="priority-item"><strong>P1</strong><span>Urgence maximale · FRENCH 1 et 2</span></div>
+<div class="priority-item"><strong>P2</strong><span>Urgence modérée · FRENCH 3A et 3B</span></div>
+<div class="priority-item"><strong>P3</strong><span>Urgence différée · FRENCH 4 et 5</span></div>
+</div>
+</article>
+<article class="project-card">
+<div class="project-top"><span class="project-type">JUSTIFICATION</span></div>
+<h3>Explication</h3>
+<p>La priorité est accompagnée d'une explication courte, fondée uniquement sur les éléments présents dans le cas. Elle ne doit pas décrire le texte : elle doit dire pourquoi ce niveau.</p>
+<div class="output-example"><code>PRIORITY: P2<br/>EXPLANATION: …</code></div>
+</article>
+</div>
+<div class="callout subtle">
+<span class="eyebrow">L'ERREUR À ÉVITER</span>
+<strong>Le sous-triage : classer un patient urgent dans une priorité trop basse.</strong>
+<p>C'est l'erreur la plus dangereuse en triage. Je la mesure à part dans chaque évaluation, en distinguant P1→P2, P1→P3 et P2→P3.</p>
+</div>
+</div>
+</section>
+
+<!-- 03 CONTRAINTES -->
+<section class="section section-alt">
+<div class="container">
+<p class="section-number">03</p>
+<h2>Mes contraintes</h2>
+<div class="skills-grid">
+<div class="skill-group"><h3>Modèle imposé</h3><div class="constraint-value">Qwen3-1.7B-Base</div><p class="constraint-text">Je ne compare pas plusieurs LLM : je spécialise celui-ci.</p></div>
+<div class="skill-group"><h3>Matériel</h3><div class="constraint-value">RTX 4050 · 6 Go</div><p class="constraint-text">Tout l'entraînement tourne en local, ce qui impose QLoRA et un batch GPU de 1.</p></div>
+<div class="skill-group"><h3>Langues</h3><div class="constraint-value">FR + EN</div><p class="constraint-text">Les sources françaises et anglaises n'ont pas la même nature : c'est devenu un fil conducteur.</p></div>
+<div class="skill-group"><h3>Sécurité</h3><div class="constraint-value">Sous-triage minimal</div><p class="constraint-text">Un bon score global ne suffit pas : je suis les erreurs graves une par une.</p></div>
+</div>
+</div>
+</section>
+
+<!-- 04 PARCOURS -->
+<section class="section">
+<div class="container">
+<p class="section-number">04</p>
+<h2>Le projet en cinq étapes</h2>
+<figure class="story-figure"><svg class="story-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 400" role="img" aria-label="Parcours du projet : sources, données, SFT, DPO, service." xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTo4ZTYzMWUyOC1jMWRlLTQ3ZDktYjc3Ny0xOTkxYmRhMjMxYmUAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaOg5JodNKpt9FwgyqmMFsboAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDpmYjE2OTE4Yy1kYmRkLTQwNGQtOGY5ZC02NDYwMDA3ZjQxMjZscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNokMJTw1mYVvhsdGllcjwkUgAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggE1884gwd78rTT1WdpiPukM+W9BxLN7PsUoDho4GftFakZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaHv/XN4m6hy8Px91145y0jgAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCANbgx+xOvKVk0o6D3pkCgCl+KWzmx2wVCz1pcUtwoEAmRuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjQZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjhlNjMxZTI4LWMxZGUtNDdkOS1iNzc3LTE5OTFiZGEyMzFiZS9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjY1ODcyMTJlLTMxOTgtNDE2Yy04YjcwLTM3NDllMjNmOGQ4M3JjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCATXzziDB3vytNPVZ2mI+6Qz5b0HEs3s+xSgOGjgZ+0VqJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggVU01sVoll5PLoGpUX62Iu63K98JQgbhMfVtmgrRE3pKiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggJLoA1hEjLklvpyAws2nYnUTUOXdD6KAReVYn+HduJkh0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQNoa3+G+fuuaxf7ansLpg6QBkxCQnKIhqBzyTyzP0/E/m23Ozil3SLZ6juVYHONtObsTSEp3wmlyH/ywsijRraQ=</c2pa:manifest></metadata>
+<rect width="1080" height="400" rx="18" fill="#111a22"/>
+<text x="40.0" y="46.0" fill="#edf4f4" font-size="22" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Le projet en cinq étapes</text>
+<text x="40.0" y="72.0" fill="#98a8ad" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Des sources médicales publiques à une API de triage, avec les chiffres clés de chaque étape</text>
+<defs><marker id="journey-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#98a8ad"/></marker><marker id="journey-arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#48c9b0"/></marker><pattern id="journey-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#2f9e8a" opacity="0.35"/><line x1="0" y1="0" x2="0" y2="7" stroke="#2f9e8a" stroke-width="3"/></pattern></defs>
+<rect x="40" y="110" width="180" height="170" rx="12" fill="#17232d" stroke="#2f9e8a" stroke-width="1.5"/>
+<text x="54.0" y="134.0" fill="#48c9b0" font-size="10.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" letter-spacing="1.3">01 · SOURCES</text>
+<text x="54.0" y="158.0" fill="#edf4f4" font-size="18" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >4 jeux publics</text>
+<text x="54.0" y="180.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >FrenchMedMCQA</text>
+<text x="54.0" y="198.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >MediQAl, MedQuAD</text>
+<text x="54.0" y="216.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >UltraMedical · FR + EN</text>
+<line x1="223" y1="195" x2="242" y2="195" stroke="#98a8ad" stroke-width="1.6" marker-end="url(#journey-arr)"/>
+<rect x="245" y="110" width="180" height="170" rx="12" fill="#17232d" stroke="#2f9e8a" stroke-width="1.5"/>
+<text x="259.0" y="134.0" fill="#48c9b0" font-size="10.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" letter-spacing="1.3">02 · DONNÉES</text>
+<text x="259.0" y="158.0" fill="#edf4f4" font-size="18" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >5 000 cas SFT</text>
+<text x="259.0" y="180.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >pool de 18 523 cas</text>
+<text x="259.0" y="198.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >audit, anonymisation</text>
+<text x="259.0" y="216.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >2 100 paires DPO</text>
+<line x1="428" y1="195" x2="447" y2="195" stroke="#98a8ad" stroke-width="1.6" marker-end="url(#journey-arr)"/>
+<rect x="450" y="110" width="180" height="170" rx="12" fill="#17232d" stroke="#2f9e8a" stroke-width="1.5"/>
+<text x="464.0" y="134.0" fill="#48c9b0" font-size="10.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" letter-spacing="1.3">03 · SFT</text>
+<text x="464.0" y="158.0" fill="#edf4f4" font-size="18" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >F1 88,60 %</text>
+<text x="464.0" y="180.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >6 runs + reconstruction</text>
+<text x="464.0" y="198.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >QLoRA sous 6 Go</text>
+<text x="464.0" y="216.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >checkpoint-750</text>
+<line x1="633" y1="195" x2="652" y2="195" stroke="#98a8ad" stroke-width="1.6" marker-end="url(#journey-arr)"/>
+<rect x="655" y="110" width="180" height="170" rx="12" fill="#17232d" stroke="#2f9e8a" stroke-width="1.5"/>
+<text x="669.0" y="134.0" fill="#48c9b0" font-size="10.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" letter-spacing="1.3">04 · DPO</text>
+<text x="669.0" y="158.0" fill="#edf4f4" font-size="18" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >F1 89,19 %</text>
+<text x="669.0" y="180.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >1 680 paires, 1 époque</text>
+<text x="669.0" y="198.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >+0,6 pt, non significatif</text>
+<text x="669.0" y="216.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >McNemar p = 0,45</text>
+<line x1="838" y1="195" x2="857" y2="195" stroke="#98a8ad" stroke-width="1.6" marker-end="url(#journey-arr)"/>
+<rect x="860" y="110" width="180" height="170" rx="12" fill="#17232d" stroke="#cf7f3c" stroke-width="1.5"/>
+<text x="874.0" y="134.0" fill="#cf7f3c" font-size="10.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" letter-spacing="1.3">05 · SERVICE</text>
+<text x="874.0" y="158.0" fill="#edf4f4" font-size="18" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >API FastAPI</text>
+<text x="874.0" y="180.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Docker, CI/CD, monitoring</text>
+<text x="874.0" y="198.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >testée en mode simulé</text>
+<text x="874.0" y="216.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >modèle final à brancher</text>
+<rect x="40" y="318" width="22" height="14" rx="4" fill="#17232d" stroke="#2f9e8a" stroke-width="1.5"/>
+<text x="70.0" y="330.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Opérationnel</text>
+<rect x="186.4" y="318" width="22" height="14" rx="4" fill="#17232d" stroke="#cf7f3c" stroke-width="1.5"/>
+<text x="216.4" y="330.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Partiel</text>
+<rect x="296.8" y="318" width="22" height="14" rx="4" fill="#17232d" stroke="#5d6b73" stroke-width="1.5" stroke-dasharray="6 5"/>
+<text x="326.8" y="330.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Cible, pas encore en place</text>
+<text x="1040.0" y="330.0" fill="#6b7c83" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >Chiffres issus des exports de métriques et des splits</text>
+</svg><figcaption>Chaque étape a sa page détaillée. Les quatre premières sont terminées. Le service fonctionne en mode simulé ; le modèle final reste à y brancher.</figcaption></figure>
+<div class="timeline">
+<div class="timeline-item"><span>01 • Données</span><h3>Construire un corpus triable</h3><p>Quatre jeux publics (FrenchMedMCQA, MediQAl, MedQuAD, UltraMedical-Preference), nettoyés, dédoublonnés et anonymisés avec Presidio. Un pool de 18 523 cas, dont 5 000 retenus pour le SFT : 50 % français, 50 % anglais, un tiers par priorité. <a class="project-link" href="data.html">Les données →</a></p></div>
+<div class="timeline-item"><span>02 • SFT</span><h3>Apprendre la tâche</h3><p>Six runs historiques, une régression, un score trop beau écarté pour suspicion de fuite, puis une reconstruction complète du dataset. Le F1 macro passe de 51,97 % au premier run à 88,60 % pour le modèle final. <a class="project-link" href="experiments.html">Les runs SFT →</a></p></div>
+<div class="timeline-item"><span>03 • DPO</span><h3>Préférer de meilleures explications</h3><p>1 680 paires de réponses (une préférée, une rejetée) pour une époque d'optimisation. Le F1 progresse de 0,59 point, mais la différence n'est pas significative et le sous-triage augmente légèrement. <a class="project-link" href="dpo.html">Le DPO →</a></p></div>
+<div class="timeline-item"><span>04 • Service</span><h3>Exposer le modèle</h3><p>API FastAPI avec validation stricte, conteneur Docker sans privilèges, CI/CD GitHub Actions, Prometheus et Grafana. Elle tourne aujourd'hui avec un moteur simulé. <a class="project-link" href="architecture.html">L'architecture →</a></p></div>
+</div>
+</div>
+</section>
+
+<!-- 05 RESULTATS -->
+<section class="section section-alt">
+<div class="container">
+<p class="section-number">05</p>
+<h2>Résultats du modèle final</h2>
+<p class="section-intro">Le checkpoint-750 du run SFT 20261009-190331 est choisi sur la validation, puis mesuré une seule fois sur un test gelé de 500 cas (250 FR, 250 EN).</p>
+<div class="result-grid">
+<div class="result-card"><strong>88,60 %</strong><span>F1 macro</span></div>
+<div class="result-card"><strong>6,40 %</strong><span>Sous-triage</span></div>
+<div class="result-card"><strong>93,41 %</strong><span>Rappel P1</span></div>
+<div class="result-card"><strong>443 / 500</strong><span>Cas bien classés</span></div>
+</div>
+<figure class="story-figure"><svg class="story-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 640" role="img" aria-label="Évolution du F1 macro et du sous-triage sur les six runs historiques et le SFT final." xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTo3YjQ1NjJjMS1jODVmLTRiZjktODQ1Ny1kNDViOGE1Njg2NTUAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaBCPn/sBQJ7kCDFZ3CaTdUEAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDoxYWQwZGRmMC0zM2I3LTQyODctYTQwNC03NjJkOTA2MmUwOWRscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNoXZE8BKuaQODIEw6pIE2yfgAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggIC8W4OZHrBEW62fbwi9hk/ogAOnu8guJabrYZFZGoHakZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaJGIBDClMTvmi39ghedRfcAAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCDiRkrkU7hKPFb8UaBVUbKj85REvmbQ9Y4AXl5BoZPIR2RuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjsZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjdiNDU2MmMxLWM4NWYtNGJmOS04NDU3LWQ0NWI4YTU2ODY1NS9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjZlOGNhZDA2LTViMjgtNGYzMy04YTg0LWU2NmZiNDk0MDRmYXJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCAgLxbg5kesERbrZ9vCL2GT+iAA6e7yC4lputhkVkagdqJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggwYyEppbO6wMS1cpHnH8hqCsTVQWBxgaN5qzMezDhr72iY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggCaSrHLl2T8nY5rkMtYYdRdyUgmoVkBaPZqxj1jCJXWN0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQIfY4N3v2XtzHMWmqVRtHPoXeFPlVAPW4/G9P6uWd61CxawoDeFRJN8nFtB5J3eHLDpj1tmlvtr0FsY6ifw3K7s=</c2pa:manifest></metadata>
+<rect width="1080" height="640" rx="18" fill="#111a22"/>
+<text x="40.0" y="46.0" fill="#edf4f4" font-size="22" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Trajectoire des runs SFT</text>
+<text x="40.0" y="72.0" fill="#98a8ad" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >F1 macro et sous-triage évoluent en miroir : quand la classification progresse, le risque baisse</text>
+<defs><marker id="trajectory-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#98a8ad"/></marker><marker id="trajectory-arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#48c9b0"/></marker><pattern id="trajectory-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#2f9e8a" opacity="0.35"/><line x1="0" y1="0" x2="0" y2="7" stroke="#2f9e8a" stroke-width="3"/></pattern></defs>
+<rect x="878.0" y="100" width="180.0" height="470" fill="#2f9e8a" opacity="0.06"/>
+<line x1="880.0" y1="100" x2="880.0" y2="570" stroke="#3a4a54" stroke-dasharray="4 5"/>
+<text x="890.0" y="116.0" fill="#48c9b0" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >après audit</text>
+<text x="890.0" y="130.0" fill="#48c9b0" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >des données</text>
+<line x1="100" y1="330.0" x2="1030" y2="330.0" stroke="#25333c"/>
+<text x="92.0" y="334.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >40 %</text>
+<line x1="100" y1="273.3" x2="1030" y2="273.3" stroke="#25333c"/>
+<text x="92.0" y="277.3" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >60 %</text>
+<line x1="100" y1="216.7" x2="1030" y2="216.7" stroke="#25333c"/>
+<text x="92.0" y="220.7" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >80 %</text>
+<line x1="100" y1="160.0" x2="1030" y2="160.0" stroke="#25333c"/>
+<text x="92.0" y="164.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >100 %</text>
+<text x="40.0" y="146.0" fill="#edf4f4" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >F1 macro</text>
+<text x="866.0" y="146.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >↑ plus haut = mieux</text>
+<polyline points="110.0,296.1 238.0,222.2 366.0,261.9 494.0,255.6 622.0,240.5 750.0,255.5" fill="none" stroke="#2f9e8a" stroke-width="2" stroke-linejoin="round"/>
+<line x1="750" y1="255.5" x2="1010" y2="192.3" stroke="#2f9e8a" stroke-width="2" stroke-dasharray="5 5" opacity="0.7"/>
+<circle cx="110" cy="296.1" r="5.5" fill="#2f9e8a" stroke="#111a22" stroke-width="2"/>
+<text x="124.0" y="282.1" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >51,97</text>
+<circle cx="238" cy="222.2" r="5.5" fill="#2f9e8a" stroke="#111a22" stroke-width="2"/>
+<text x="238.0" y="208.2" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >78,04</text>
+<circle cx="366" cy="261.9" r="5.5" fill="#2f9e8a" stroke="#111a22" stroke-width="2"/>
+<text x="366.0" y="247.9" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >64,05</text>
+<circle cx="494" cy="255.6" r="5.5" fill="#2f9e8a" stroke="#111a22" stroke-width="2"/>
+<text x="494.0" y="241.6" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >66,27</text>
+<circle cx="622" cy="240.5" r="7" fill="#2f9e8a" stroke="#111a22" stroke-width="2"/>
+<circle cx="622" cy="240.5" r="11" fill="none" stroke="#edf4f4" stroke-width="1.2" opacity="0.7"/>
+<text x="622.0" y="226.5" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >71,60</text>
+<circle cx="750" cy="255.5" r="5.5" fill="#2f9e8a" stroke="#111a22" stroke-width="2"/>
+<text x="750.0" y="241.5" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >66,30</text>
+<circle cx="1010" cy="192.3" r="9" fill="#2f9e8a" stroke="#111a22" stroke-width="2"/>
+<text x="1010.0" y="175.3" fill="#48c9b0" font-size="15" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="800" >88,60</text>
+<line x1="100" y1="540.0" x2="1030" y2="540.0" stroke="#25333c"/>
+<text x="92.0" y="544.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >0 %</text>
+<line x1="100" y1="484.0" x2="1030" y2="484.0" stroke="#25333c"/>
+<text x="92.0" y="488.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >10 %</text>
+<line x1="100" y1="428.0" x2="1030" y2="428.0" stroke="#25333c"/>
+<text x="92.0" y="432.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >20 %</text>
+<text x="40.0" y="386.0" fill="#edf4f4" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Sous-triage</text>
+<text x="866.0" y="386.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >↓ plus bas = mieux</text>
+<polyline points="110.0,421.1 238.0,479.5 366.0,441.4 494.0,439.2 622.0,443.7 750.0,430.2" fill="none" stroke="#cf7f3c" stroke-width="2" stroke-linejoin="round"/>
+<line x1="750" y1="430.2" x2="1010" y2="504.2" stroke="#cf7f3c" stroke-width="2" stroke-dasharray="5 5" opacity="0.7"/>
+<circle cx="110" cy="421.1" r="5.5" fill="#cf7f3c" stroke="#111a22" stroke-width="2"/>
+<text x="124.0" y="407.1" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >21,23</text>
+<circle cx="238" cy="479.5" r="5.5" fill="#cf7f3c" stroke="#111a22" stroke-width="2"/>
+<text x="238.0" y="465.5" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >10,80</text>
+<circle cx="366" cy="441.4" r="5.5" fill="#cf7f3c" stroke="#111a22" stroke-width="2"/>
+<text x="366.0" y="427.4" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >17,60</text>
+<circle cx="494" cy="439.2" r="5.5" fill="#cf7f3c" stroke="#111a22" stroke-width="2"/>
+<text x="494.0" y="425.2" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >18,00</text>
+<circle cx="622" cy="443.7" r="7" fill="#cf7f3c" stroke="#111a22" stroke-width="2"/>
+<circle cx="622" cy="443.7" r="11" fill="none" stroke="#edf4f4" stroke-width="1.2" opacity="0.7"/>
+<text x="622.0" y="429.7" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >17,20</text>
+<circle cx="750" cy="430.2" r="5.5" fill="#cf7f3c" stroke="#111a22" stroke-width="2"/>
+<text x="750.0" y="416.2" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >19,60</text>
+<circle cx="1010" cy="504.2" r="9" fill="#cf7f3c" stroke="#111a22" stroke-width="2"/>
+<text x="1010.0" y="487.2" fill="#edf4f4" font-size="15" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="800" >6,40</text>
+<text x="110.0" y="572.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >Run 01</text>
+<text x="110.0" y="590.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >Baseline</text>
+<text x="238.0" y="572.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >Run 02</text>
+<text x="238.0" y="590.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >Supervision</text>
+<text x="366.0" y="572.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >Run 03</text>
+<text x="366.0" y="590.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >Régression</text>
+<text x="494.0" y="572.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >Run 04</text>
+<text x="494.0" y="590.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >Unsloth</text>
+<text x="622.0" y="572.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >Run 05</text>
+<text x="622.0" y="590.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >Référence</text>
+<text x="750.0" y="572.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >Run 06</text>
+<text x="750.0" y="590.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >Prolongé</text>
+<text x="1010.0" y="572.0" fill="#48c9b0" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >SFT final</text>
+<text x="1010.0" y="590.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >ckpt-750</text>
+<text x="40.0" y="622.0" fill="#6b7c83" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Cercle blanc : référence historique (run 05). Pointillés : protocole et données différents, comparaison indicative.</text>
+</svg><figcaption>Mon parcours SFT : les changements de réglages plafonnent autour de 64–72 % ; c'est la reconstruction des données qui fait passer le modèle au-dessus de 88 %.</figcaption></figure>
+<figure class="story-figure"><svg class="story-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 440" role="img" aria-label="Comparaison SFT et DPO sur le test gelé." xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTo5NzZiMTU0Mi01YTE0LTRjMWMtODUyMy0xN2U1NDM4YzUwN2MAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaKEaRyE4HnXXZ1QYlXS80XAAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDoyM2MwN2Q5ZS0zNDI2LTRkZTMtODM3Ny01ZTM0YzM0MGRlYjRscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNoAZ/WZlBBZQzKqR72a1w2WgAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFgg1ZPxS5PkiLHbcAwRH3dUnzGWi5qY1sdOTYlC2KzNBUCkZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaJ1ssjeo/8+BsQIP3yG562IAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCDVq97fXuxIKyMiGqZNbmeHZTgyLOY3zxwcL/ME/jNvl2RuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBi/Zmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjk3NmIxNTQyLTVhMTQtNGMxYy04NTIzLTE3ZTU0MzhjNTA3Yy9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOmRlMTg0ZThkLTgwZWQtNGM2Zi04YWIxLWIyOWVhM2Q0NjQwNnJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCDVk/FLk+SIsdtwDBEfd1SfMZaLmpjWx05NiULYrM0FQKJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggY3PPK3xPK0vhPb2Cb9A3E9VOt/VjL4v9VXwttpd1iIiiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggmyf851Cve2Fi1l4l7RrCRra+WmTUV9g+ZBDgAzckahV0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQHfBZ2Iw2gvxnuMX4NpECszjvnhKxxt1a4UhQYTDvbWHI6KGczVxXROe2JB5bG9NHsm409Cd5kd67V28l2seEIc=</c2pa:manifest></metadata>
+<rect width="1080" height="440" rx="18" fill="#111a22"/>
+<text x="40.0" y="46.0" fill="#edf4f4" font-size="22" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >SFT puis DPO, sur le même test gelé</text>
+<text x="40.0" y="72.0" fill="#98a8ad" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Le DPO gagne quelques dixièmes de point, mais le sous-triage augmente légèrement (+0,4 pt)</text>
+<defs><marker id="sft-dpo-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#98a8ad"/></marker><marker id="sft-dpo-arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#48c9b0"/></marker><pattern id="sft-dpo-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#2f9e8a" opacity="0.35"/><line x1="0" y1="0" x2="0" y2="7" stroke="#2f9e8a" stroke-width="3"/></pattern></defs>
+<line x1="70" y1="350.0" x2="1040" y2="350.0" stroke="#3a4a54"/>
+<text x="60.0" y="354.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >0</text>
+<line x1="70" y1="295.0" x2="1040" y2="295.0" stroke="#25333c"/>
+<text x="60.0" y="299.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >25</text>
+<line x1="70" y1="240.0" x2="1040" y2="240.0" stroke="#25333c"/>
+<text x="60.0" y="244.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >50</text>
+<line x1="70" y1="185.0" x2="1040" y2="185.0" stroke="#25333c"/>
+<text x="60.0" y="189.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >75</text>
+<line x1="70" y1="130.0" x2="1040" y2="130.0" stroke="#25333c"/>
+<text x="60.0" y="134.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >100</text>
+<path d="M101.0,350.0 V159.08 Q101.0,155.08 105.0,155.08 H161.0 Q165.0,155.08 165.0,159.08 V350.0 Z" fill="#2f9e8a" />
+<text x="133.0" y="147.1" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >88,60</text>
+<path d="M169.0,350.0 V157.76 Q169.0,153.76 173.0,153.76 H229.0 Q233.0,153.76 233.0,157.76 V350.0 Z" fill="#7b86ea" />
+<text x="201.0" y="145.8" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >89,20</text>
+<text x="167.0" y="374.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >Accuracy (↑)</text>
+<path d="M295.0,350.0 V159.08 Q295.0,155.08 299.0,155.08 H355.0 Q359.0,155.08 359.0,159.08 V350.0 Z" fill="#2f9e8a" />
+<text x="327.0" y="147.1" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >88,60</text>
+<path d="M363.0,350.0 V157.78199999999998 Q363.0,153.78199999999998 367.0,153.78199999999998 H423.0 Q427.0,153.78199999999998 427.0,157.78199999999998 V350.0 Z" fill="#7b86ea" />
+<text x="395.0" y="145.8" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >89,19</text>
+<text x="361.0" y="374.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >F1 macro (↑)</text>
+<path d="M489.0,350.0 V173.60000000000002 Q489.0,169.60000000000002 493.0,169.60000000000002 H549.0 Q553.0,169.60000000000002 553.0,173.60000000000002 V350.0 Z" fill="#2f9e8a" />
+<text x="521.0" y="161.6" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >82,00</text>
+<path d="M557.0,350.0 V171.84 Q557.0,167.84 561.0,167.84 H617.0 Q621.0,167.84 621.0,171.84 V350.0 Z" fill="#7b86ea" />
+<text x="589.0" y="159.8" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >82,80</text>
+<text x="555.0" y="374.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >Accuracy FR (↑)</text>
+<path d="M683.0,350.0 V144.55999999999997 Q683.0,140.55999999999997 687.0,140.55999999999997 H743.0 Q747.0,140.55999999999997 747.0,144.55999999999997 V350.0 Z" fill="#2f9e8a" />
+<text x="715.0" y="132.6" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >95,20</text>
+<path d="M751.0,350.0 V143.68 Q751.0,139.68 755.0,139.68 H811.0 Q815.0,139.68 815.0,143.68 V350.0 Z" fill="#7b86ea" />
+<text x="783.0" y="131.7" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >95,60</text>
+<text x="749.0" y="374.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >Accuracy EN (↑)</text>
+<path d="M877.0,350.0 V339.92 Q877.0,335.92 881.0,335.92 H937.0 Q941.0,335.92 941.0,339.92 V350.0 Z" fill="#2f9e8a" />
+<text x="909.0" y="327.9" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >6,40</text>
+<path d="M945.0,350.0 V339.04 Q945.0,335.04 949.0,335.04 H1005.0 Q1009.0,335.04 1009.0,339.04 V350.0 Z" fill="#7b86ea" />
+<text x="977.0" y="327.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >6,80</text>
+<text x="943.0" y="374.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >Sous-triage (↓)</text>
+<rect x="40" y="98" width="12" height="12" rx="3" fill="#2f9e8a"/>
+<text x="58.0" y="109.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >SFT · checkpoint-750</text>
+<rect x="230" y="98" width="12" height="12" rx="3" fill="#7b86ea"/>
+<text x="248.0" y="109.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >SFT + DPO</text>
+<text x="40.0" y="418.0" fill="#6b7c83" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Même test gelé de 500 cas. 441 cas justes pour les deux modèles, 7 désaccords (5 en faveur du DPO, 2 du SFT) : différence non significative.</text>
+</svg><figcaption>Le DPO, entraîné sur le checkpoint-750, ne change presque pas la classification : 7 cas sur 500 changent de verdict (McNemar p = 0,45).</figcaption></figure>
+<div class="experiment-analysis">
+<div><span>CE QUI EST SOLIDE</span><p>P1, la classe la plus critique, est la mieux reconnue (93,41 % de rappel). Le sous-triage est divisé par plus de trois par rapport à mon premier run, et la sélection du modèle n'a jamais utilisé le test.</p></div>
+<div><span>CE QUI RESTE FRAGILE</span><p>Le français reste nettement derrière l'anglais (82,0 % contre 95,2 % d'accuracy). Les 6 patients P1 classés P3 sont tous français, et la frontière P2/P3 concentre la majorité des erreurs.</p></div>
+</div>
+</div>
+</section>
+
+<!-- 06 LECONS -->
+<section class="section">
+<div class="container">
+<p class="section-number">06</p>
+<h2>Ce que ce projet m'a appris</h2>
+<div class="reflection-grid">
+<div class="reflection-card"><h3>La donnée avant les réglages</h3><p>Mes plus gros gains viennent de la supervision et de la reconstruction des données, pas des hyperparamètres ou d'époques supplémentaires.</p></div>
+<div class="reflection-card"><h3>Lire ce que le modèle apprend</h3><p>Mes cibles contenaient des explications génériques. Le modèle les reproduisait fidèlement : il apprenait exactement ce que je lui montrais.</p></div>
+<div class="reflection-card"><h3>Douter d'un trop bon score</h3><p>Un run à 94 % de F1 obtenu en une journée m'a semblé suspect. Je l'ai écarté plutôt que de le présenter comme un succès.</p></div>
+<div class="reflection-card"><h3>Tracer chaque résultat</h3><p>Chaque run final est relié à ses données (SHA-256), sa configuration, son checkpoint et son suivi W&amp;B dans un manifeste.</p></div>
+</div>
+</div>
+</section>
+
+<!-- 07 LIMITES -->
+<section class="section section-alt">
+<div class="container">
+<p class="section-number">07</p>
+<h2>Ce que le POC démontre, et ce qu'il ne démontre pas</h2>
+<div class="projects-grid">
+<article class="project-card">
+<div class="project-top"><span class="project-type">DÉMONTRÉ</span></div>
+<h3>Faisable et mesurable</h3>
+<p>Un modèle de 1,7 milliard de paramètres peut être spécialisé au triage sous 6 Go de VRAM, avec 88,60 % de F1 macro et 6,40 % de sous-triage sur un test gelé. Le protocole sépare sélection et mesure, et chaque résultat est traçable.</p>
+</article>
+<article class="project-card">
+<div class="project-top"><span class="project-type">NON DÉMONTRÉ</span></div>
+<h3>Une validation clinique</h3>
+<p>Les priorités sont des labels construits, pas un avis médical sur chaque cas. La qualité des explications n'est pas mesurée par un score, l'écart entre langues reste important, et le modèle final n'est pas encore servi par l'API.</p>
+</article>
+</div>
+</div>
+</section>
+
+<!-- NAVIGATION -->
+<section class="section contact">
+<div class="container">
+<p class="eyebrow">EXPLORER LE PROJET</p>
+<h2>Une enquête expérimentale, pas seulement un score.</h2>
+<p>Chaque page raconte une étape : ce que j'ai essayé, ce que j'ai mesuré, ce qui n'a pas marché et ce que j'en ai tiré.</p>
+<div class="hero-actions">
+<a class="button primary" href="experiments.html">Expérimentations SFT</a>
+<a class="button secondary" href="data.html">Données</a>
+<a class="button secondary" href="dpo.html">DPO</a>
+<a class="button secondary" href="architecture.html">Architecture</a>
+</div>
+</div>
+</section>
 </main>
-
-
 <footer>
-
-    <div class="container footer-content">
-
-        <span>
-            Medical Triage AI • POC académique
-        </span>
-
-        <span>
-            AI Engineering • 2026
-        </span>
-
-    </div>
-
+<div class="container footer-content">
+<span>Medical Triage AI • POC académique</span>
+<span>AI Engineering • 2026</span>
+</div>
 </footer>
-
-
 <script src="js/main.js"></script>
-
 </body>
-
 </html>

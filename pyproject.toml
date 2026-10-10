@@ -1,53 +1,76 @@
 [project]
 name = "medical-triage-agent"
 version = "0.1.0"
-description = "Add your description here"
+description = "Medical triage AI agent - SFT, DPO and deployment"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 
+# Application FastAPI et communication avec vLLM
 dependencies = [
-    "accelerate>=1.10,<2",
-    "bitsandbytes>=0.48,<0.50",
-    "datasets>=4.1.1,<4.4",
-    "en-core-web-lg",
-    "en-core-web-md",
     "fastapi>=0.141.1",
-    "fr-core-news-lg",
-    "fr-core-news-md",
-    "huggingface-hub>=1.28.0",
-    "langdetect>=1.0.9",
-    "matplotlib>=3.11.1",
-    "nbformat>=5.11.1",
-    "numpy>=2.5.2",
-    "pandas>=3.0.5",
-    "peft>=0.18,<0.20",
-    "presidio-analyzer>=2.2.362",
-    "presidio-anonymizer>=2.2.364",
-    "python-dotenv>=1.2.3",
-    "rapidfuzz>=3.14.5",
-    "scikit-learn>=1.5,<2",
-    "spacy>=3.8.16",
-    "tokenizers>=0.22.0,<=0.23.0",
-    "torch==2.11.0",
-    "tqdm>=4.70.0",
-    "transformers>=4.56.2,<=5.5.0",
-    "triton-windows>=3.7,<3.8",
-    "unsloth>=2026.9.1",
-    "unsloth-zoo>=2025.7.4",
     "uvicorn[standard]>=0.53.0",
-    "wandb>=0.22,<0.24",
+    "python-dotenv>=1.2.3",
+    "httpx>=0.28,<1",
+    "prometheus-fastapi-instrumentator>=7,<8",
 ]
 
 [dependency-groups]
+
+# Préparation, traitement et anonymisation des données
+data = [
+    "datasets>=4.1.1,<4.4",
+    "en-core-web-lg",
+    "en-core-web-md",
+    "fr-core-news-lg",
+    "fr-core-news-md",
+    "langdetect>=1.0.9",
+    "numpy>=2.5.2",
+    "pandas>=3.0.5",
+    "presidio-analyzer>=2.2.362",
+    "presidio-anonymizer>=2.2.364",
+    "rapidfuzz>=3.14.5",
+    "scikit-learn>=1.5,<2",
+    "spacy>=3.8.16",
+]
+
+# Entraînement SFT / DPO
+training = [
+    "accelerate>=1.10,<2",
+    "bitsandbytes>=0.48,<0.50",
+    "huggingface-hub>=1.28.0",
+    "peft>=0.18,<0.20",
+    "tokenizers>=0.22.0,<=0.23.0",
+    "torch==2.11.0",
+    "transformers>=4.56.2,<=5.5.0",
+    "triton-windows>=3.7,<3.8; sys_platform == 'win32'",
+    "unsloth>=2026.9.1",
+    "unsloth-zoo>=2025.7.4",
+    "wandb>=0.22,<0.24",
+]
+
+# Développement et notebooks
 dev = [
     "ipykernel>=7.3.0",
     "ipywidgets>=8.1.9",
+    "matplotlib>=3.11.1",
+    "nbformat>=5.11.1",
+    "tqdm>=4.70.0",
 ]
 
+# Tests automatisés et qualité du code
+ci = [
+    "pytest>=8,<10",
+    "pytest-cov>=6,<8",
+    "ruff>=0.13,<1",
+]
+
+# Sources spécifiques
 [tool.uv.sources]
 torch = { index = "pytorch-cu130" }
+
 en-core-web-lg = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl" }
 en-core-web-md = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl" }
+
 fr-core-news-lg = { url = "https://github.com/explosion/spacy-models/releases/download/fr_core_news_lg-3.8.0/fr_core_news_lg-3.8.0-py3-none-any.whl" }
 fr-core-news-md = { url = "https://github.com/explosion/spacy-models/releases/download/fr_core_news_md-3.8.0/fr_core_news_md-3.8.0-py3-none-any.whl" }
 
@@ -55,3 +78,22 @@ fr-core-news-md = { url = "https://github.com/explosion/spacy-models/releases/do
 name = "pytorch-cu130"
 url = "https://download.pytorch.org/whl/cu130"
 explicit = true
+
+# ============================================================
+# RUFF - Qualité du code
+# ============================================================
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+# ============================================================
+# PYTEST - Tests automatiques
+# ============================================================
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 350" role="img" aria-label="Accord des classifications">
+<rect width="100%" height="100%" rx="20" fill="#111a22"/>
+<text x="40" y="44" fill="#edf4f4" font-size="24" font-family="Arial" font-weight="bold">Comparaison appariée : 500 cas</text>
+<text x="40" y="72" fill="#98a8ad" font-size="14" font-family="Arial">La justesse commune ne signifie pas une prédiction identique pour les erreurs</text>
+<rect x="40.0" y="110" width="722.0" height="62" fill="#48c9b0"/>
+<rect x="762.0" y="110" width="22.0" height="62" fill="#7eb6e0"/>
+<rect x="784.0" y="110" width="20.0" height="62" fill="#e7c27b"/>
+<rect x="804.0" y="110" width="236.0" height="62" fill="#ad7f88"/>
+<rect x="50" y="210" width="16" height="16" fill="#48c9b0"/>
+<text x="78" y="225" fill="#edf4f4" font-size="18" font-family="Arial">Corrects tous les deux : 361 (72.2 %)</text>
+<rect x="570" y="210" width="16" height="16" fill="#7eb6e0"/>
+<text x="598" y="225" fill="#edf4f4" font-size="18" font-family="Arial">SFT seul correct : 11 (2.2 %)</text>
+<rect x="50" y="263" width="16" height="16" fill="#e7c27b"/>
+<text x="78" y="278" fill="#edf4f4" font-size="18" font-family="Arial">DPO seul correct : 10 (2.0 %)</text>
+<rect x="570" y="263" width="16" height="16" fill="#ad7f88"/>
+<text x="598" y="278" fill="#edf4f4" font-size="18" font-family="Arial">Incorrects tous les deux : 118 (23.6 %)</text>
+</svg>

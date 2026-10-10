@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 450" role="img" aria-label="Six runs SFT : sous-triage">
+<rect width="100%" height="100%" rx="20" fill="#111a22"/>
+<text x="55" y="42" fill="#edf4f4" font-size="23" font-family="Arial" font-weight="bold">Six runs SFT : sous-triage</text>
+<text x="55" y="67" fill="#98a8ad" font-size="14" font-family="Arial">Plus bas est préférable ; définition et périmètre à confirmer</text>
+<line x1="85" y1="375.0" x2="1040" y2="375.0" stroke="#2b3942" stroke-width="1"/><text x="73" y="380.0" fill="#98a8ad" font-size="13" text-anchor="end">0%</text>
+<line x1="85" y1="280.0" x2="1040" y2="280.0" stroke="#2b3942" stroke-width="1"/><text x="73" y="285.0" fill="#98a8ad" font-size="13" text-anchor="end">10%</text>
+<line x1="85" y1="185.0" x2="1040" y2="185.0" stroke="#2b3942" stroke-width="1"/><text x="73" y="190.0" fill="#98a8ad" font-size="13" text-anchor="end">20%</text>
+<line x1="85" y1="90.0" x2="1040" y2="90.0" stroke="#2b3942" stroke-width="1"/><text x="73" y="95.0" fill="#98a8ad" font-size="13" text-anchor="end">30%</text>
+<polyline points="85.0,173.3 276.0,272.4 467.0,207.8 658.0,204.0 849.0,211.6 1040.0,188.8" fill="none" stroke="#48c9b0" stroke-width="4" stroke-linejoin="round"/>
+<circle cx="85.0" cy="173.315" r="7" fill="#48c9b0" stroke="#111a22" stroke-width="2"/>
+<text x="85.0" y="157.315" text-anchor="middle" fill="#edf4f4" font-size="15" font-family="Arial" font-weight="bold">21.23%</text>
+<text x="85.0" y="415" text-anchor="middle" fill="#98a8ad" font-size="14" font-family="Arial">Run 01</text>
+<circle cx="276.0" cy="272.4" r="7" fill="#48c9b0" stroke="#111a22" stroke-width="2"/>
+<text x="276.0" y="256.4" text-anchor="middle" fill="#edf4f4" font-size="15" font-family="Arial" font-weight="bold">10.80%</text>
+<text x="276.0" y="415" text-anchor="middle" fill="#98a8ad" font-size="14" font-family="Arial">Run 02</text>
+<circle cx="467.0" cy="207.79999999999998" r="7" fill="#48c9b0" stroke="#111a22" stroke-width="2"/>
+<text x="467.0" y="191.79999999999998" text-anchor="middle" fill="#edf4f4" font-size="15" font-family="Arial" font-weight="bold">17.60%</text>
+<text x="467.0" y="415" text-anchor="middle" fill="#98a8ad" font-size="14" font-family="Arial">Run 03</text>
+<circle cx="658.0" cy="204.0" r="7" fill="#48c9b0" stroke="#111a22" stroke-width="2"/>
+<text x="658.0" y="188.0" text-anchor="middle" fill="#edf4f4" font-size="15" font-family="Arial" font-weight="bold">18.00%</text>
+<text x="658.0" y="415" text-anchor="middle" fill="#98a8ad" font-size="14" font-family="Arial">Run 04</text>
+<circle cx="849.0" cy="211.60000000000002" r="7" fill="#48c9b0" stroke="#111a22" stroke-width="2"/>
+<text x="849.0" y="195.60000000000002" text-anchor="middle" fill="#edf4f4" font-size="15" font-family="Arial" font-weight="bold">17.20%</text>
+<text x="849.0" y="415" text-anchor="middle" fill="#98a8ad" font-size="14" font-family="Arial">Run 05</text>
+<circle cx="1040.0" cy="188.79999999999998" r="7" fill="#48c9b0" stroke="#111a22" stroke-width="2"/>
+<text x="1040.0" y="172.79999999999998" text-anchor="middle" fill="#edf4f4" font-size="15" font-family="Arial" font-weight="bold">19.60%</text>
+<text x="1040.0" y="415" text-anchor="middle" fill="#98a8ad" font-size="14" font-family="Arial">Run 06</text>
+</svg>

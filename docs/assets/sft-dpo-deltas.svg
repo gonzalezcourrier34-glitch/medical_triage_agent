@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 480" role="img" aria-label="Comparaison SFT DPO">
+<rect width="100%" height="100%" rx="20" fill="#111a22"/>
+<text x="45" y="45" fill="#edf4f4" font-size="24" font-family="Arial" font-weight="bold">SFT → DPO : écarts en points de pourcentage</text>
+<text x="45" y="72" fill="#98a8ad" font-size="14" font-family="Arial">Test gelé de 500 cas • les petits écarts ne démontrent pas un gain clinique</text>
+<line x1="650" y1="105" x2="650" y2="420" stroke="#98a8ad" stroke-dasharray="5 5"/>
+<text x="50" y="145" fill="#edf4f4" font-size="18" font-family="Arial">F1 macro</text>
+<line x1="633.9" y1="140" x2="650.0" y2="140" stroke="#e7a37b" stroke-width="14" stroke-linecap="round"/>
+<circle cx="633.9" cy="140" r="7" fill="#edf4f4"/>
+<text x="920" y="145" fill="#edf4f4" font-size="18" font-family="Arial">-0.17 pt</text>
+<text x="50" y="207" fill="#edf4f4" font-size="18" font-family="Arial">Accuracy</text>
+<line x1="631.0" y1="202" x2="650.0" y2="202" stroke="#e7a37b" stroke-width="14" stroke-linecap="round"/>
+<circle cx="631.0" cy="202" r="7" fill="#edf4f4"/>
+<text x="920" y="207" fill="#edf4f4" font-size="18" font-family="Arial">-0.20 pt</text>
+<text x="50" y="269" fill="#edf4f4" font-size="18" font-family="Arial">F1 P1</text>
+<line x1="650.0" y1="264" x2="675.7" y2="264" stroke="#48c9b0" stroke-width="14" stroke-linecap="round"/>
+<circle cx="675.7" cy="264" r="7" fill="#edf4f4"/>
+<text x="920" y="269" fill="#edf4f4" font-size="18" font-family="Arial">+0.27 pt</text>
+<text x="50" y="331" fill="#edf4f4" font-size="18" font-family="Arial">F1 P2</text>
+<line x1="650.0" y1="326" x2="718.4" y2="326" stroke="#48c9b0" stroke-width="14" stroke-linecap="round"/>
+<circle cx="718.4" cy="326" r="7" fill="#edf4f4"/>
+<text x="920" y="331" fill="#edf4f4" font-size="18" font-family="Arial">+0.72 pt</text>
+<text x="50" y="393" fill="#edf4f4" font-size="18" font-family="Arial">F1 P3</text>
+<line x1="508.4" y1="388" x2="650.0" y2="388" stroke="#e7a37b" stroke-width="14" stroke-linecap="round"/>
+<circle cx="508.4" cy="388" r="7" fill="#edf4f4"/>
+<text x="920" y="393" fill="#edf4f4" font-size="18" font-family="Arial">-1.49 pt</text>
+</svg>

@@ -1,0 +1,44 @@
+[
+  {
+    "run": "SFT 01",
+    "accuracy": 51.79,
+    "f1_macro": 51.97,
+    "undertriage": 21.23,
+    "theme": "Baseline initiale"
+  },
+  {
+    "run": "SFT 02",
+    "accuracy": 78.2,
+    "f1_macro": 78.04,
+    "undertriage": 10.8,
+    "theme": "Supervision améliorée"
+  },
+  {
+    "run": "SFT 03",
+    "accuracy": 64.2,
+    "f1_macro": 64.05,
+    "undertriage": 17.6,
+    "theme": "Régression"
+  },
+  {
+    "run": "SFT 04",
+    "accuracy": 66.2,
+    "f1_macro": 66.27,
+    "undertriage": 18.0,
+    "theme": "Optimisation technique"
+  },
+  {
+    "run": "SFT 05",
+    "accuracy": 71.4,
+    "f1_macro": 71.6,
+    "undertriage": 17.2,
+    "theme": "Référence historique"
+  },
+  {
+    "run": "SFT 06",
+    "accuracy": 66.0,
+    "f1_macro": 66.3,
+    "undertriage": 19.6,
+    "theme": "Entraînement prolongé"
+  }
+]

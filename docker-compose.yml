@@ -1,0 +1,163 @@
+# ============================================================
+# Docker Compose - Medical Triage Agent
+#
+# Services :
+# - FastAPI    : API REST
+# - vLLM       : inférence Qwen3
+# - Prometheus : collecte des métriques
+# - Grafana    : visualisation du monitoring
+#
+# Démarrage progressif avec profils Docker.
+# ============================================================
+
+services:
+
+  # ----------------------------------------------------------
+  # 1. API FASTAPI
+  # ----------------------------------------------------------
+
+  api:
+    # Construction depuis le Dockerfile de l'API.
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+
+    container_name: medical-triage-api
+
+    # API accessible uniquement depuis l'ordinateur local.
+    ports:
+      - "127.0.0.1:8000:8000"
+
+    # Configuration du moteur d'inférence.
+    environment:
+      INFERENCE_BACKEND: ${INFERENCE_BACKEND:-mock}
+      VLLM_BASE_URL: http://vllm:8000/v1
+      VLLM_MODEL: triage-qwen3
+
+    # Réduit les privilèges du conteneur.
+    security_opt:
+      - no-new-privileges:true
+
+    # Vérifie la disponibilité de l'API.
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+    restart: unless-stopped
+
+  # ----------------------------------------------------------
+  # 2. SERVEUR D'INFÉRENCE VLLM
+  # ----------------------------------------------------------
+
+  vllm:
+    # Activation uniquement avec le profil GPU.
+    profiles:
+      - gpu
+
+    # Version à figer après validation de compatibilité.
+    image: vllm/vllm-openai:latest
+
+    container_name: medical-triage-vllm
+
+    # Accès local pour les tests.
+    ports:
+      - "127.0.0.1:8001:8000"
+
+    # Accès au GPU NVIDIA.
+    gpus: all
+
+    # Modèle exporté dans le dossier local.
+    volumes:
+      - ./models/triage-qwen3:/models/triage-qwen3:ro
+
+    # Configuration du serveur.
+    command:
+      - --model
+      - /models/triage-qwen3
+      - --served-model-name
+      - triage-qwen3
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+
+    security_opt:
+      - no-new-privileges:true
+
+    restart: unless-stopped
+
+  # ----------------------------------------------------------
+  # 3. PROMETHEUS
+  # ----------------------------------------------------------
+
+  prometheus:
+    profiles:
+      - monitoring
+
+    # Version à figer avant déploiement.
+    image: prom/prometheus:latest
+
+    container_name: medical-triage-prometheus
+
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+
+    # Interface Prometheus locale.
+    ports:
+      - "127.0.0.1:9090:9090"
+
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+
+    security_opt:
+      - no-new-privileges:true
+
+    restart: unless-stopped
+
+  # ----------------------------------------------------------
+  # 4. GRAFANA
+  # ----------------------------------------------------------
+
+  grafana:
+    profiles:
+      - monitoring
+
+    # Version à figer avant déploiement.
+    image: grafana/grafana:latest
+
+    container_name: medical-triage-grafana
+
+    # Interface Grafana locale.
+    ports:
+      - "127.0.0.1:3000:3000"
+
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Définir GRAFANA_ADMIN_PASSWORD dans .env}
+
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+
+    security_opt:
+      - no-new-privileges:true
+
+    restart: unless-stopped
+
+
+# ------------------------------------------------------------
+# VOLUMES PERSISTANTS
+# ------------------------------------------------------------
+
+volumes:
+  prometheus_data:
+  grafana_data:

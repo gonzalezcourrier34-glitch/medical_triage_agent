@@ -1,12 +1,14 @@
+"""Gestion du cycle de vie de l'API."""
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from scr.api.services.inference import inference_service
+from scr.api.services.provider import inference_service
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Gère le cycle de vie de l'API."""
+    """Initialise le moteur d'inférence au démarrage."""
     inference_service.load()
     yield

@@ -1,0 +1,114 @@
+# ============================================================
+# CI - Continuous Integration
+# Projet : Medical Triage Agent
+#
+# Objectif :
+# Vérifier automatiquement la qualité du code Python.
+# Aucun entraînement GPU n'est exécuté dans ce workflow.
+# ============================================================
+
+name: CI
+
+# ------------------------------------------------------------
+# 1. Déclenchement automatique
+# ------------------------------------------------------------
+
+on:
+  # Exécution lors d'un push sur main.
+  push:
+    branches: [main]
+
+  # Exécution lors d'une pull request vers main.
+  pull_request:
+    branches: [main]
+
+  # Permet de lancer la CI manuellement depuis GitHub.
+  workflow_dispatch:
+
+# ------------------------------------------------------------
+# 2. Permissions GitHub
+# ------------------------------------------------------------
+
+# Le workflow doit uniquement lire le dépôt.
+permissions:
+  contents: read
+
+# ------------------------------------------------------------
+# 3. Jobs
+# ------------------------------------------------------------
+
+jobs:
+
+  quality:
+    # Nom affiché dans GitHub Actions.
+    name: Quality & Tests
+
+    # Machine Linux fournie par GitHub.
+    runs-on: ubuntu-latest
+
+    # Évite qu'un job bloqué tourne indéfiniment.
+    timeout-minutes: 15
+
+    # Force l'utilisation du moteur simulé.
+    env:
+      INFERENCE_BACKEND: mock
+
+    steps:
+
+      # ------------------------------------------------------
+      # Étape 1 : récupérer le code
+      # ------------------------------------------------------
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------
+      # Étape 2 : installer uv
+      # ------------------------------------------------------
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      # ------------------------------------------------------
+      # Étape 3 : installer Python 3.13
+      # ------------------------------------------------------
+
+      - name: Setup Python
+        run: uv python install 3.13
+
+      # ------------------------------------------------------
+      # Étape 4 : installer les dépendances CI
+      # ------------------------------------------------------
+
+      # Installation sans les groupes training/data/dev.
+      # --locked vérifie que uv.lock est à jour.
+      - name: Install dependencies
+        run: uv sync --locked --no-default-groups --group ci
+
+      # ------------------------------------------------------
+      # Étape 5 : vérifier la qualité du code
+      # ------------------------------------------------------
+
+      # Ruff analyse le code de l'API et les tests.
+      # Le workflow échoue si une erreur est détectée.
+      - name: Ruff lint
+        run: uv run --no-sync ruff check main.py scr tests
+
+      # ------------------------------------------------------
+      # Étape 6 : vérifier le formatage
+      # ------------------------------------------------------
+
+      # Vérifie le format sans modifier les fichiers.
+      - name: Ruff format
+        run: uv run --no-sync ruff format --check main.py scr tests
+
+      # ------------------------------------------------------
+      # Étape 7 : exécuter les tests et mesurer la couverture
+      # ------------------------------------------------------
+
+      # Exécute Pytest et mesure la couverture du code applicatif.
+      # Le rapport affiche les lignes non couvertes.
+      - name: Tests and coverage
+        run: uv run --no-sync pytest tests -q --cov=scr --cov-report=term-missing

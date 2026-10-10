@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 450" role="img" aria-label="Six runs SFT : F1 macro">
+<rect width="100%" height="100%" rx="20" fill="#111a22"/>
+<text x="55" y="42" fill="#edf4f4" font-size="23" font-family="Arial" font-weight="bold">Six runs SFT : F1 macro</text>
+<text x="55" y="67" fill="#98a8ad" font-size="14" font-family="Arial">Valeurs rapportées par run ; vérifier les protocoles avant toute comparaison directe</text>
+<line x1="85" y1="375.0" x2="1040" y2="375.0" stroke="#2b3942" stroke-width="1"/><text x="73" y="380.0" fill="#98a8ad" font-size="13" text-anchor="end">0%</text>
+<line x1="85" y1="346.5" x2="1040" y2="346.5" stroke="#2b3942" stroke-width="1"/><text x="73" y="351.5" fill="#98a8ad" font-size="13" text-anchor="end">10%</text>
+<line x1="85" y1="318.0" x2="1040" y2="318.0" stroke="#2b3942" stroke-width="1"/><text x="73" y="323.0" fill="#98a8ad" font-size="13" text-anchor="end">20%</text>
+<line x1="85" y1="289.5" x2="1040" y2="289.5" stroke="#2b3942" stroke-width="1"/><text x="73" y="294.5" fill="#98a8ad" font-size="13" text-anchor="end">30%</text>
+<line x1="85" y1="261.0" x2="1040" y2="261.0" stroke="#2b3942" stroke-width="1"/><text x="73" y="266.0" fill="#98a8ad" font-size="13" text-anchor="end">40%</text>
+<line x1="85" y1="232.5" x2="1040" y2="232.5" stroke="#2b3942" stroke-width="1"/><text x="73" y="237.5" fill="#98a8ad" font-size="13" text-anchor="end">50%</text>
+<line x1="85" y1="204.0" x2="1040" y2="204.0" stroke="#2b3942" stroke-width="1"/><text x="73" y="209.0" fill="#98a8ad" font-size="13" text-anchor="end">60%</text>
+<line x1="85" y1="175.5" x2="1040" y2="175.5" stroke="#2b3942" stroke-width="1"/><text x="73" y="180.5" fill="#98a8ad" font-size="13" text-anchor="end">70%</text>
+<line x1="85" y1="147.0" x2="1040" y2="147.0" stroke="#2b3942" stroke-width="1"/><text x="73" y="152.0" fill="#98a8ad" font-size="13" text-anchor="end">80%</text>
+<line x1="85" y1="118.5" x2="1040" y2="118.5" stroke="#2b3942" stroke-width="1"/><text x="73" y="123.5" fill="#98a8ad" font-size="13" text-anchor="end">90%</text>
+<line x1="85" y1="90.0" x2="1040" y2="90.0" stroke="#2b3942" stroke-width="1"/><text x="73" y="95.0" fill="#98a8ad" font-size="13" text-anchor="end">100%</text>
+<polyline points="85.0,226.9 276.0,152.6 467.0,192.5 658.0,186.1 849.0,170.9 1040.0,186.0" fill="none" stroke="#48c9b0" stroke-width="4" stroke-linejoin="round"/>
+<circle cx="85.0" cy="226.8855" r="7" fill="#48c9b0" stroke="#111a22" stroke-width="2"/>
+<text x="85.0" y="210.8855" text-anchor="middle" fill="#edf4f4" font-size="15" font-family="Arial" font-weight="bold">51.97%</text>
+<text x="85.0" y="415" text-anchor="middle" fill="#98a8ad" font-size="14" font-family="Arial">Run 01</text>
+<circle cx="276.0" cy="152.58599999999998" r="7" fill="#48c9b0" stroke="#111a22" stroke-width="2"/>
+<text x="276.0" y="136.58599999999998" text-anchor="middle" fill="#edf4f4" font-size="15" font-family="Arial" font-weight="bold">78.04%</text>
+<text x="276.0" y="415" text-anchor="middle" fill="#98a8ad" font-size="14" font-family="Arial">Run 02</text>
+<circle cx="467.0" cy="192.4575" r="7" fill="#48c9b0" stroke="#111a22" stroke-width="2"/>
+<text x="467.0" y="176.4575" text-anchor="middle" fill="#edf4f4" font-size="15" font-family="Arial" font-weight="bold">64.05%</text>
+<text x="467.0" y="415" text-anchor="middle" fill="#98a8ad" font-size="14" font-family="Arial">Run 03</text>
+<circle cx="658.0" cy="186.1305" r="7" fill="#48c9b0" stroke="#111a22" stroke-width="2"/>
+<text x="658.0" y="170.1305" text-anchor="middle" fill="#edf4f4" font-size="15" font-family="Arial" font-weight="bold">66.27%</text>
+<text x="658.0" y="415" text-anchor="middle" fill="#98a8ad" font-size="14" font-family="Arial">Run 04</text>
+<circle cx="849.0" cy="170.94" r="7" fill="#48c9b0" stroke="#111a22" stroke-width="2"/>
+<text x="849.0" y="154.94" text-anchor="middle" fill="#edf4f4" font-size="15" font-family="Arial" font-weight="bold">71.60%</text>
+<text x="849.0" y="415" text-anchor="middle" fill="#98a8ad" font-size="14" font-family="Arial">Run 05</text>
+<circle cx="1040.0" cy="186.04500000000002" r="7" fill="#48c9b0" stroke="#111a22" stroke-width="2"/>
+<text x="1040.0" y="170.04500000000002" text-anchor="middle" fill="#edf4f4" font-size="15" font-family="Arial" font-weight="bold">66.30%</text>
+<text x="1040.0" y="415" text-anchor="middle" fill="#98a8ad" font-size="14" font-family="Arial">Run 06</text>
+</svg>

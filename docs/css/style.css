@@ -1693,3 +1693,34 @@ footer {
     }
 
 }
+/* Compléments : histoire expérimentale et figures */
+.story-figure{margin:2.4rem 0;padding:1.25rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface)}
+.story-figure img{width:100%;height:auto;display:block}
+.story-figure figcaption{margin-top:1rem;color:var(--muted);font-size:.92rem}
+.story-intro{max-width:920px;font-size:1.15rem;line-height:1.85;color:var(--text)}
+.story-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:2rem 0}
+.story-step{border:1px solid var(--border);border-radius:14px;padding:1.5rem;background:var(--surface)}
+.story-step strong{display:block;color:var(--accent);margin-bottom:.6rem}
+.story-step p{color:var(--muted)}
+.story-table{width:100%;border-collapse:collapse;margin:2rem 0}
+.story-table th,.story-table td{padding:.85rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.story-table th{color:var(--accent)}
+.story-note{border-left:3px solid var(--accent);padding:1rem 1.4rem;margin:1.8rem 0;background:var(--surface)}
+@media(max-width:800px){.story-grid{grid-template-columns:1fr}.story-table{font-size:.84rem}}
+
+/* Figures lisibles sur mobile : défilement horizontal plutôt que réduction */
+.story-figure svg.story-svg{width:100%;height:auto;display:block}
+@media(max-width:700px){.story-figure{overflow-x:auto}.story-figure img,.story-figure svg.story-svg{min-width:680px}}
+
+/* Page SFT : tableaux de paramètres, matrice de confusion */
+.params-table td:first-child{white-space:nowrap;font-weight:700}
+.params-table td:last-child{color:var(--muted)}
+.experiment-card .params-table{margin:1.5rem 0 0}
+.story-table code,.params-table code{color:var(--accent);font-size:.9em}
+.confusion-table td,.confusion-table th{text-align:center}
+.confusion-table td:first-child,.confusion-table th:first-child{text-align:left}
+.confusion-table td.ok{color:var(--accent);font-weight:800}
+.confusion-table td.under{color:#e0904a;font-weight:800}
+.table-note{color:var(--muted);font-size:.9rem;margin-top:-1rem}
+.experiment-analysis + .story-figure{margin-top:3rem}
+@media(max-width:800px){.story-table{display:block;overflow-x:auto}.params-table td:first-child{white-space:normal}}

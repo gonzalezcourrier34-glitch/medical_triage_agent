@@ -1,0 +1,69 @@
+# ============================================================
+# Dockerfile - Medical Triage API
+# Construction du conteneur FastAPI.
+# ============================================================
+
+# ------------------------------------------------------------
+# 1. Image Python
+# ------------------------------------------------------------
+
+# Image Python 3.13 légère.
+FROM python:3.13-slim
+
+# Répertoire de travail.
+WORKDIR /app
+
+# Gestionnaire de dépendances uv.
+COPY --from=ghcr.io/astral-sh/uv:0.9.18 /uv /uvx /bin/
+
+# ------------------------------------------------------------
+# 2. Configuration Python
+# ------------------------------------------------------------
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/app/.venv/bin:$PATH" \
+    INFERENCE_BACKEND=mock
+
+# ------------------------------------------------------------
+# 3. Installation des dépendances
+# ------------------------------------------------------------
+
+# Copie uniquement les fichiers nécessaires à l'installation.
+COPY pyproject.toml uv.lock ./
+
+# Installation reproductible sans les groupes training/data/dev.
+RUN uv sync \
+    --frozen \
+    --no-default-groups \
+    --no-install-project \
+    --no-editable
+
+# ------------------------------------------------------------
+# 4. Copie de l'application
+# ------------------------------------------------------------
+
+COPY main.py ./
+COPY scr/ ./scr/
+
+# ------------------------------------------------------------
+# 5. Sécurité du conteneur
+# ------------------------------------------------------------
+
+# Création d'un utilisateur sans privilèges administrateur.
+RUN useradd --create-home --uid 10001 appuser \
+    && chown -R appuser:appuser /app
+
+USER appuser
+
+# ------------------------------------------------------------
+# 6. Exposition du service
+# ------------------------------------------------------------
+
+EXPOSE 8000
+
+# ------------------------------------------------------------
+# 7. Démarrage FastAPI
+# ------------------------------------------------------------
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
