@@ -27,3 +27,5 @@ perso/
 
 artifacts/
 .coverage
+
+*.lnk
