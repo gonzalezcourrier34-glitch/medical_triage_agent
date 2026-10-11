@@ -54,6 +54,7 @@ dev = [
     "ipywidgets>=8.1.9",
     "matplotlib>=3.11.1",
     "nbformat>=5.11.1",
+    "pytest-asyncio>=1.4.0",
     "tqdm>=4.70.0",
 ]
 
@@ -97,3 +98,20 @@ select = ["E", "F", "I", "UP"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+# Racine du projet dans le chemin d'import : main.py et le paquet src/ (API).
+pythonpath = ["."]
+
+# ============================================================
+# COVERAGE - Couverture des tests
+# ============================================================
+
+[tool.coverage.run]
+omit = [
+    # Moteur GPU (PyTorch + PEFT) : non installable dans la CI.
+    # Validé sur le test gelé par benchmarks/eval_test_gele.py (453/500).
+    "src/api/services/inference.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 90

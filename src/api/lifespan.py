@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from scr.api.services.provider import inference_service
+from src.api.services.provider import inference_service
 
 
 @asynccontextmanager

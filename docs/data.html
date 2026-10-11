@@ -1,15 +1,335 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Données et protocole | Medical Triage AI</title><link rel="stylesheet" href="css/style.css"></head><body>
-<header class="header"><nav class="nav container"><a class="logo" href="index.html">MT<span>.</span>AI</a><div class="nav-links"><a href="index.html">Projet</a><a href="data.html" class="active">Données</a><a href="experiments.html">SFT</a><a href="dpo.html">DPO</a><a href="architecture.html">Architecture</a></div></nav></header>
-<main><section class="hero project-hero"><div class="container hero-content"><p class="eyebrow">DATA ENGINEERING · AUDIT · TRAÇABILITÉ</p><h1>La donnée <span>avant le modèle.</span></h1><p class="hero-text">Une classification peut être correcte alors que sa justification est médiocre. La qualité des données et des cibles constitue donc une hypothèse expérimentale à part entière.</p></div></section>
-<section class="section"><div class="container"><p class="section-number">01</p><h2>Le problème identifié</h2><p class="story-intro">Après plusieurs runs SFT, l'analyse qualitative a mis en évidence des formulations problématiques dans les cibles de supervision. Augmenter la durée d'entraînement pouvait renforcer ces défauts au lieu de les corriger.</p>
-<div class="story-grid"><div class="story-step"><strong>Observer</strong><p>Confronter les prédictions aux cibles, au-delà des scores globaux.</p></div><div class="story-step"><strong>Auditer</strong><p>Vérifier les contextes, les priorités et les explications en conservant la provenance.</p></div><div class="story-step"><strong>Reconstruire</strong><p>Corriger les cibles problématiques puis réévaluer sur un protocole documenté.</p></div></div></div></section>
-<section class="section section-alt"><div class="container"><p class="section-number">02</p><h2>Règles de gouvernance</h2><table class="story-table"><thead><tr><th>Dimension</th><th>Principe</th><th>Preuve à rattacher</th></tr></thead><tbody>
-<tr><td>Traçabilité</td><td>Conserver l'identité de la source et l'historique des transformations.</td><td>Schéma, identifiants, hash SHA-256</td></tr>
-<tr><td>Intégrité</td><td>Ne pas modifier silencieusement les priorités déjà validées lors de la reconstruction des explications.</td><td>Contrôles avant/après</td></tr>
-<tr><td>Reproductibilité</td><td>Versionner chaque jeu de données utilisé par un run.</td><td>Manifest de dataset et configuration</td></tr>
-<tr><td>Évaluation</td><td>Distinguer train, validation et test gelé.</td><td>Répartition, seeds, hashes</td></tr>
-<tr><td>Confidentialité</td><td>Éviter d'exposer des données patient identifiantes dans les exemples, logs et métriques.</td><td>Audit de confidentialité</td></tr>
-</tbody></table></div></section>
-<section class="section"><div class="container"><p class="section-number">03</p><h2>Deux datasets, deux objectifs</h2><div class="story-grid"><div class="story-step"><strong>SFT</strong><p>Apprendre à produire une priorité structurée et une explication courte.</p></div><div class="story-step"><strong>DPO</strong><p>Apprendre une préférence entre deux explications pour un même contexte.</p></div><div class="story-step"><strong>Test gelé</strong><p>Comparer les modèles sur des cas non utilisés pour choisir le checkpoint.</p></div></div>
-<div class="story-note"><strong>À compléter à partir des audits sources :</strong> effectifs par étape, volumes rejetés, motifs de revue humaine, proportions FR/EN, distributions P1/P2/P3, taux de doublons et exemples de corrections. Aucun chiffre non vérifié n'est introduit dans cette page.</div></div></section>
-<section class="section section-alt"><div class="container"><h2>Décision issue des audits</h2><p class="story-intro">La démarche passe d'une recherche de meilleurs hyperparamètres à une amélioration contrôlée de la supervision. Ce choix explique la reconstruction des données avant la sélection du checkpoint SFT de référence, puis la préparation de paires DPO plus discriminantes.</p><p><a class="button primary" href="experiments.html">Lire les six runs SFT</a></p></div></section></main><footer><div class="container footer-content"><span>Medical Triage AI • POC académique</span><span>AI Engineering • 2026</span></div></footer><script src="js/main.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Données | Medical Triage AI</title>
+<meta content="Construction du dataset médical bilingue : sources, audits, confidentialité, attribution des priorités FRENCH, sélection et splits." name="description"/>
+<link href="css/style.css" rel="stylesheet"/>
+</head>
+<body>
+<header class="header">
+<nav class="nav container">
+<a class="logo" href="index.html">MT<span>.</span>AI</a>
+<div class="nav-links"><a href="index.html">Projet</a><a class="active" href="data.html">Données</a><a href="experiments.html">SFT</a><a href="dpo.html">DPO</a><a href="architecture.html">Architecture</a></div>
+</nav>
+</header>
+<main>
+
+<!-- HERO -->
+<section class="hero project-hero">
+<div class="container hero-content">
+<p class="eyebrow">DATA ENGINEERING · AUDIT · CONFIDENTIALITÉ</p>
+<h1>La donnée<span>avant le modèle.</span></h1>
+<p class="hero-text">
+Je n'avais pas de dossiers de triage à disposition : seulement des QCM, des questions-réponses médicales et des paires de préférences publiques.
+Cette page explique comment j'en ai fait un dataset bilingue de 5 000 cas de triage : ce que j'ai audité, ce que j'ai retiré,
+comment j'ai protégé les données personnelles, comment j'ai attribué les priorités et pourquoi j'ai dû reconstruire une partie du corpus.
+</p>
+<div class="hero-tags">
+<span>164 477 lignes brutes</span><span>Presidio FR / EN</span><span>Protocole FRENCH</span><span>Dédoublonnage MinHash + RapidFuzz</span><span>SHA-256</span><span>5 000 cas SFT</span>
+</div>
+<div class="hero-actions">
+<a class="button primary" href="#audit">Voir les audits</a>
+<a class="button secondary" href="#final">Voir le dataset final</a>
+</div>
+</div>
+</section>
+
+<!-- 01 SOURCES -->
+<section class="section section-alt">
+<div class="container">
+<p class="section-number">01</p>
+<h2>Quatre sources publiques, aucune n'est un dataset de triage</h2>
+<p class="section-intro">J'ai utilisé uniquement des jeux publics sous licence ouverte. Aucune donnée de patient réel du CHSA n'entre dans ce projet.</p>
+<table class="story-table params-table">
+<thead><tr><th>Source</th><th>Langue · licence</th><th>Lignes</th><th>Ce qu'elle contient · ce que j'en fais</th></tr></thead>
+<tbody>
+<tr><td>FrenchMedMCQA</td><td>FR · Apache-2.0</td><td>3 105</td><td>QCM de pharmacie. Peu de situations patient : très peu d'exemples retenus au final.</td></tr>
+<tr><td>MediQAl</td><td>FR · CC-BY-4.0</td><td>32 603</td><td>QCM et questions ouvertes de médecine, parfois avec un cas clinique. Principale source française.</td></tr>
+<tr><td>MedQuAD</td><td>EN · CC-BY-4.0</td><td>16 407</td><td>Questions-réponses sur des maladies. Décrit des pathologies, pas des patients : il a fallu les projeter en situations patient.</td></tr>
+<tr><td>UltraMedical-Preference</td><td>EN · MIT</td><td>112 362</td><td>Paires de réponses préférées / rejetées. Base du travail sur les préférences (DPO).</td></tr>
+</tbody>
+</table>
+<figure class="story-figure"><svg class="story-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 470" role="img" aria-label="Entonnoir des données : 164 477 lignes brutes jusqu'à 5 000 exemples SFT." xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTozMWMxMDdmNi1hOTc3LTRhZTItYTFhOC0xOGFhNTdkOWM4ZjcAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaJz4U42DwUdQ4QghUi5WqL4AAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDoxZWNhM2Q2OC05NzY1LTRiN2ItODAwZC1jOThjN2QyYzVmZTJscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNosVWDQm7wq33f8y5Ly3UbsgAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggbCENcRNlR9B/dkAIcdn6NFSkMIAyTXtF/KwW270Rx46kZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaC5uX7YIsyx2axHSzvcr6i4AAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCBI78KUAU04roinXo1YvwiUa0z+QbELQpoeZ4K+ojVgy2RuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjhZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjMxYzEwN2Y2LWE5NzctNGFlMi1hMWE4LTE4YWE1N2Q5YzhmNy9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOmJlODBjMWVlLTEwYWUtNGY4ZC04N2IwLTAwYTk4Y2Q5OGQwZXJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCBsIQ1xE2VH0H92QAhx2fo0VKQwgDJNe0X8rBbbvRHHjqJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggFTwFNhHl8IAH1mwOhN75jtZeEI4vY+Fu1xohMlVJiEKiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggedGhZNaI0QHLTeTVbWVbVY3l8Q8VEDi4S3SIu4o5bKB0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQEDvijtNofvwesMs8ucmfAP3vQzpoXyRQcBt7MTYLbSqrMWaHMrqsKQzLb8ZvjtHTXkJHzO036MeeF09ziXGZbw=</c2pa:manifest></metadata>
+<rect width="1080" height="470" rx="18" fill="#111a22"/>
+<text x="40.0" y="46.0" fill="#edf4f4" font-size="22" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Du corpus brut au dataset d'entraînement</text>
+<text x="40.0" y="72.0" fill="#98a8ad" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Moins de 4 % des lignes brutes deviennent des exemples SFT : la sélection est le cœur du travail sur les données</text>
+<defs><marker id="funnel-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#98a8ad"/></marker><marker id="funnel-arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#48c9b0"/></marker><pattern id="funnel-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#2f9e8a" opacity="0.35"/><line x1="0" y1="0" x2="0" y2="7" stroke="#2f9e8a" stroke-width="3"/></pattern></defs>
+<rect x="40.0" y="120.0" width="180.8" height="210.0" rx="8" fill="#8a98a0" opacity="0.85"/>
+<text x="130.4" y="108.0" fill="#edf4f4" font-size="20" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="800" >164 477</text>
+<text x="130.4" y="356.0" fill="#98a8ad" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" letter-spacing="1.2">SOURCES BRUTES</text>
+<text x="130.4" y="376.0" fill="#edf4f4" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >4 jeux publics FR / EN</text>
+<line x1="222.8" y1="300" x2="242.8" y2="300" stroke="#98a8ad" stroke-width="1.6" marker-end="url(#funnel-arr)"/>
+<rect x="244.8" y="150.9" width="180.8" height="179.1" rx="8" fill="#5d6b73" opacity="0.85"/>
+<text x="335.2" y="138.9" fill="#edf4f4" font-size="20" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="800" >18 523</text>
+<text x="335.2" y="356.0" fill="#98a8ad" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" letter-spacing="1.2">CAS DE TRIAGE</text>
+<text x="335.2" y="376.0" fill="#edf4f4" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >priorité FRENCH attribuée</text>
+<line x1="427.6" y1="300" x2="447.6" y2="300" stroke="#98a8ad" stroke-width="1.6" marker-end="url(#funnel-arr)"/>
+<rect x="449.6" y="152.2" width="180.8" height="177.8" rx="8" fill="#5d6b73" opacity="0.85"/>
+<text x="540.0" y="140.2" fill="#edf4f4" font-size="20" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="800" >16 879</text>
+<text x="540.0" y="356.0" fill="#98a8ad" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" letter-spacing="1.2">APRÈS DÉDOUBLONNAGE</text>
+<text x="540.0" y="376.0" fill="#edf4f4" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >doublons et contradictions retirés</text>
+<line x1="632.4000000000001" y1="300" x2="652.4000000000001" y2="300" stroke="#98a8ad" stroke-width="1.6" marker-end="url(#funnel-arr)"/>
+<rect x="654.4" y="169.4" width="180.8" height="160.6" rx="8" fill="#2f9e8a" opacity="0.95"/>
+<text x="744.8" y="157.4" fill="#48c9b0" font-size="20" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="800" >5 000</text>
+<text x="744.8" y="356.0" fill="#98a8ad" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" letter-spacing="1.2">SÉLECTION SFT</text>
+<text x="744.8" y="376.0" fill="#edf4f4" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >équilibrée langue × priorité</text>
+<line x1="837.2" y1="300" x2="857.2" y2="300" stroke="#98a8ad" stroke-width="1.6" marker-end="url(#funnel-arr)"/>
+<rect x="859.2" y="169.4" width="180.8" height="160.6" rx="8" fill="#2f9e8a" opacity="0.95"/>
+<text x="949.6" y="157.4" fill="#48c9b0" font-size="20" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="800" >5 000</text>
+<text x="949.6" y="356.0" fill="#98a8ad" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" letter-spacing="1.2">SPLITS</text>
+<text x="949.6" y="376.0" fill="#edf4f4" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >4 000 / 500 / 500</text>
+<text x="40.0" y="420.0" fill="#6b7c83" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Hauteurs en échelle logarithmique. La part DPO suit un chemin séparé : 112 362 préférences UltraMedical → 11 830 préférences auditées,</text>
+<text x="40.0" y="438.0" fill="#6b7c83" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >puis un corpus reconstruit de 2 100 paires bilingues (voir la page DPO).</text>
+</svg><figcaption>De 164 477 lignes brutes à 5 000 exemples d'entraînement. Le volume n'a jamais été le problème : la difficulté était de trouver des cas réellement triables.</figcaption></figure>
+</div>
+</section>
+
+<!-- 02 AUDIT -->
+<section class="section" id="audit">
+<div class="container">
+<p class="section-number">02</p>
+<h2>Auditer avant de transformer</h2>
+<p class="section-intro">Avant toute transformation, j'ai audité chaque fichier source : structure, valeurs manquantes, langue, longueur, doublons et contradictions. Les résultats sont enregistrés dans <code>data/audits_optimized/</code> avec un manifeste d'audit (seed 42).</p>
+<table class="story-table params-table">
+<thead><tr><th>Contrôle</th><th>Ce que j'ai trouvé</th><th>Ce que j'en ai fait</th></tr></thead>
+<tbody>
+<tr><td>Structure des QCM</td><td>0 position de réponse invalide, 0 incohérence entre le nombre de réponses déclaré et réel</td><td>Les QCM sont exploitables tels quels.</td></tr>
+<tr><td>Cas cliniques manquants</td><td>Environ 61 % des QCM MediQAl n'ont pas de cas clinique associé</td><td>Une question sans situation patient ne peut pas devenir un cas de triage.</td></tr>
+<tr><td>Langue</td><td>Détection automatique sur échantillon : par exemple 99,8 % de français confirmé sur FrenchMedMCQA</td><td>Contrôle de cohérence langue annoncée / langue réelle.</td></tr>
+<tr><td>Longueur</td><td>Comptage en tokens Qwen3 sur chaque source, avec seuils à 512, 1 024 et 2 048</td><td>Choix d'une longueur maximale de 2 048 tokens à l'entraînement.</td></tr>
+<tr><td>Doublons exacts</td><td>25 771 lignes répétées à l'identique et 64 713 lignes dont l'entrée est répétée (après normalisation)</td><td>Un seul exemplaire conservé par groupe.</td></tr>
+<tr><td>Quasi-doublons</td><td>9 803 paires très proches (pré-filtre MinHash LSH 0,80, confirmation RapidFuzz ≥ 95)</td><td>Regroupées pour qu'un même cas n'apparaisse pas deux fois.</td></tr>
+<tr><td>Contradictions</td><td>32 groupes de QCM identiques avec des réponses différentes ; 1 437 questions MedQuAD avec plusieurs réponses</td><td>Exclusion ou revue : un exemple contradictoire enseigne du bruit.</td></tr>
+<tr><td>Préférences (DPO)</td><td>0 réponse manquante, 0 paire « chosen = rejected », 24 876 triplets répétés, 17 571 paires très déséquilibrées en longueur</td><td>Dédoublonnage et méfiance envers le biais « plus long = meilleur ».</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- 03 CONFIDENTIALITE -->
+<section class="section section-alt">
+<div class="container">
+<p class="section-number">03</p>
+<h2>Confidentialité et RGPD</h2>
+<div class="about-grid">
+<div class="large-text">Détecter large, masquer automatiquement ce qui est sûr, revoir à la main ce qui est ambigu.</div>
+<div>
+<p>J'ai utilisé Presidio en français et en anglais (modèles spaCy, seuil 0,60), complété par mes propres détecteurs : identifiant patient, numéro de sécurité sociale (NIR), date de naissance et phrases de présentation (« je m'appelle… »).</p>
+<p>Les e-mails, téléphones, adresses IP, URL, identifiants, NIR et dates de naissance sont remplacés automatiquement par des balises (<code>[EMAIL]</code>, <code>[IDENTIFIER]</code>…). Les noms de personnes ne sont pas masqués automatiquement : ils partent en revue, car beaucoup de « noms » détectés sont en réalité des termes médicaux.</p>
+</div>
+</div>
+<figure class="story-figure"><svg class="story-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 470" role="img" aria-label="Résultats de la détection de données personnelles et contrôle du corpus final." xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTo2M2M2OWMwZC1lM2ZhLTRhZTItODFmYi02OWMxYWMwMWFkOWEAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaNGHi637kICJDybYHm88X1AAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDpiNDUyNmUzZi1iNTAyLTRiNjgtOGU0Yi1mYjY3YTZjMjQxZGNscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNolAf98llEULsVbvGU+5rnfwAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFgg/3ekiV/TVXtKokKCnJ1jBsrnb4LDbWYandoy+1HnKk+kZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaMThnZRaunrZfvl/tzIKwXAAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCA801D4vtO+Yvt6vc6mD76Vo9sB+QgLB9QAuAxsXBdId2RuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjoZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjYzYzY5YzBkLWUzZmEtNGFlMi04MWZiLTY5YzFhYzAxYWQ5YS9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjFkNjM2YmI0LWE3YWEtNDFhZS1iYmNlLWU1YjVkZmI5ZjBhMHJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCD/d6SJX9NVe0qiQoKcnWMGyudvgsNtZhqd2jL7UecqT6JjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggoqwhaToDyFaO6/yMDKpCLh28PySEruDXHS8z132H016iY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFgg/K9jv++vrFHYZZDBhdxqPUZEwzUzYxSX0xA4oWvQ+ch0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQHRdKib7xue9nZU6L1ftH2+V6wx2RaLt60KRqGSfLeYtLZbAsCNuBVt4uOjU1loP7vT7NparEsswPAP05p0vyJ0=</c2pa:manifest></metadata>
+<rect width="1080" height="470" rx="18" fill="#111a22"/>
+<text x="40.0" y="46.0" fill="#edf4f4" font-size="22" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Confidentialité : détecter large, vérifier à la main</text>
+<text x="40.0" y="72.0" fill="#98a8ad" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Presidio signale 90 % des lignes, avec beaucoup de faux positifs sur des termes médicaux : d'où la revue humaine</text>
+<defs><marker id="pii-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#98a8ad"/></marker><marker id="pii-arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#48c9b0"/></marker><pattern id="pii-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#2f9e8a" opacity="0.35"/><line x1="0" y1="0" x2="0" y2="7" stroke="#2f9e8a" stroke-width="3"/></pattern></defs>
+<text x="40.0" y="116.0" fill="#edf4f4" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Statut de confidentialité des 164 477 lignes brutes (Presidio FR / EN, seuil 0,60)</text>
+<rect x="40.0" y="130" width="90.1" height="34" rx="4" fill="#2f9e8a"/>
+<rect x="40" y="178" width="12" height="12" rx="3" fill="#2f9e8a"/>
+<text x="58.0" y="189.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Aucune détection · 15 146 (9,2 %)</text>
+<rect x="132.1" y="130" width="125.3" height="34" rx="4" fill="#7b86ea"/>
+<rect x="370" y="178" width="12" height="12" rx="3" fill="#7b86ea"/>
+<text x="388.0" y="189.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Revue humaine · 20 935 (12,7 %)</text>
+<rect x="259.4" y="130" width="778.6" height="34" rx="4" fill="#cf7f3c"/>
+<rect x="700" y="178" width="12" height="12" rx="3" fill="#cf7f3c"/>
+<text x="718.0" y="189.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Masquage ou revue · 128 396 (78,1 %)</text>
+<text x="40.0" y="250.0" fill="#edf4f4" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Lignes concernées par catégorie détectée</text>
+<text x="220.0" y="281.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >Personne</text>
+<path d="M230,268 H746.0 Q750.0,268 750.0,272 V280 Q750.0,284 746.0,284 H230 Z" fill="#8a98a0" />
+<text x="758.0" y="281.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >111 665</text>
+<text x="220.0" y="303.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >Date / heure</text>
+<path d="M230,290 H553.2416603232884 Q557.2416603232884,290 557.2416603232884,294 V302 Q557.2416603232884,306 553.2416603232884,306 H230 Z" fill="#8a98a0" />
+<text x="565.2" y="303.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >70 272</text>
+<text x="220.0" y="325.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >Lieu</text>
+<path d="M230,312 H530.488604307527 Q534.488604307527,312 534.488604307527,316 V324 Q534.488604307527,328 530.488604307527,328 H230 Z" fill="#8a98a0" />
+<text x="542.5" y="325.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >65 386</text>
+<text x="220.0" y="347.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >Identifiant</text>
+<path d="M230,334 H450.6619800295527 Q454.6619800295527,334 454.6619800295527,338 V346 Q454.6619800295527,350 450.6619800295527,350 H230 Z" fill="#8a98a0" />
+<text x="462.7" y="347.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >48 244</text>
+<text x="220.0" y="369.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >URL</text>
+<path d="M230,356 H253.94071553306765 Q257.94071553306765,356 257.94071553306765,360 V368 Q257.94071553306765,372 253.94071553306765,372 H230 Z" fill="#8a98a0" />
+<text x="265.9" y="369.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >6 000</text>
+<text x="220.0" y="391.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >Présentation d'identité</text>
+<path d="M230,378 H230.73344378274302 Q231.46688756548605,378 231.46688756548605,378.73344378274305 V393.26655621725695 Q231.46688756548605,394 230.73344378274302,394 H230 Z" fill="#8a98a0" />
+<text x="239.5" y="391.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >315</text>
+<text x="220.0" y="413.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >Téléphone</text>
+<path d="M230,400 H230.1257332198988 Q230.2514664397976,400 230.2514664397976,400.1257332198988 V415.8742667801012 Q230.2514664397976,416 230.1257332198988,416 H230 Z" fill="#8a98a0" />
+<text x="238.3" y="413.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >54</text>
+<text x="220.0" y="435.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >Date de naissance</text>
+<path d="M230,422 H230.06752339587158 Q230.13504679174315,422 230.13504679174315,422.0675233958716 V437.9324766041284 Q230.13504679174315,438 230.06752339587158,438 H230 Z" fill="#8a98a0" />
+<text x="238.1" y="435.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >29</text>
+<rect x="830" y="262" width="210" height="170" rx="12" fill="#17232d" stroke="#2f9e8a"/>
+<text x="846.0" y="288.0" fill="#48c9b0" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" letter-spacing="1.2">CORPUS FINAL (5 000)</text>
+<text x="846.0" y="318.0" fill="#edf4f4" font-size="15" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >0 e-mail</text>
+<text x="846.0" y="342.0" fill="#edf4f4" font-size="15" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >0 téléphone</text>
+<text x="846.0" y="366.0" fill="#edf4f4" font-size="15" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >0 numéro NIR</text>
+<text x="846.0" y="390.0" fill="#edf4f4" font-size="15" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >0 URL</text>
+</svg><figcaption>Sur les données brutes, Presidio signale 90,8 % des lignes et 978 834 entités. Sur les 5 000 cas finaux, mon contrôle ne trouve aucun e-mail, téléphone, NIR ni URL.</figcaption></figure>
+<div class="experiment-analysis">
+<div><span>POURQUOI AUTANT DE DÉTECTIONS</span><p>Les textes médicaux contiennent beaucoup de mots que Presidio prend pour des noms, des lieux ou des dates. Par exemple, dans un QCM de physique, « particules » est détecté comme un lieu. C'est pour cela que je ne masque pas tout aveuglément : un masquage excessif détruirait l'information médicale.</p></div>
+<div><span>CE QUE JE PEUX AFFIRMER</span><p>Le corpus final ne contient aucune coordonnée directe détectable (e-mail, téléphone, NIR, URL). Les cas « patient fictif » sont construits à partir des sources et ne décrivent pas de personne réelle.</p></div>
+<div><span>CE QUE JE NE PEUX PAS AFFIRMER</span><p>Une détection automatique n'est pas une garantie complète de conformité au RGPD. Je l'ai écrit dans le manifeste d'audit : il faudrait une revue humaine exhaustive pour certifier l'anonymisation.</p></div>
+<div><span>POUR UN USAGE AU CHSA</span><p>Avec de vraies données patient, il faudrait en plus une analyse d'impact (AIPD), une base légale de traitement, un hébergement certifié pour les données de santé (HDS) et une politique de conservation. Ce sont des étapes de la roadmap, pas de ce POC.</p></div>
+</div>
+</div>
+</section>
+
+<!-- 04 LABELS -->
+<section class="section">
+<div class="container">
+<p class="section-number">04</p>
+<h2>Attribuer une priorité à chaque cas</h2>
+<div class="about-grid">
+<div class="large-text">Les priorités viennent d'un protocole, pas de mon intuition.</div>
+<div>
+<p>Je m'appuie sur la grille de triage FRENCH (version 1.2, 115 motifs de recours), versionnée dans le projet avec son empreinte SHA-256. Ses niveaux sont regroupés en trois priorités : FRENCH 1 et 2 → P1, 3A et 3B → P2, 4 et 5 → P3.</p>
+<p>Un moteur de règles (<code>scr/triage</code>) extrait les informations patient de chaque cas, les rapproche des motifs FRENCH, applique les critères et attribue une priorité avec un niveau de confiance. Les cas ambigus sont routés vers une revue.</p>
+</div>
+</div>
+<table class="story-table">
+<thead><tr><th>Corpus maître (18 523 cas)</th><th>Valeur</th></tr></thead>
+<tbody>
+<tr><td>Langues</td><td>12 440 FR · 6 083 EN</td></tr>
+<tr><td>Priorités</td><td>7 091 P1 · 6 030 P2 · 5 402 P3</td></tr>
+<tr><td>Confiance de la priorité</td><td>5 603 élevée · 2 628 moyenne · 10 292 faible</td></tr>
+<tr><td>Méthode de décision</td><td>6 111 revue de protocole · 3 827 référence de connaissance · 3 768 revue de routage · 1 663 décision unique · 1 278 règle exacte · 1 876 autres règles déterministes</td></tr>
+<tr><td>Informations patient présentes</td><td>9 093 cas</td></tr>
+</tbody>
+</table>
+<div class="callout subtle">
+<span class="eyebrow">LIMITE</span>
+<strong>Ces priorités sont des labels construits, pas un avis médical sur chaque cas.</strong>
+<p>Plus de la moitié des cas ont une confiance faible. C'est l'une des raisons pour lesquelles la sélection finale privilégie les cas avec de vraies informations patient.</p>
+</div>
+</div>
+</section>
+
+<!-- 05 SELECTION -->
+<section class="section section-alt">
+<div class="container">
+<p class="section-number">05</p>
+<h2>Choisir 5 000 cas parmi 16 879</h2>
+<p class="section-intro">Après dédoublonnage et retrait des groupes contradictoires (124 groupes, 315 lignes), il restait 16 879 candidats. Avant d'entraîner Qwen pendant des heures, j'ai comparé quatre stratégies de sélection avec un classifieur rapide (TF-IDF) sur un holdout commun de 600 cas.</p>
+<table class="story-table">
+<thead><tr><th>Sélection de 5 000 cas</th><th>FR / EN</th><th>F1 macro</th><th>Lecture</th></tr></thead>
+<tbody>
+<tr><td>Aléatoire</td><td>50 / 50</td><td>0,572</td><td>Point de comparaison.</td></tr>
+<tr><td>Confiance d'abord</td><td>50 / 50</td><td>0,547</td><td>Des labels sûrs ne suffisent pas : le rappel P3 tombe à 3 %.</td></tr>
+<tr><td><strong>Informations patient d'abord</strong></td><td>50 / 50</td><td><strong>0,750</strong></td><td>Meilleure stratégie : des cas décrivant un vrai patient.</td></tr>
+<tr><td>Informations patient d'abord</td><td>80 / 20</td><td>0,671</td><td>Plus de cas patient ne compense pas le déséquilibre de langue.</td></tr>
+</tbody>
+</table>
+<p class="table-note">Limite : ce holdout contenait 598 cas français et seulement 2 anglais. Il compare des stratégies, il ne mesure pas une performance bilingue.</p>
+<div class="callout">
+<span class="eyebrow">9 OCTOBRE · RECONSTRUCTION DU DATASET (v2)</span>
+<strong>Les runs SFT ont montré que mes cibles contenaient des explications génériques. J'ai reconstruit le dataset avant le modèle final.</strong>
+<p>Réécriture et correction ciblée des explications, révision des P1 par lots, enrichissement des patients trop courts (dont 299 patients projetés), revue clinique assistée, revue prudente sans changement de priorités, diversité ciblée, remplacement de 136 cas par des cas synthétiques, puis harmonisation finale des explications. Les priorités validées n'ont pas été modifiées silencieusement.</p>
+</div>
+</div>
+</section>
+
+<!-- 06 DATASET FINAL -->
+<section class="section" id="final">
+<div class="container">
+<p class="section-number">06</p>
+<h2>Le dataset final</h2>
+<figure class="story-figure"><svg class="story-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 430" role="img" aria-label="Composition du dataset SFT final par langue, priorité et source." xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTpjOGVjNjdhYi0xM2E4LTRmN2EtYjMzMi01ODg3ZTk1M2ViMjQAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaEBBNjvYeDeJERy0rsLonG0AAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDo3Njk4N2UwNi1iZjJlLTRlMmEtOWU5NC1lMTI3ODlmMTBmZTRscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNov9c0+OL1UGyZSAB8mj0CvwAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggkhpl1HBdyBnG57+GgxJP8r5Ipjqysr6t/b+jBKYhu2mkZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaJUlyn9RYW0GiTFVOWsA8uUAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCDgvUy5z8VPUcUTnfw6OjR56QnUP1BQf9vGVYiQRrqJK2RuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjXZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOmM4ZWM2N2FiLTEzYTgtNGY3YS1iMzMyLTU4ODdlOTUzZWIyNC9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjU5ZTIzYzY0LThhYjctNDlmNy1hYTJiLTg2MmVjMjYzZjg3ZHJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCCSGmXUcF3IGcbnv4aDEk/yvkimOrKyvq39v6MEpiG7aaJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFgg2HliN+p5AYKXoPnSlmE83BhH5uajZVewT57YRPb2Y46iY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggE75iTC27/+yLjPj+vbbfTMFuIxTQcQhj1k0eXf0dVNt0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQLbasHVKCchwS129XAVk/LdvHp9BYK5+wFJqtGu+z+g4Y/M5sfmkflwa8iJ/Kz9nC5vShsJ+anHdXX5292MqwX0=</c2pa:manifest></metadata>
+<rect width="1080" height="430" rx="18" fill="#111a22"/>
+<text x="40.0" y="46.0" fill="#edf4f4" font-size="22" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Le dataset final : équilibré par construction</text>
+<text x="40.0" y="72.0" fill="#98a8ad" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Mêmes volumes pour chaque langue et chaque priorité, pour que le score ne soit pas porté par la classe majoritaire</text>
+<defs><marker id="composition-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#98a8ad"/></marker><marker id="composition-arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#48c9b0"/></marker><pattern id="composition-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#2f9e8a" opacity="0.35"/><line x1="0" y1="0" x2="0" y2="7" stroke="#2f9e8a" stroke-width="3"/></pattern></defs>
+<text x="40.0" y="116.0" fill="#edf4f4" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >4 000 exemples d'entraînement par langue et priorité</text>
+<text x="40.0" y="400.0" fill="#6b7c83" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Le train compte 2 000 cas par langue et environ 1 333 par priorité ; validation et test suivent le même équilibre.</text>
+<text x="70.0" y="178.0" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="800" >FR</text>
+<rect x="100" y="142" width="140" height="68" rx="10" fill="#17232d" stroke="#2f9e8a"/>
+<text x="170.0" y="168.0" fill="#48c9b0" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >P1</text>
+<text x="170.0" y="194.0" fill="#edf4f4" font-size="17" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="800" >≈ 667</text>
+<rect x="250" y="142" width="140" height="68" rx="10" fill="#17232d" stroke="#2f9e8a"/>
+<text x="320.0" y="168.0" fill="#48c9b0" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >P2</text>
+<text x="320.0" y="194.0" fill="#edf4f4" font-size="17" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="800" >≈ 667</text>
+<rect x="400" y="142" width="140" height="68" rx="10" fill="#17232d" stroke="#2f9e8a"/>
+<text x="470.0" y="168.0" fill="#48c9b0" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >P3</text>
+<text x="470.0" y="194.0" fill="#edf4f4" font-size="17" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="800" >≈ 667</text>
+<text x="70.0" y="258.0" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="800" >EN</text>
+<rect x="100" y="222" width="140" height="68" rx="10" fill="#17232d" stroke="#2f9e8a"/>
+<text x="170.0" y="248.0" fill="#48c9b0" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >P1</text>
+<text x="170.0" y="274.0" fill="#edf4f4" font-size="17" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="800" >≈ 667</text>
+<rect x="250" y="222" width="140" height="68" rx="10" fill="#17232d" stroke="#2f9e8a"/>
+<text x="320.0" y="248.0" fill="#48c9b0" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >P2</text>
+<text x="320.0" y="274.0" fill="#edf4f4" font-size="17" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="800" >≈ 667</text>
+<rect x="400" y="222" width="140" height="68" rx="10" fill="#17232d" stroke="#2f9e8a"/>
+<text x="470.0" y="248.0" fill="#48c9b0" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >P3</text>
+<text x="470.0" y="274.0" fill="#edf4f4" font-size="17" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="800" >≈ 667</text>
+<text x="600.0" y="116.0" fill="#edf4f4" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Origine des 5 000 exemples</text>
+<text x="600.0" y="161.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >MedQuAD (EN)</text>
+<path d="M770,146 H996.0 Q1000.0,146 1000.0,150 V164 Q1000.0,168 996.0,168 H770 Z" fill="#8a98a0" />
+<text x="1008.0" y="162.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >2 486</text>
+<text x="600.0" y="207.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >MediQAl (FR)</text>
+<path d="M770,192 H983.510056315366 Q987.510056315366,192 987.510056315366,196 V210 Q987.510056315366,214 983.510056315366,214 H770 Z" fill="#7b86ea" />
+<text x="995.5" y="208.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >2 351</text>
+<text x="600.0" y="253.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Cas synthétiques</text>
+<path d="M770,238 H779.8777152051489 Q783.8777152051489,238 783.8777152051489,242 V256 Q783.8777152051489,260 779.8777152051489,260 H770 Z" fill="#cf7f3c" />
+<text x="791.9" y="254.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >150</text>
+<text x="600.0" y="299.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >FrenchMedMCQA (FR)</text>
+<path d="M770,284 H771.5 Q773,284 773,285.5 V304.5 Q773,306 771.5,306 H770 Z" fill="#2f9e8a" />
+<text x="781.0" y="300.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >13</text>
+<text x="600.0" y="352.0" fill="#cf7f3c" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >679 cas sont des « patients fictifs » construits à partir des sources.</text>
+</svg><figcaption>5 000 cas, découpés en 4 000 / 500 / 500. Chaque split a autant de cas français qu'anglais et environ un tiers par priorité.</figcaption></figure>
+<div class="reflection-grid">
+<div class="reflection-card"><span class="eyebrow">FORMAT</span><h3>Un cas, une priorité, une explication</h3><p>Chaque exemple contient un contexte patient (23 mots en médiane), une priorité P1/P2/P3 et une explication (22,5 mots en médiane), avec ses métadonnées de provenance.</p></div>
+<div class="reflection-card"><span class="eyebrow">SPLITS</span><h3>Groupes de fuite</h3><p>Le découpage respecte des groupes de fuite : les exemples issus d'une même source restent dans le même split. Aucun contexte, aucune entrée ni aucune source n'est partagé entre train, validation et test.</p></div>
+<div class="reflection-card"><span class="eyebrow">DPO</span><h3>2 100 paires bilingues</h3><p>1 680 paires d'entraînement et 420 de validation, 1 050 FR / 1 050 EN, priorité identique dans chaque paire, aucun cas commun avec le SFT. Détails sur la page DPO.</p></div>
+<div class="reflection-card"><span class="eyebrow">LIMITE CONNUE</span><h3>Effet de gabarit</h3><p>679 cas « patient fictif » viennent de mêmes modèles de phrase. Des cas presque identiques se retrouvent entre train et test et gonflent le score d'environ 1 point. <a class="project-link" href="experiments.html#fuite">Voir l'analyse →</a></p></div>
+</div>
+</div>
+</section>
+
+<!-- 07 TRACABILITE -->
+<section class="section section-alt">
+<div class="container">
+<p class="section-number">07</p>
+<h2>Traçabilité</h2>
+<p class="section-intro">Chaque fichier utilisé pour l'entraînement est identifié par son empreinte. Si un seul exemple change, l'empreinte change, et je le vois dans le manifeste du run.</p>
+<table class="story-table params-table">
+<thead><tr><th>Fichier</th><th>Lignes</th><th>SHA-256</th></tr></thead>
+<tbody>
+<tr><td><code>sft_train.jsonl</code></td><td>4 000</td><td><code>0c15e682…b61ea0</code></td></tr>
+<tr><td><code>sft_validation.jsonl</code></td><td>500</td><td><code>5c1f6bda…286e65</code></td></tr>
+<tr><td><code>sft_test.jsonl</code></td><td>500</td><td><code>01795834…b2abe7</code></td></tr>
+<tr><td><code>dpo_train.jsonl</code></td><td>1 680</td><td><code>7f00557c…c3baf1</code></td></tr>
+<tr><td><code>dpo_validation.jsonl</code></td><td>420</td><td><code>8f9e5f94…b186ce</code></td></tr>
+<tr><td>Protocole FRENCH</td><td>115 motifs</td><td><code>11b70614…185e44d</code></td></tr>
+</tbody>
+</table>
+<div class="reflection-grid">
+<div class="reflection-card"><h3>Ce que ce travail m'a appris</h3><p>Un texte médical n'est pas un cas de triage. La qualité d'un exemple dépend de la présence d'un vrai patient et du lien entre ce qu'il présente et la priorité attendue.</p></div>
+<div class="reflection-card"><h3>Ce que je ferais autrement</h3><p>Regrouper les cas générés par gabarit dans un même groupe de fuite et ajouter un contrôle de similarité automatique avant chaque découpage.</p></div>
+</div>
+</div>
+</section>
+
+<!-- NAVIGATION -->
+<section class="section contact">
+<div class="container">
+<p class="eyebrow">SUITE DU PROJET</p>
+<h2>Des données à l'entraînement.</h2>
+<p>Ce dataset a servi à entraîner et évaluer le modèle final.</p>
+<div class="hero-actions">
+<a class="button primary" href="experiments.html">Expérimentations SFT</a>
+<a class="button secondary" href="dpo.html">DPO</a>
+<a class="button secondary" href="index.html">Retour au projet</a>
+</div>
+</div>
+</section>
+</main>
+<footer>
+<div class="container footer-content">
+<span>Medical Triage AI • Données</span>
+<span>AI Engineering • 2026</span>
+</div>
+</footer>
+<script src="js/main.js"></script>
+</body>
+</html>

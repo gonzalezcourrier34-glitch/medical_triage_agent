@@ -19,7 +19,7 @@ on:
     types:
       - completed
     branches:
-      - main
+      - master
 
   # Autorise également un lancement manuel.
   workflow_dispatch:
@@ -104,9 +104,13 @@ jobs:
 # 4. Déploiement pilote
 # ------------------------------------------------------------
 
+  # Déploiement SSH vers un serveur pilote : activé seulement si la variable
+  # de dépôt DEPLOY_ENABLED vaut "true" (Settings > Variables). Pour la démo,
+  # l'image publiée est lancée sur RunPod (voir deploy/runpod.md).
   deploy:
     name: Deploy Pilot
     needs: build
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
 
     # Protection possible par approbation manuelle.
     environment: pilot

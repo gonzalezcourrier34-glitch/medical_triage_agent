@@ -1725,3 +1725,4 @@ footer {
 .experiment-analysis + .story-figure{margin-top:3rem}
 @media(max-width:800px){.story-table{display:block;overflow-x:auto}.params-table td:first-child{white-space:normal}}
 .experiment-analysis + h3,.experiment-analysis + table{margin-top:3rem}
+.story-figure + h3{margin-top:3.5rem;margin-bottom:1.5rem}

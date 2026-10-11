@@ -1,0 +1,9 @@
+# Contexte de build minimal pour l'image de l'API :
+# seuls les fichiers copiés par docker/Dockerfile.api sont envoyés à Docker.
+# (Sans ce fichier, les données et les modèles, plusieurs dizaines de Go, seraient envoyés.)
+*
+!pyproject.toml
+!uv.lock
+!main.py
+!src/
+**/__pycache__

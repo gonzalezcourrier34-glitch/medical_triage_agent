@@ -26,3 +26,4 @@ wandb/
 perso/
 
 artifacts/
+.coverage

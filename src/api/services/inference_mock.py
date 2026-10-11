@@ -1,6 +1,6 @@
 """Service d'inférence simulé pour les tests techniques."""
 
-from scr.api.schemas import TriageRequest
+from src.api.schemas import TriageRequest
 
 
 class MockInferenceService:

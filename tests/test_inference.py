@@ -1,13 +1,14 @@
 """Tests du moteur simulé et des recommandations."""
 
+import asyncio
+
 import pytest
 
-from scr.api.schemas import TriageRequest
-from scr.api.services.inference_mock import MockInferenceService
-from scr.api.services.recommendations import get_recommendation
+from src.api.schemas import TriageRequest
+from src.api.services.inference_mock import MockInferenceService
+from src.api.services.recommendations import get_recommendation
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("language", "explanation"),
     [
@@ -15,7 +16,7 @@ from scr.api.services.recommendations import get_recommendation
         ("en", "Simulated explanation for technical testing."),
     ],
 )
-async def test_mock_prediction(language, explanation):
+def test_mock_prediction(language, explanation):
     """Vérifie la classification et l'explication bilingue."""
     service = MockInferenceService()
 
@@ -24,7 +25,7 @@ async def test_mock_prediction(language, explanation):
         question="Cas fictif de test.",
     )
 
-    prediction = await service.predict(request)
+    prediction = asyncio.run(service.predict(request))
 
     assert prediction == {
         "priority": "P2",

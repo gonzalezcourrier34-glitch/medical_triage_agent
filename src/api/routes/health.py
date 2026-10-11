@@ -2,9 +2,8 @@
 
 from fastapi import APIRouter
 
-from scr.api.schemas import HealthResponse
-from scr.api.services.provider import inference_service
-
+from src.api.schemas import HealthResponse
+from src.api.services.provider import inference_service
 
 router = APIRouter(tags=["health"])
 

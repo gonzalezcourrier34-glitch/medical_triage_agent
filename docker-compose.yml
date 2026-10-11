@@ -17,7 +17,8 @@ services:
   # ----------------------------------------------------------
 
   api:
-    # Construction depuis le Dockerfile de l'API.
+    # Image publiée par la CD (API_IMAGE) ; sinon construction locale.
+    image: ${API_IMAGE:-medical-triage-api:local}
     build:
       context: .
       dockerfile: docker/Dockerfile.api
@@ -31,8 +32,12 @@ services:
     # Configuration du moteur d'inférence.
     environment:
       INFERENCE_BACKEND: ${INFERENCE_BACKEND:-mock}
-      VLLM_BASE_URL: http://vllm:8000/v1
+      # vLLM local (profil gpu) par défaut ; sinon URL distante, ex. RunPod :
+      # https://<pod-id>-8000.proxy.runpod.net/v1
+      VLLM_BASE_URL: ${VLLM_BASE_URL:-http://vllm:8000/v1}
+      VLLM_API_KEY: ${VLLM_API_KEY:-}
       VLLM_MODEL: triage-qwen3
+      MODEL_VERSION: ${MODEL_VERSION:-qwen3-1.7b-sft154320-ckpt450-dpo-ckpt150}
 
     # Réduit les privilèges du conteneur.
     security_opt:
@@ -73,16 +78,25 @@ services:
     # Accès au GPU NVIDIA.
     gpus: all
 
-    # Modèle exporté dans le dossier local.
+    # Modèle fusionné (Qwen3 + LoRA SFT checkpoint-450 + DPO checkpoint-150, BF16).
+    # Produit par notebooks/07_fusion_lora.ipynb.
     volumes:
-      - ./models/triage-qwen3:/models/triage-qwen3:ro
+      - ./artifacts/deployment/qwen3-triage-20261009-154320:/models/triage-qwen3:ro
 
-    # Configuration du serveur.
+    # Même template de conversation qu'à l'entraînement, contexte limité à 2 048 tokens.
     command:
       - --model
       - /models/triage-qwen3
       - --served-model-name
       - triage-qwen3
+      - --dtype
+      - bfloat16
+      - --max-model-len
+      - "2048"
+      # RTX 4050 Laptop (6 Go) : 80 % de la VRAM pour vLLM (poids 3,3 Go + cache KV),
+      # la valeur par défaut (90 %) dépasse souvent la mémoire libre sous Windows.
+      - --gpu-memory-utilization
+      - "0.80"
       - --host
       - 0.0.0.0
       - --port

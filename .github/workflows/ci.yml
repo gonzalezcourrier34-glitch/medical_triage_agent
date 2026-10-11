@@ -14,13 +14,13 @@ name: CI
 # ------------------------------------------------------------
 
 on:
-  # Exécution lors d'un push sur main.
+  # Exécution lors d'un push sur master (branche principale du dépôt).
   push:
-    branches: [main]
+    branches: [master]
 
-  # Exécution lors d'une pull request vers main.
+  # Exécution lors d'une pull request vers master.
   pull_request:
-    branches: [main]
+    branches: [master]
 
   # Permet de lancer la CI manuellement depuis GitHub.
   workflow_dispatch:
@@ -91,10 +91,11 @@ jobs:
       # Étape 5 : vérifier la qualité du code
       # ------------------------------------------------------
 
-      # Ruff analyse le code de l'API et les tests.
+      # Ruff analyse le code déployé (API) et les tests.
+      # Les scripts de données et d'entraînement ne sont pas embarqués dans l'image.
       # Le workflow échoue si une erreur est détectée.
       - name: Ruff lint
-        run: uv run --no-sync ruff check main.py scr tests
+        run: uv run --no-sync ruff check main.py src tests
 
       # ------------------------------------------------------
       # Étape 6 : vérifier le formatage
@@ -102,7 +103,7 @@ jobs:
 
       # Vérifie le format sans modifier les fichiers.
       - name: Ruff format
-        run: uv run --no-sync ruff format --check main.py scr tests
+        run: uv run --no-sync ruff format --check main.py src tests
 
       # ------------------------------------------------------
       # Étape 7 : exécuter les tests et mesurer la couverture
@@ -111,4 +112,4 @@ jobs:
       # Exécute Pytest et mesure la couverture du code applicatif.
       # Le rapport affiche les lignes non couvertes.
       - name: Tests and coverage
-        run: uv run --no-sync pytest tests -q --cov=scr --cov-report=term-missing
+        run: uv run --no-sync pytest tests -q --cov=src --cov=main

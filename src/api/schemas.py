@@ -6,15 +6,6 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class TriageRequest(BaseModel):
-    """Données reçues pour une demande de triage."""
-
-    language: Literal["fr", "en"]
-    question: str = Field(min_length=1)
-    context: str = ""
-    answer: str = ""
-
-
 class TriageResponse(BaseModel):
     """Résultat retourné par l'API."""
 
@@ -33,6 +24,7 @@ class TriageResponse(BaseModel):
     latency_ms: float = Field(ge=0)
     status: Literal["success"] = "success"
 
+
 class TriageRequest(BaseModel):
     """Données reçues pour une demande de triage."""
 
@@ -42,7 +34,8 @@ class TriageRequest(BaseModel):
     question: str = Field(min_length=1)
     context: str = ""
     answer: str = ""
-    
+
+
 class HealthResponse(BaseModel):
     """État de disponibilité de l'API."""
 

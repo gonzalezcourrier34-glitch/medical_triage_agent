@@ -1,14 +1,14 @@
 """Route de classification du triage médical."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from time import perf_counter
 from uuid import uuid4
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 
-from scr.api.schemas import TriageRequest, TriageResponse
-from scr.api.services.provider import inference_service
-from scr.api.services.recommendations import get_recommendation
+from src.api.schemas import TriageRequest, TriageResponse
+from src.api.services.provider import inference_service
+from src.api.services.recommendations import get_recommendation
 
 router = APIRouter(tags=["triage"])
 
@@ -19,7 +19,14 @@ async def triage(request: TriageRequest) -> TriageResponse:
     start = perf_counter()
 
     # Classification et explication fournies par le moteur.
-    prediction = await inference_service.predict(request)
+    # Moteur injoignable ou réponse illisible : 503, sans détail technique ni médical.
+    try:
+        prediction = await inference_service.predict(request)
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Moteur d'inférence indisponible.",
+        ) from error
 
     # Recommandation déterministe fournie par l'API.
     recommendation = get_recommendation(
@@ -31,7 +38,7 @@ async def triage(request: TriageRequest) -> TriageResponse:
 
     return TriageResponse(
         request_id=str(uuid4()),
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         model_version=inference_service.model_version,
         priority=prediction["priority"],
         explanation=prediction["explanation"],
