@@ -15,7 +15,8 @@ Qwen3-1.7B · QLoRA · SFT + DPO · vLLM · FastAPI · Docker · GitHub Actions
 
 [Documentation technique](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/) ·
 [Expériences](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/experiments.html) ·
-[Architecture](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/architecture.html)
+[Architecture](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/architecture.html) ·
+[Synthèse et feuille de route](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/synthese.html)
 
 </div>
 
@@ -248,6 +249,8 @@ Détails : [page Données](https://gonzalezcourrier34-glitch.github.io/medical_t
 - Le français reste moins bien classé que l'anglais (84,8 % contre 96,4 % d'accuracy sur le modèle livré).
 - La qualité des explications n'est pas encore mesurée par une grille d'évaluation.
 - L'API de démonstration n'a pas d'authentification.
+
+Recommandation, feuille de route vers un pilote au CHSA et analyse des risques : [page Synthèse](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/synthese.html).
 
 ---
 

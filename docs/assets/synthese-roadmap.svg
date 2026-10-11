@@ -1,0 +1,70 @@
+<svg class="story-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 470" role="img" aria-label="Feuille de route en quatre phases, du POC au pilote assisté, avec des garde-fous permanents.">
+<title>Feuille de route du POC au pilote</title>
+<desc>Phase 0 consolider le POC, phase 1 conformité et données, phase 2 pilote silencieux, phase 3 pilote assisté ; la décision reste humaine en continu.</desc>
+<defs><marker id="road-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#98a8ad"/></marker></defs>
+<rect width="1080" height="470" rx="18" fill="#111a22"/>
+<text x="40" y="46" fill="#edf4f4" font-size="22" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Du POC au pilote : quatre phases</text>
+<text x="40" y="72" fill="#98a8ad" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Chaque phase ne commence que si la précédente atteint ses critères de sortie</text>
+<rect x="40" y="104" width="228" height="250" rx="14" fill="#16222c" stroke="#25333c"/>
+<rect x="40" y="104" width="228" height="6" rx="3" fill="#2f9e8a"/>
+<text x="58" y="140" fill="#2f9e8a" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">PHASE 0</text>
+<text x="58" y="166" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Consolider le POC</text>
+<text x="58" y="188" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">0 à 1 mois</text>
+<line x1="58" y1="204" x2="250" y2="204" stroke="#25333c"/>
+<circle cx="64" cy="230" r="3.5" fill="#2f9e8a"/>
+<text x="76" y="234" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Réaligner le DPO</text>
+<circle cx="64" cy="260" r="3.5" fill="#2f9e8a"/>
+<text x="76" y="264" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Évaluer les explications</text>
+<circle cx="64" cy="290" r="3.5" fill="#2f9e8a"/>
+<text x="76" y="294" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Authentifier l&#x27;API</text>
+<circle cx="64" cy="320" r="3.5" fill="#2f9e8a"/>
+<text x="76" y="324" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Tests de charge vLLM</text>
+<line x1="272" y1="229.0" x2="294" y2="229.0" stroke="#98a8ad" stroke-width="2" marker-end="url(#road-arr)"/>
+<rect x="298" y="104" width="228" height="250" rx="14" fill="#16222c" stroke="#25333c"/>
+<rect x="298" y="104" width="228" height="6" rx="3" fill="#7b86ea"/>
+<text x="316" y="140" fill="#7b86ea" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">PHASE 1</text>
+<text x="316" y="166" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Conformité et données</text>
+<text x="316" y="188" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">1 à 3 mois</text>
+<line x1="316" y1="204" x2="508" y2="204" stroke="#25333c"/>
+<circle cx="322" cy="230" r="3.5" fill="#7b86ea"/>
+<text x="334" y="234" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">AIPD et base légale</text>
+<circle cx="322" cy="260" r="3.5" fill="#7b86ea"/>
+<text x="334" y="264" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Hébergement certifié HDS</text>
+<circle cx="322" cy="290" r="3.5" fill="#7b86ea"/>
+<text x="334" y="294" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Cas réels pseudonymisés</text>
+<circle cx="322" cy="320" r="3.5" fill="#7b86ea"/>
+<text x="334" y="324" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Étiquetage par des IOA</text>
+<line x1="530" y1="229.0" x2="552" y2="229.0" stroke="#98a8ad" stroke-width="2" marker-end="url(#road-arr)"/>
+<rect x="556" y="104" width="228" height="250" rx="14" fill="#16222c" stroke="#25333c"/>
+<rect x="556" y="104" width="228" height="6" rx="3" fill="#cf7f3c"/>
+<text x="574" y="140" fill="#cf7f3c" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">PHASE 2</text>
+<text x="574" y="166" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Pilote silencieux</text>
+<text x="574" y="188" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">3 à 6 mois</text>
+<line x1="574" y1="204" x2="766" y2="204" stroke="#25333c"/>
+<circle cx="580" cy="230" r="3.5" fill="#cf7f3c"/>
+<text x="592" y="234" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Modèle en parallèle des IOA</text>
+<circle cx="580" cy="260" r="3.5" fill="#cf7f3c"/>
+<text x="592" y="264" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Sans effet sur les soins</text>
+<circle cx="580" cy="290" r="3.5" fill="#cf7f3c"/>
+<text x="592" y="294" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Concordance, sous-triage</text>
+<circle cx="580" cy="320" r="3.5" fill="#cf7f3c"/>
+<text x="592" y="324" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Suivi de la dérive</text>
+<line x1="788" y1="229.0" x2="810" y2="229.0" stroke="#98a8ad" stroke-width="2" marker-end="url(#road-arr)"/>
+<rect x="814" y="104" width="228" height="250" rx="14" fill="#16222c" stroke="#25333c"/>
+<rect x="814" y="104" width="228" height="6" rx="3" fill="#48c9b0"/>
+<text x="832" y="140" fill="#48c9b0" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">PHASE 3</text>
+<text x="832" y="166" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Pilote assisté</text>
+<text x="832" y="188" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">6 à 12 mois</text>
+<line x1="832" y1="204" x2="1024" y2="204" stroke="#25333c"/>
+<circle cx="838" cy="230" r="3.5" fill="#48c9b0"/>
+<text x="850" y="234" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Intégration au DPI</text>
+<circle cx="838" cy="260" r="3.5" fill="#48c9b0"/>
+<text x="850" y="264" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Alerte de sous-triage</text>
+<circle cx="838" cy="290" r="3.5" fill="#48c9b0"/>
+<text x="850" y="294" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Ré-entraînement encadré</text>
+<circle cx="838" cy="320" r="3.5" fill="#48c9b0"/>
+<text x="850" y="324" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Statut MDR et AI Act</text>
+<rect x="40" y="382" width="1000" height="58" rx="12" fill="none" stroke="#48c9b0" stroke-dasharray="6 5"/>
+<text x="60" y="406" fill="#48c9b0" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">EN CONTINU</text>
+<text x="60" y="426" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">L&#x27;IOA ou le médecin garde la décision · sous-triage suivi à chaque version · test gelé rejoué avant toute mise en service</text>
+</svg>

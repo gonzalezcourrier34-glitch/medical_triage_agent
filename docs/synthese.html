@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Synthèse et recommandations | Medical Triage AI</title>
+<meta content="Bilan du POC de triage médical, réponses à la mission, recommandation pour le CHSA, feuille de route, passage à l'échelle et risques." name="description"/>
+<link href="css/style.css" rel="stylesheet"/>
+</head>
+<body>
+<header class="header">
+<nav class="nav container">
+<a class="logo" href="index.html">MT<span>.</span>AI</a>
+<div class="nav-links"><a href="index.html">Projet</a><a href="data.html">Données</a><a href="experiments.html">SFT</a><a href="dpo.html">DPO</a><a href="architecture.html">Architecture</a><a class="active" href="synthese.html">Synthèse</a></div>
+</nav>
+</header>
+<main>
+
+<!-- HERO -->
+<section class="hero project-hero">
+<div class="container hero-content">
+<p class="eyebrow">SYNTHÈSE ET RECOMMANDATIONS</p>
+<h1>Ce que le POC démontre,<span>et ce qu'il faudrait pour aller plus loin.</span></h1>
+<p class="hero-text">
+Cette page rassemble mes conclusions pour le Centre Hospitalier Saint-Aurélien (CHSA). Le POC répond à la question de départ :
+un petit modèle de langage peut apprendre à trier des cas cliniques en P1, P2 ou P3 et à justifier sa décision, sur du matériel modeste.
+Il ne répond pas encore à la question suivante, la seule qui compte pour un hôpital : est-ce qu'il aide vraiment une infirmière
+d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommandation est donc un pilote encadré, pas une mise en service.
+</p>
+<div class="hero-tags">
+<span>Bilan</span><span>Recommandation</span><span>Feuille de route</span><span>Passage à l'échelle</span><span>RGPD · HDS · AI Act</span><span>Risques</span>
+</div>
+<div class="hero-actions">
+<a class="button primary" href="#recommandation">Voir la recommandation</a>
+<a class="button secondary" href="#feuille-de-route">Voir la feuille de route</a>
+</div>
+</div>
+</section>
+
+<!-- 01 BILAN -->
+<section class="section">
+<div class="container">
+<p class="section-number">01</p>
+<h2>Le bilan en quatre chiffres</h2>
+<p class="section-intro">Ces chiffres sont ceux du modèle réellement livré (adapter fusionné dans Qwen3-1.7B, servi par vLLM), mesurés sur le test gelé de 500 cas, jamais utilisé pour choisir un modèle.</p>
+<div class="result-grid">
+<div class="result-card"><strong>90,66 %</strong><span>F1 macro (453/500)</span></div>
+<div class="result-card"><strong>7,20 %</strong><span>Sous-triage</span></div>
+<div class="result-card"><strong>84,8 · 96,4 %</strong><span>Accuracy FR · EN</span></div>
+<div class="result-card"><strong>6 Go</strong><span>VRAM d'entraînement</span></div>
+</div>
+<table class="story-table params-table">
+<thead><tr><th>Ce qui est démontré</th><th>Ce qui ne l'est pas</th></tr></thead>
+<tbody>
+<tr><td>Un modèle de 1,7 milliard de paramètres apprend la tâche sur une carte de 6 Go (QLoRA).</td><td>Une performance sur de vrais patients : toutes les données sont publiques et en partie reformulées.</td></tr>
+<tr><td>Le protocole d'évaluation est sain : sélection sur la validation, mesure unique sur un test gelé, analyse de fuite.</td><td>Une concordance avec des soignants : les priorités viennent d'une application automatisée du protocole FRENCH, pas d'IOA.</td></tr>
+<tr><td>Le modèle livré est vérifié après fusion : 492 décisions sur 500 identiques à l'adapter évalué.</td><td>La qualité clinique des explications, qu'aucun score ne mesure encore.</td></tr>
+<tr><td>La chaîne est industrialisable : API testée, image Docker, CI/CD, monitoring, service vLLM.</td><td>Un comportement sûr en charge réelle et dans la durée (dérive des données, pannes).</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- 02 MISSION -->
+<section class="section section-alt">
+<div class="container">
+<p class="section-number">02</p>
+<h2>Réponses à la mission</h2>
+<p class="section-intro">Chaque livrable demandé, son état et l'endroit où il est documenté.</p>
+<table class="story-table params-table">
+<thead><tr><th>Livrable</th><th>État</th><th>Où le trouver</th></tr></thead>
+<tbody>
+<tr><td>Dataset nettoyé, anonymisé, bilingue</td><td><span class="experiment-status selected">Livré</span></td><td>5 000 cas FR/EN, Presidio, déduplication, empreintes SHA-256 : <a href="data.html">Données</a></td></tr>
+<tr><td>Qwen3-1.7B fine-tuné (SFT + LoRA) et aligné (DPO)</td><td><span class="experiment-status selected">Livré</span></td><td>Six runs SFT, sept essais DPO, choix argumenté : <a href="experiments.html">SFT</a> et <a href="dpo.html">DPO</a></td></tr>
+<tr><td>Poids finaux</td><td><span class="experiment-status selected">Livré</span></td><td>Modèle fusionné BF16 (3,3 Go), vérifié sur le test gelé, dépôt Hugging Face privé : <a href="architecture.html#verif-fusion">Architecture</a></td></tr>
+<tr><td>Endpoint cloud optimisé avec vLLM</td><td><span class="experiment-status promising">Prêt à déployer</span></td><td>vLLM sur GPU RunPod en Europe, API dans un second pod, procédure <code>deploy/runpod.md</code></td></tr>
+<tr><td>CI/CD GitHub Actions</td><td><span class="experiment-status selected">Livré</span></td><td>Ruff, 34 tests, couverture minimale de 90 %, image publiée sur GHCR : <a href="architecture.html">Architecture</a></td></tr>
+<tr><td>Rapport technique</td><td><span class="experiment-status selected">Livré</span></td><td>Ce site : méthodologie, métriques, analyses, limites et cette synthèse</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- 03 RECOMMANDATION -->
+<section class="section" id="recommandation">
+<div class="container">
+<p class="section-number">03</p>
+<h2>Ma recommandation pour le CHSA</h2>
+<div class="about-grid">
+<div class="large-text">Oui à un pilote encadré. Non à un usage autonome.</div>
+<div>
+<p>Le modèle classe correctement neuf cas sur dix, mais il sous-trie encore 7,2 % des cas du test, dont des P1. Aux urgences, un patient grave classé trop bas est l'erreur la plus coûteuse. Le modèle ne peut donc pas décider seul, et personne ne devrait le lui demander.</p>
+<p>En revanche, il peut devenir un <strong>second avis</strong> : il lit le cas, propose une priorité avec sa justification, et alerte quand sa priorité est plus urgente que celle de l'IOA. L'IOA garde la décision. C'est ce rôle que je propose de tester, en commençant par un pilote silencieux où le modèle n'a aucun effet sur la prise en charge.</p>
+</div>
+</div>
+<div class="callout subtle">
+<span class="eyebrow">CONDITION DE DÉPART</span>
+<strong>Rien ne doit toucher un vrai patient avant que trois conditions soient réunies.</strong>
+<p>Un hébergement certifié pour les données de santé (HDS), une analyse d'impact (AIPD) validée avec le délégué à la protection des données, et une évaluation du modèle sur des cas réels du CHSA, étiquetés par des IOA.</p>
+</div>
+</div>
+</section>
+
+<!-- 04 FEUILLE DE ROUTE -->
+<section class="section section-alt" id="feuille-de-route">
+<div class="container">
+<p class="section-number">04</p>
+<h2>La feuille de route</h2>
+<p class="section-intro">Quatre phases sur environ un an. Les durées sont des ordres de grandeur pour une petite équipe ; chaque phase a des critères de sortie, et l'on n'avance que s'ils sont atteints.</p>
+<figure class="story-figure">
+<svg class="story-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 470" role="img" aria-label="Feuille de route en quatre phases, du POC au pilote assisté, avec des garde-fous permanents.">
+<title>Feuille de route du POC au pilote</title>
+<desc>Phase 0 consolider le POC, phase 1 conformité et données, phase 2 pilote silencieux, phase 3 pilote assisté ; la décision reste humaine en continu.</desc>
+<defs><marker id="road-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#98a8ad"/></marker></defs>
+<rect width="1080" height="470" rx="18" fill="#111a22"/>
+<text x="40" y="46" fill="#edf4f4" font-size="22" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Du POC au pilote : quatre phases</text>
+<text x="40" y="72" fill="#98a8ad" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Chaque phase ne commence que si la précédente atteint ses critères de sortie</text>
+<rect x="40" y="104" width="228" height="250" rx="14" fill="#16222c" stroke="#25333c"/>
+<rect x="40" y="104" width="228" height="6" rx="3" fill="#2f9e8a"/>
+<text x="58" y="140" fill="#2f9e8a" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">PHASE 0</text>
+<text x="58" y="166" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Consolider le POC</text>
+<text x="58" y="188" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">0 à 1 mois</text>
+<line x1="58" y1="204" x2="250" y2="204" stroke="#25333c"/>
+<circle cx="64" cy="230" r="3.5" fill="#2f9e8a"/>
+<text x="76" y="234" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Réaligner le DPO</text>
+<circle cx="64" cy="260" r="3.5" fill="#2f9e8a"/>
+<text x="76" y="264" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Évaluer les explications</text>
+<circle cx="64" cy="290" r="3.5" fill="#2f9e8a"/>
+<text x="76" y="294" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Authentifier l&#x27;API</text>
+<circle cx="64" cy="320" r="3.5" fill="#2f9e8a"/>
+<text x="76" y="324" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Tests de charge vLLM</text>
+<line x1="272" y1="229.0" x2="294" y2="229.0" stroke="#98a8ad" stroke-width="2" marker-end="url(#road-arr)"/>
+<rect x="298" y="104" width="228" height="250" rx="14" fill="#16222c" stroke="#25333c"/>
+<rect x="298" y="104" width="228" height="6" rx="3" fill="#7b86ea"/>
+<text x="316" y="140" fill="#7b86ea" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">PHASE 1</text>
+<text x="316" y="166" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Conformité et données</text>
+<text x="316" y="188" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">1 à 3 mois</text>
+<line x1="316" y1="204" x2="508" y2="204" stroke="#25333c"/>
+<circle cx="322" cy="230" r="3.5" fill="#7b86ea"/>
+<text x="334" y="234" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">AIPD et base légale</text>
+<circle cx="322" cy="260" r="3.5" fill="#7b86ea"/>
+<text x="334" y="264" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Hébergement certifié HDS</text>
+<circle cx="322" cy="290" r="3.5" fill="#7b86ea"/>
+<text x="334" y="294" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Cas réels pseudonymisés</text>
+<circle cx="322" cy="320" r="3.5" fill="#7b86ea"/>
+<text x="334" y="324" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Étiquetage par des IOA</text>
+<line x1="530" y1="229.0" x2="552" y2="229.0" stroke="#98a8ad" stroke-width="2" marker-end="url(#road-arr)"/>
+<rect x="556" y="104" width="228" height="250" rx="14" fill="#16222c" stroke="#25333c"/>
+<rect x="556" y="104" width="228" height="6" rx="3" fill="#cf7f3c"/>
+<text x="574" y="140" fill="#cf7f3c" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">PHASE 2</text>
+<text x="574" y="166" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Pilote silencieux</text>
+<text x="574" y="188" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">3 à 6 mois</text>
+<line x1="574" y1="204" x2="766" y2="204" stroke="#25333c"/>
+<circle cx="580" cy="230" r="3.5" fill="#cf7f3c"/>
+<text x="592" y="234" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Modèle en parallèle des IOA</text>
+<circle cx="580" cy="260" r="3.5" fill="#cf7f3c"/>
+<text x="592" y="264" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Sans effet sur les soins</text>
+<circle cx="580" cy="290" r="3.5" fill="#cf7f3c"/>
+<text x="592" y="294" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Concordance, sous-triage</text>
+<circle cx="580" cy="320" r="3.5" fill="#cf7f3c"/>
+<text x="592" y="324" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Suivi de la dérive</text>
+<line x1="788" y1="229.0" x2="810" y2="229.0" stroke="#98a8ad" stroke-width="2" marker-end="url(#road-arr)"/>
+<rect x="814" y="104" width="228" height="250" rx="14" fill="#16222c" stroke="#25333c"/>
+<rect x="814" y="104" width="228" height="6" rx="3" fill="#48c9b0"/>
+<text x="832" y="140" fill="#48c9b0" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">PHASE 3</text>
+<text x="832" y="166" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Pilote assisté</text>
+<text x="832" y="188" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">6 à 12 mois</text>
+<line x1="832" y1="204" x2="1024" y2="204" stroke="#25333c"/>
+<circle cx="838" cy="230" r="3.5" fill="#48c9b0"/>
+<text x="850" y="234" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Intégration au DPI</text>
+<circle cx="838" cy="260" r="3.5" fill="#48c9b0"/>
+<text x="850" y="264" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Alerte de sous-triage</text>
+<circle cx="838" cy="290" r="3.5" fill="#48c9b0"/>
+<text x="850" y="294" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Ré-entraînement encadré</text>
+<circle cx="838" cy="320" r="3.5" fill="#48c9b0"/>
+<text x="850" y="324" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Statut MDR et AI Act</text>
+<rect x="40" y="382" width="1000" height="58" rx="12" fill="none" stroke="#48c9b0" stroke-dasharray="6 5"/>
+<text x="60" y="406" fill="#48c9b0" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">EN CONTINU</text>
+<text x="60" y="426" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">L&#x27;IOA ou le médecin garde la décision · sous-triage suivi à chaque version · test gelé rejoué avant toute mise en service</text>
+</svg>
+<figcaption>Le modèle n'intervient dans la prise en charge qu'en phase 3, et toujours comme second avis.</figcaption></figure>
+<table class="story-table params-table">
+<thead><tr><th>Phase</th><th>Objectif</th><th>Critère de sortie</th></tr></thead>
+<tbody>
+<tr><td>0 · Consolider le POC</td><td>Corriger les limites connues : paires DPO reconstruites sur le corpus du SFT, grille d'évaluation des explications, authentification de l'API, versions d'images figées, tests de charge.</td><td>Sous-triage au plus égal à celui du modèle actuel sur le test gelé ; explications relues et jugées fidèles au cas.</td></tr>
+<tr><td>1 · Conformité et données</td><td>AIPD et base légale avec le DPD, hébergement HDS, extraction de cas réels pseudonymisés, étiquetage par des IOA selon FRENCH.</td><td>AIPD validée ; quelques milliers de cas étiquetés par au moins deux IOA, désaccords arbitrés.</td></tr>
+<tr><td>2 · Pilote silencieux</td><td>Le modèle tourne en parallèle des IOA sur les vrais flux, sans que personne ne voie ses réponses.</td><td>Concordance avec les IOA et sous-triage mesurés sur plusieurs semaines, comparés à la variabilité entre IOA.</td></tr>
+<tr><td>3 · Pilote assisté</td><td>Intégration au logiciel des urgences (DPI) comme second avis, alerte de sous-triage, ré-entraînement encadré.</td><td>Pas d'augmentation du sous-triage, adoption par les équipes, statut réglementaire clarifié.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- 05 ÉCHELLE -->
+<section class="section">
+<div class="container">
+<p class="section-number">05</p>
+<h2>Passer à l'échelle</h2>
+<p class="section-intro">L'architecture du POC a été pensée pour grandir : le même code d'API sert les tests, un poste GPU et le cloud. Voici ce qui changerait pour un usage hospitalier.</p>
+<table class="story-table params-table">
+<thead><tr><th>Dimension</th><th>Dans le POC</th><th>Pour un pilote au CHSA</th></tr></thead>
+<tbody>
+<tr><td>Hébergement</td><td>RunPod en Europe (0,27 à 0,57 $/h selon le GPU)</td><td>Hébergeur certifié HDS (OVHcloud, Scaleway ou les régions françaises des grands clouds, par exemple), ou serveur GPU interne</td></tr>
+<tr><td>Inférence</td><td>Un serveur vLLM, un GPU, modèle BF16 de 3,3 Go</td><td>Plusieurs réplicas vLLM derrière un répartiteur ; un modèle de cette taille tient sur des GPU d'entrée de gamme</td></tr>
+<tr><td>Fidélité du modèle servi</td><td>Adapter fusionné en BF16 (453/500)</td><td>Servir la base 4 bits avec l'adapter non fusionné pour retrouver exactement les décisions évaluées (459/500), si le coût en latence est acceptable</td></tr>
+<tr><td>Sécurité</td><td>Clé entre l'API et vLLM, API sans authentification</td><td>Authentification des clients (OAuth2 ou certificats), réseau privé entre API et modèle, chiffrement, journalisation sans contenu médical</td></tr>
+<tr><td>Supervision</td><td>Prometheus et Grafana : trafic, latence, erreurs</td><td>Ajouter des indicateurs métier : répartition des priorités, écart avec les IOA, sous-triage, dérive des cas entrants</td></tr>
+<tr><td>Cycle de vie</td><td>Notebooks, manifestes SHA-256, W&amp;B, CD vers GHCR</td><td>Registre de modèles, ré-entraînement planifié, test gelé et seuil de sous-triage comme barrière avant toute mise en service</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- 06 RÉGLEMENTAIRE -->
+<section class="section section-alt">
+<div class="container">
+<p class="section-number">06</p>
+<h2>Le cadre réglementaire</h2>
+<p class="section-intro">Ce point dépasse un POC, mais il conditionne tout le reste. Il devra être confirmé avec le service juridique et le DPD de l'établissement.</p>
+<div class="reflection-grid">
+<div class="reflection-card"><h3>RGPD et HDS</h3><p>Des données de santé sont des données sensibles : base légale, minimisation, AIPD et hébergement certifié HDS dès qu'un prestataire héberge ces données pour le compte du CHSA.</p></div>
+<div class="reflection-card"><h3>Dispositif médical</h3><p>Un logiciel qui aide à décider d'une prise en charge relève probablement du règlement européen sur les dispositifs médicaux (MDR), ce qui implique un marquage CE avant tout usage clinique hors recherche.</p></div>
+<div class="reflection-card"><h3>AI Act</h3><p>Les systèmes de tri des patients aux urgences figurent parmi les usages à haut risque du règlement européen sur l'IA : gestion des risques, qualité des données, traçabilité et contrôle humain obligatoires.</p></div>
+<div class="reflection-card"><h3>Ce que le POC prépare déjà</h3><p>Traçabilité des données et des runs, contrôle humain par conception, API qui ne conserve ni n'expose les données saisies, documentation des limites.</p></div>
+</div>
+</div>
+</section>
+
+<!-- 07 RISQUES -->
+<section class="section">
+<div class="container">
+<p class="section-number">07</p>
+<h2>Les risques et leurs garde-fous</h2>
+<table class="story-table params-table">
+<thead><tr><th>Risque</th><th>Ce qu'on observe déjà</th><th>Garde-fou proposé</th></tr></thead>
+<tbody>
+<tr><td>Sous-triage d'un patient grave</td><td>7,2 % de sous-triage sur le test, dont 13 P1</td><td>Décision humaine ; alerte seulement quand le modèle est plus urgent que l'IOA ; seuil de sous-triage bloquant à chaque nouvelle version</td></tr>
+<tr><td>Écart entre langues</td><td>84,8 % d'accuracy en français contre 96,4 % en anglais</td><td>Données françaises réelles en priorité ; métriques suivies par langue, jamais seulement globales</td></tr>
+<tr><td>Explication trompeuse</td><td>Explications non évaluées ; le DPO a appris sur des paires trop faciles</td><td>Grille de relecture clinique ; affichage de l'explication comme aide, jamais comme preuve</td></tr>
+<tr><td>Dérive des données</td><td>Le modèle a appris sur des cas publics, souvent courts et structurés</td><td>Suivi de la répartition des priorités et des cas entrants ; réévaluation périodique sur des cas récents étiquetés</td></tr>
+<tr><td>Confiance excessive des soignants</td><td>Risque connu des aides à la décision</td><td>Formation, pilote silencieux d'abord, mesure de l'effet du second avis sur les décisions des IOA</td></tr>
+<tr><td>Erreur de livraison du modèle</td><td>Une première fusion sur la mauvaise base est passée de 459 à 417 cas justes sans aucune erreur visible</td><td>Le test gelé est rejoué sur le modèle exact qui sera servi, avant chaque mise en service</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- 08 LEÇONS -->
+<section class="section section-alt">
+<div class="container">
+<p class="section-number">08</p>
+<h2>Ce que je retiens du projet</h2>
+<div class="reflection-grid">
+<div class="reflection-card"><h3>Les données décident</h3><p>Les gains les plus nets sont venus de la reconstruction du dataset, pas des hyperparamètres. Et la seule anomalie inexpliquée du DPO venait elle aussi d'un écart entre deux générations de données.</p></div>
+<div class="reflection-card"><h3>Un score trop beau se vérifie</h3><p>J'ai écarté un run à +19 points pour suspicion de fuite, puis mesuré l'effet de gabarit sur le modèle final (environ 1 point). Un chiffre n'est utile que si je sais ce qu'il mesure.</p></div>
+<div class="reflection-card"><h3>Vérifier ce qui est servi</h3><p>Des fichiers corrects ne garantissent pas un modèle correct : seul le test gelé rejoué sur le modèle fusionné a révélé une erreur de base. C'est devenu une étape obligatoire de livraison.</p></div>
+<div class="reflection-card"><h3>Comprendre sa loss</h3><p>Le DPO ne pouvait pas changer le triage, parce que la priorité s'annulait entre les deux réponses. Lire ma propre loss m'aurait évité plusieurs essais.</p></div>
+</div>
+</div>
+</section>
+
+<!-- NAVIGATION -->
+<section class="section contact">
+<div class="container">
+<p class="eyebrow">EN RÉSUMÉ</p>
+<h2>Un POC solide, une suite à construire avec les soignants.</h2>
+<p>Le modèle livré atteint 90,66 % de F1 macro sur un test gelé, avec une chaîne complète de la donnée au service. La prochaine étape n'est pas technique : c'est l'évaluation sur des cas réels du CHSA, étiquetés par des IOA, dans un cadre conforme.</p>
+<div class="hero-actions">
+<a class="button primary" href="index.html">Retour au projet</a>
+<a class="button secondary" href="experiments.html">Expérimentations</a>
+<a class="button secondary" href="architecture.html">Architecture</a>
+</div>
+</div>
+</section>
+</main>
+<footer>
+<div class="container footer-content">
+<span>Medical Triage AI • Synthèse et recommandations</span>
+<span>AI Engineering • 2026</span>
+</div>
+</footer>
+<script src="js/main.js"></script>
+</body>
+</html>

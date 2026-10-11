@@ -11,7 +11,7 @@
 <header class="header">
 <nav class="nav container">
 <a class="logo" href="index.html">MT<span>.</span>AI</a>
-<div class="nav-links"><a href="index.html">Projet</a><a href="data.html">Données</a><a href="experiments.html">SFT</a><a class="active" href="dpo.html">DPO</a><a href="architecture.html">Architecture</a></div>
+<div class="nav-links"><a href="index.html">Projet</a><a href="data.html">Données</a><a href="experiments.html">SFT</a><a class="active" href="dpo.html">DPO</a><a href="architecture.html">Architecture</a><a href="synthese.html">Synthèse</a></div>
 </nav>
 </header>
 <main>
@@ -430,7 +430,7 @@ J'ai donc pré-calculé les log-probabilités de la référence (le SFT) une seu
 <div class="reflection-card"><h3>Explications non évaluées</h3><p>Aucun score ne mesure encore la fidélité au cas, la pertinence clinique ou la clarté des explications générées, avant et après DPO.</p></div>
 <div class="reflection-card"><h3>Paires trop faciles</h3><p>Avec 100 % de préférences correctes, le DPO ne reçoit presque plus de signal. Le corpus est le premier levier à retravailler.</p></div>
 <div class="reflection-card"><h3>Écart entre langues</h3><p>Le DPO ne réduit pas l'écart français / anglais : 23 des 29 sous-triages du modèle final sont français.</p></div>
-<div class="reflection-card"><h3>Un suivi de triage mal choisi</h3><p>Pendant l'entraînement, je suivais aussi le triage sur les 420 cas de la validation DPO (environ 62 % de F1, stable du premier au dernier pas). Ce chiffre ne mesure pas le modèle. Quand j'ai reconstruit le SFT à partir du corpus maître FRENCH, je n'ai pas reconstruit les paires DPO : elles viennent encore d'une réserve antérieure (pipeline de septembre, vignettes longues, priorités souvent fixées hors de la règle FRENCH automatique). Le SFT n'est donc pas d'accord avec une partie de ces étiquettes. Ce suivi n'a eu aucun rôle : le checkpoint est choisi sur la loss DPO, la priorité s'annule dans la loss, et le DPO ne change aucune décision du test gelé.</p></div>
+<div class="reflection-card"><h3>Un suivi de triage mal choisi</h3><p>Pendant l'entraînement, je suivais aussi le triage sur les 420 cas de la validation DPO (environ 62 % de F1, stable du premier au dernier pas). Ce chiffre ne mesure pas le modèle. Quand j'ai reconstruit le SFT à partir du corpus maître FRENCH, je n'ai pas reconstruit les paires DPO : elles viennent encore d'une réserve antérieure (pipeline de septembre, vignettes longues, priorités souvent fixées hors de la règle FRENCH automatique). Le SFT n'est donc pas d'accord avec une partie de ces étiquettes : mesuré seul sur ces 420 cas, il n'obtient que 59,4 % de F1. Le DPO n'a donc pas dégradé le triage. Ce suivi n'a eu aucun rôle : le checkpoint est choisi sur la loss DPO, la priorité s'annule dans la loss, et le DPO ne change aucune décision du test gelé.</p></div>
 <div class="reflection-card"><h3>Coût</h3><p>Chaque DPO complet coûte entre 1 h 39 et 2 h 10 sur ma carte. Les premiers essais montaient jusqu'à 11 h pour un effet nul.</p></div>
 </div>
 </div>
