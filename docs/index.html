@@ -141,7 +141,7 @@ Sur un test gelé de 500 cas, mon modèle final atteint <strong>91,86 % de F1 ma
 <text x="874.0" y="158.0" fill="#edf4f4" font-size="18" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >API FastAPI</text>
 <text x="874.0" y="180.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Docker, CI/CD, monitoring</text>
 <text x="874.0" y="198.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >modèle final branché</text>
-<text x="874.0" y="216.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >déploiement cloud à faire</text>
+<text x="874.0" y="216.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >démo cloud : RunPod Europe</text>
 <rect x="40" y="318" width="22" height="14" rx="4" fill="#17232d" stroke="#2f9e8a" stroke-width="1.5"/>
 <text x="70.0" y="330.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Opérationnel</text>
 <rect x="186.4" y="318" width="22" height="14" rx="4" fill="#17232d" stroke="#cf7f3c" stroke-width="1.5"/>
@@ -149,12 +149,12 @@ Sur un test gelé de 500 cas, mon modèle final atteint <strong>91,86 % de F1 ma
 <rect x="296.8" y="318" width="22" height="14" rx="4" fill="#17232d" stroke="#5d6b73" stroke-width="1.5" stroke-dasharray="6 5"/>
 <text x="326.8" y="330.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Cible, pas encore en place</text>
 <text x="1040.0" y="330.0" fill="#6b7c83" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >Chiffres issus des exports de métriques et des splits</text>
-</svg><figcaption>Chaque étape a sa page détaillée. Les quatre premières sont terminées. Le service est branché sur le modèle final ; il reste à le déployer sur le cloud.</figcaption></figure>
+</svg><figcaption>Chaque étape a sa page détaillée. Les quatre premières sont terminées. Le service est branché sur le modèle final et son déploiement cloud est prêt ; restent les mesures sur le service en ligne.</figcaption></figure>
 <div class="timeline">
 <div class="timeline-item"><span>01 • Données</span><h3>Construire un corpus triable</h3><p>Quatre jeux publics (FrenchMedMCQA, MediQAl, MedQuAD, UltraMedical-Preference), nettoyés, dédoublonnés et anonymisés avec Presidio. Un pool de 18 523 cas, dont 5 000 retenus pour le SFT : 50 % français, 50 % anglais, un tiers par priorité. <a class="project-link" href="data.html">Les données →</a></p></div>
 <div class="timeline-item"><span>02 • SFT</span><h3>Apprendre la tâche</h3><p>Six runs historiques, une régression, un score trop beau écarté pour suspicion de fuite, puis une reconstruction complète du dataset. Le F1 macro passe de 51,97 % au premier run à 91,86 % pour le modèle final, choisi entre deux candidats sur la validation. <a class="project-link" href="experiments.html">Les runs SFT →</a></p></div>
 <div class="timeline-item"><span>03 • DPO</span><h3>Préférer de meilleures explications</h3><p>1 680 paires de réponses (une préférée, une rejetée) pour une époque d'optimisation. Sur le modèle final, le DPO ne change aucune des 500 décisions : il agit seulement sur les explications, et ses paires se sont révélées trop faciles. <a class="project-link" href="dpo.html">Le DPO →</a></p></div>
-<div class="timeline-item"><span>04 • Service</span><h3>Exposer le modèle</h3><p>API FastAPI avec validation stricte, conteneur Docker sans privilèges, CI/CD GitHub Actions, Prometheus et Grafana. Elle sert le modèle final en local ou via vLLM ; le déploiement cloud reste à faire. <a class="project-link" href="architecture.html">L'architecture →</a></p></div>
+<div class="timeline-item"><span>04 • Service</span><h3>Exposer le modèle</h3><p>API FastAPI avec validation stricte, conteneur Docker sans privilèges, CI/CD GitHub Actions, Prometheus et Grafana. Elle sert le modèle final en local ou via vLLM, et sa démo se déploie sur RunPod en Europe à partir de l'image publiée par la CD. <a class="project-link" href="architecture.html">L'architecture →</a></p></div>
 </div>
 </div>
 </section>
@@ -339,7 +339,7 @@ Sur un test gelé de 500 cas, mon modèle final atteint <strong>91,86 % de F1 ma
 <article class="project-card">
 <div class="project-top"><span class="project-type">NON DÉMONTRÉ</span></div>
 <h3>Une validation clinique</h3>
-<p>Les priorités sont des labels construits, pas un avis médical sur chaque cas. La qualité des explications n'est pas mesurée par un score, l'écart entre langues reste important, et le service n'est pas encore déployé sur le cloud.</p>
+<p>Les priorités sont des labels construits, pas un avis médical sur chaque cas. La qualité des explications n'est pas mesurée par un score, l'écart entre langues reste important, et la latence du service en ligne reste à mesurer.</p>
 </article>
 </div>
 </div>

@@ -37,6 +37,6 @@
 <text x="854.0" y="216.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >healthcheck curl</text>
 <text x="854.0" y="234.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >5 essais</text>
 <rect x="40" y="370" width="1000" height="70" rx="12" fill="none" stroke="#cf7f3c" stroke-opacity="0.6"/>
-<text x="58.0" y="398.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Reste à faire : choisir le serveur cloud et configurer ses secrets (DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, PILOT_HEALTH_URL).</text>
+<text x="58.0" y="398.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Démo : l'image publiée est lancée sur RunPod. Déploiement SSH activable par DEPLOY_ENABLED et ses secrets.</text>
 <text x="58.0" y="420.0" fill="#98a8ad" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Le docker-compose lit désormais API_IMAGE : le déploiement récupère bien l'image publiée sur GHCR.</text>
 </svg>

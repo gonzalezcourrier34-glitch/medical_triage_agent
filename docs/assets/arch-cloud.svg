@@ -1,0 +1,52 @@
+<svg class="story-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 560" role="img" aria-label="Déploiement cloud de la démo : API sur un pod CPU, vLLM sur un pod GPU en Europe, poids sur Hugging Face, image publiée par la CD.">
+<title>Déploiement cloud de la démo</title>
+<desc>Le client appelle l'API FastAPI sur un pod CPU RunPod ; l'API appelle vLLM sur un pod GPU en Europe avec une clé ; vLLM télécharge les poids depuis un dépôt Hugging Face privé ; la CD publie l'image de l'API sur GHCR.</desc>
+<defs><marker id="cloud-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#98a8ad"/></marker></defs>
+<rect width="1080" height="560" rx="18" fill="#111a22"/>
+<text x="40" y="46" fill="#edf4f4" font-size="22" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Déploiement cloud de la démo</text>
+<text x="40" y="72" fill="#98a8ad" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Deux pods RunPod en Europe : l&#x27;API sans GPU, le modèle sur GPU ; aucun secret dans le code</text>
+<rect x="300" y="100" width="740" height="250" rx="16" fill="none" stroke="#25333c" stroke-dasharray="6 5"/>
+<text x="320" y="124" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">RUNPOD · EUROPE · HTTPS PAR LE PROXY RUNPOD</text>
+<rect x="40" y="170" width="200" height="130" rx="14" fill="#16222c" stroke="#edf4f4" stroke-width="1.5"/>
+<text x="58" y="198" fill="#edf4f4" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">CLIENT</text>
+<text x="58" y="222" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Navigateur, curl</text>
+<text x="58" y="248" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">/docs pour la démo</text>
+<text x="58" y="269" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">POST /triage</text>
+<rect x="330" y="150" width="300" height="170" rx="14" fill="#16222c" stroke="#48c9b0" stroke-width="1.5"/>
+<text x="348" y="178" fill="#48c9b0" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">POD CPU</text>
+<text x="348" y="202" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">API FastAPI</text>
+<text x="348" y="228" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Image GHCR publiée par la CD</text>
+<text x="348" y="249" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">INFERENCE_BACKEND=vllm</text>
+<text x="348" y="270" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">validation, recommandation</text>
+<text x="348" y="291" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">/health · /metrics</text>
+<rect x="710" y="150" width="300" height="170" rx="14" fill="#16222c" stroke="#cf7f3c" stroke-width="1.5"/>
+<text x="728" y="178" fill="#cf7f3c" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">POD GPU</text>
+<text x="728" y="202" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Serveur vLLM</text>
+<text x="728" y="228" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">RTX PRO 4000 ou A5000</text>
+<text x="728" y="249" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">modèle fusionné BF16, 2 048 tokens</text>
+<text x="728" y="270" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">clé VLLM_API_KEY (secret RunPod)</text>
+<text x="728" y="291" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">température 0, sans thinking</text>
+<line x1="240" y1="235" x2="326" y2="235" stroke="#98a8ad" stroke-width="2" marker-end="url(#cloud-arr)"/>
+<text x="283" y="225" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="600">HTTPS</text>
+<line x1="630" y1="235" x2="706" y2="235" stroke="#98a8ad" stroke-width="2" marker-end="url(#cloud-arr)"/>
+<text x="668" y="225" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="600">clé</text>
+<rect x="330" y="400" width="300" height="120" rx="14" fill="#16222c" stroke="#7b86ea" stroke-width="1.5"/>
+<text x="348" y="428" fill="#7b86ea" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">GITHUB</text>
+<text x="348" y="452" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">CI → CD → GHCR</text>
+<text x="348" y="478" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">tests, couverture ≥ 90 %</text>
+<text x="348" y="499" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">image api:sha-&lt;commit&gt;</text>
+<rect x="710" y="400" width="300" height="120" rx="14" fill="#16222c" stroke="#2f9e8a" stroke-width="1.5"/>
+<text x="728" y="428" fill="#2f9e8a" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">HUGGING FACE</text>
+<text x="728" y="452" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Dépôt privé</text>
+<text x="728" y="478" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">qwen3-triage-chsa</text>
+<text x="728" y="499" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">lu avec HF_TOKEN (lecture)</text>
+<line x1="480" y1="400" x2="480" y2="324" stroke="#7b86ea" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#cloud-arr)"/>
+<text x="510" y="372" fill="#7b86ea" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="600">image</text>
+<line x1="860" y1="400" x2="860" y2="324" stroke="#2f9e8a" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#cloud-arr)"/>
+<text x="892" y="372" fill="#2f9e8a" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="600">poids</text>
+<rect x="40" y="400" width="200" height="120" rx="14" fill="#16222c" stroke="#98a8ad" stroke-width="1.5"/>
+<text x="58" y="428" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">SECRETS</text>
+<text x="58" y="452" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">RunPod Secrets</text>
+<text x="58" y="478" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">HF_TOKEN</text>
+<text x="58" y="499" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">VLLM_API_KEY</text>
+</svg>

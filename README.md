@@ -71,6 +71,7 @@ Test gelé de **500 cas** (250 FR, 250 EN), jamais utilisé pour choisir un mod�
 - La fusion garde **492 décisions sur 500** identiques à la référence (McNemar exact, p = 0,070) ; les écarts concernent des cas limites.
 - Sans les cas du test trop proches d'un cas d'entraînement, le F1 macro de référence est de 90,83 % : pas de fuite massive, un effet de gabarit d'environ 1 point.
 - Le DPO ne change aucune décision de triage : il agit sur la formulation des explications.
+- La latence du service en ligne (vLLM sur GPU RunPod) est mesurée après déploiement avec `benchmarks/eval_test_gele.py --mode vllm`.
 
 Le détail des runs, des erreurs et des décisions est dans la [page Expériences](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/experiments.html).
 

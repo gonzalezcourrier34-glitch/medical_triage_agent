@@ -110,7 +110,7 @@ Le seul lien entre les deux est l'adapter exporté.
 <text x="814.0" y="440.0" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >vLLM</text>
 <text x="814.0" y="462.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >modèle fusionné BF16</text>
 <text x="814.0" y="480.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >monté en lecture seule</text>
-<text x="814.0" y="498.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >déploiement cloud à faire</text>
+<text x="814.0" y="498.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >démo cloud : RunPod Europe</text>
 <text x="48.0" y="552.0" fill="#48c9b0" font-size="10.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" letter-spacing="1.3">MONITORING</text>
 <text x="140.0" y="552.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Prometheus collecte /metrics de l'API et de vLLM toutes les 15 s → Grafana, tableau « Operations Overview » :</text>
 <text x="140.0" y="568.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >trafic, débit, latence moyenne et P95, taux d'erreurs 5xx, disponibilité de FastAPI et de vLLM.</text>
@@ -128,9 +128,9 @@ Le seul lien entre les deux est l'adapter exporté.
 <tr><td>Entraînement SFT / DPO</td><td><span class="experiment-status selected">Opérationnel</span></td><td>Notebooks 05 et 06, manifestes par run, suivi W&amp;B, adapters sauvegardés.</td></tr>
 <tr><td>API FastAPI</td><td><span class="experiment-status selected">Opérationnel</span></td><td>Routes, validation, recommandations, métriques. 34 fonctions de test.</td></tr>
 <tr><td>Inférence réelle dans l'API</td><td><span class="experiment-status selected">Opérationnel</span></td><td>Moteurs <code>local</code> (GPU) et <code>vllm</code> branchés sur le modèle final, avec le prompt exact de l'entraînement.</td></tr>
-<tr><td>Serveur vLLM</td><td><span class="experiment-status promising">Partiel</span></td><td>Modèle fusionné servi par vLLM dans Docker Compose. Fusion validée au test gelé (453/500, 492 décisions identiques à la référence) ; pas encore déployé sur un serveur cloud.</td></tr>
+<tr><td>Serveur vLLM</td><td><span class="experiment-status selected">Prêt</span></td><td>Modèle fusionné validé au test gelé (453/500, 492 décisions identiques à la référence), publié sur Hugging Face (dépôt privé), servi par vLLM en local (profil <code>gpu</code>) et sur RunPod (<a href="#cloud">déploiement de la démo</a>). Restent les <a href="#mesures-cloud">mesures en ligne</a>.</td></tr>
 <tr><td>Docker et monitoring</td><td><span class="experiment-status selected">Opérationnel</span></td><td>Dockerfile, Compose à profils, Prometheus, dashboard Grafana provisionné.</td></tr>
-<tr><td>CI/CD</td><td><span class="experiment-status promising">Partiel</span></td><td>Lint et format au vert sur le code applicatif ; la CD récupère l'image publiée. Reste à configurer le serveur pilote.</td></tr>
+<tr><td>CI/CD</td><td><span class="experiment-status selected">Opérationnel</span></td><td>CI à chaque push et pull request sur <code>master</code> : Ruff, 34 tests, couverture minimale de 90 %. CD : image de l'API publiée sur GHCR après chaque CI réussie ; déploiement SSH vers un serveur pilote activable par <code>DEPLOY_ENABLED</code>.</td></tr>
 </tbody>
 </table>
 </div>
@@ -400,9 +400,93 @@ Le seul lien entre les deux est l'adapter exporté.
 <text x="854.0" y="216.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >healthcheck curl</text>
 <text x="854.0" y="234.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >5 essais</text>
 <rect x="40" y="370" width="1000" height="70" rx="12" fill="none" stroke="#cf7f3c" stroke-opacity="0.6"/>
-<text x="58.0" y="398.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Reste à faire : choisir le serveur cloud et configurer ses secrets (DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, PILOT_HEALTH_URL).</text>
+<text x="58.0" y="398.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Démo : l'image publiée est lancée sur RunPod. Déploiement SSH activable par DEPLOY_ENABLED et ses secrets.</text>
 <text x="58.0" y="420.0" fill="#98a8ad" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Le docker-compose lit désormais API_IMAGE : le déploiement récupère bien l'image publiée sur GHCR.</text>
 </svg><figcaption>Chaque image est étiquetée avec le commit qui l'a produite (sha-…), ce qui permet de savoir exactement quel code tourne.</figcaption></figure>
+<h3 id="cloud">Le déploiement de la démo sur RunPod</h3>
+<div class="about-grid">
+<div class="large-text">Deux pods, une image publiée par la CD, des poids sur Hugging Face.</div>
+<div>
+<p>Pour la démo, je sépare le service en deux pods RunPod en Europe. L'API, qui n'a pas besoin de GPU, tourne sur un pod CPU à partir de l'image publiée sur GHCR par la CD : le code qui tourne est exactement celui qui a passé la CI. Le modèle est servi par vLLM sur un pod GPU, qui télécharge les poids fusionnés depuis un dépôt Hugging Face privé.</p>
+<p>Je n'utilise pas de volume réseau : le pod GPU peut être recréé dans n'importe quel datacenter où un GPU est libre, et les poids restent versionnés à un seul endroit. Les deux pods sont arrêtés (Terminate) en dehors des démonstrations, ce qui limite à la fois le coût et l'exposition.</p>
+</div>
+</div>
+<figure class="story-figure"><svg class="story-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 560" role="img" aria-label="Déploiement cloud de la démo : API sur un pod CPU, vLLM sur un pod GPU en Europe, poids sur Hugging Face, image publiée par la CD.">
+<title>Déploiement cloud de la démo</title>
+<desc>Le client appelle l'API FastAPI sur un pod CPU RunPod ; l'API appelle vLLM sur un pod GPU en Europe avec une clé ; vLLM télécharge les poids depuis un dépôt Hugging Face privé ; la CD publie l'image de l'API sur GHCR.</desc>
+<defs><marker id="cloud-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#98a8ad"/></marker></defs>
+<rect width="1080" height="560" rx="18" fill="#111a22"/>
+<text x="40" y="46" fill="#edf4f4" font-size="22" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Déploiement cloud de la démo</text>
+<text x="40" y="72" fill="#98a8ad" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Deux pods RunPod en Europe : l&#x27;API sans GPU, le modèle sur GPU ; aucun secret dans le code</text>
+<rect x="300" y="100" width="740" height="250" rx="16" fill="none" stroke="#25333c" stroke-dasharray="6 5"/>
+<text x="320" y="124" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">RUNPOD · EUROPE · HTTPS PAR LE PROXY RUNPOD</text>
+<rect x="40" y="170" width="200" height="130" rx="14" fill="#16222c" stroke="#edf4f4" stroke-width="1.5"/>
+<text x="58" y="198" fill="#edf4f4" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">CLIENT</text>
+<text x="58" y="222" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Navigateur, curl</text>
+<text x="58" y="248" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">/docs pour la démo</text>
+<text x="58" y="269" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">POST /triage</text>
+<rect x="330" y="150" width="300" height="170" rx="14" fill="#16222c" stroke="#48c9b0" stroke-width="1.5"/>
+<text x="348" y="178" fill="#48c9b0" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">POD CPU</text>
+<text x="348" y="202" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">API FastAPI</text>
+<text x="348" y="228" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Image GHCR publiée par la CD</text>
+<text x="348" y="249" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">INFERENCE_BACKEND=vllm</text>
+<text x="348" y="270" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">validation, recommandation</text>
+<text x="348" y="291" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">/health · /metrics</text>
+<rect x="710" y="150" width="300" height="170" rx="14" fill="#16222c" stroke="#cf7f3c" stroke-width="1.5"/>
+<text x="728" y="178" fill="#cf7f3c" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">POD GPU</text>
+<text x="728" y="202" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Serveur vLLM</text>
+<text x="728" y="228" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">RTX PRO 4000 ou A5000</text>
+<text x="728" y="249" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">modèle fusionné BF16, 2 048 tokens</text>
+<text x="728" y="270" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">clé VLLM_API_KEY (secret RunPod)</text>
+<text x="728" y="291" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">température 0, sans thinking</text>
+<line x1="240" y1="235" x2="326" y2="235" stroke="#98a8ad" stroke-width="2" marker-end="url(#cloud-arr)"/>
+<text x="283" y="225" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="600">HTTPS</text>
+<line x1="630" y1="235" x2="706" y2="235" stroke="#98a8ad" stroke-width="2" marker-end="url(#cloud-arr)"/>
+<text x="668" y="225" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="600">clé</text>
+<rect x="330" y="400" width="300" height="120" rx="14" fill="#16222c" stroke="#7b86ea" stroke-width="1.5"/>
+<text x="348" y="428" fill="#7b86ea" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">GITHUB</text>
+<text x="348" y="452" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">CI → CD → GHCR</text>
+<text x="348" y="478" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">tests, couverture ≥ 90 %</text>
+<text x="348" y="499" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">image api:sha-&lt;commit&gt;</text>
+<rect x="710" y="400" width="300" height="120" rx="14" fill="#16222c" stroke="#2f9e8a" stroke-width="1.5"/>
+<text x="728" y="428" fill="#2f9e8a" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">HUGGING FACE</text>
+<text x="728" y="452" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">Dépôt privé</text>
+<text x="728" y="478" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">qwen3-triage-chsa</text>
+<text x="728" y="499" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">lu avec HF_TOKEN (lecture)</text>
+<line x1="480" y1="400" x2="480" y2="324" stroke="#7b86ea" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#cloud-arr)"/>
+<text x="510" y="372" fill="#7b86ea" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="600">image</text>
+<line x1="860" y1="400" x2="860" y2="324" stroke="#2f9e8a" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#cloud-arr)"/>
+<text x="892" y="372" fill="#2f9e8a" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="600">poids</text>
+<rect x="40" y="400" width="200" height="120" rx="14" fill="#16222c" stroke="#98a8ad" stroke-width="1.5"/>
+<text x="58" y="428" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">SECRETS</text>
+<text x="58" y="452" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700">RunPod Secrets</text>
+<text x="58" y="478" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">HF_TOKEN</text>
+<text x="58" y="499" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">VLLM_API_KEY</text>
+</svg>
+<figcaption>L'API n'appelle vLLM qu'avec une clé ; les tokens et la clé vivent dans les secrets RunPod, jamais dans le code.</figcaption></figure>
+<table class="story-table params-table">
+<thead><tr><th>Élément</th><th>Choix</th><th>Pourquoi</th></tr></thead>
+<tbody>
+<tr><td>GPU</td><td>RTX PRO 4000 (24 Go, 0,57 $/h) ou RTX A5000 (24 Go, 0,27 $/h), datacenter européen</td><td>Le modèle occupe environ 4 Go avec son cache : une carte d'entrée de gamme suffit. L'Europe garde requêtes et poids dans l'UE.</td></tr>
+<tr><td>Image vLLM</td><td><code>vllm/vllm-openai</code>, version relevée dans les logs et figée</td><td>La même image que le profil <code>gpu</code> de Docker Compose ; une version figée rend la mesure reproductible.</td></tr>
+<tr><td>Commande vLLM</td><td><code>--model SteGONZALEZ/qwen3-triage-chsa --served-model-name triage-qwen3 --dtype bfloat16 --max-model-len 2048</code></td><td>Mêmes réglages qu'en local : BF16, contexte de 2 048 tokens comme à l'entraînement.</td></tr>
+<tr><td>Image de l'API</td><td><code>ghcr.io/gonzalezcourrier34-glitch/medical_triage_agent/api:sha-&lt;commit&gt;</code></td><td>Image construite par la CD après une CI réussie ; l'étiquette relie le service à un commit précis.</td></tr>
+<tr><td>Configuration de l'API</td><td><code>INFERENCE_BACKEND=vllm</code>, <code>VLLM_BASE_URL</code> (proxy RunPod du pod GPU), <code>VLLM_API_KEY</code></td><td>Le même code qu'en local et en CI : seul l'environnement change.</td></tr>
+<tr><td>Secrets</td><td><code>HF_TOKEN</code> (lecture seule) et <code>VLLM_API_KEY</code> dans les secrets RunPod</td><td>Aucun secret dans le dépôt, l'image ou la commande de démarrage.</td></tr>
+<tr><td>Procédure</td><td><code>deploy/runpod.md</code> : préparation gratuite, puis une session payante d'environ 45 minutes</td><td>Le déploiement est reproductible pas à pas, et le coût d'une démo reste de l'ordre d'un dollar.</td></tr>
+</tbody>
+</table>
+<h3 id="mesures-cloud">Les mesures à faire sur le service en ligne</h3>
+<p>Une fois les deux pods démarrés, le script <code>benchmarks/eval_test_gele.py --mode vllm</code> envoie les 500 cas du test gelé au service, comme le ferait l'API. Il fournit les derniers chiffres attendus par la mission.</p>
+<table class="story-table params-table">
+<thead><tr><th>Mesure</th><th>Ce qu'elle vérifie</th><th>Résultat</th></tr></thead>
+<tbody>
+<tr><td>Latence moyenne, P50, P95, débit</td><td>Le temps de réponse du modèle servi par vLLM sur un GPU cloud</td><td>À mesurer après déploiement</td></tr>
+<tr><td>Accuracy, F1 et sous-triage par génération</td><td>Le choix de priorité en générant le texte (production) comparé au scoring conditionnel de l'évaluation (453/500)</td><td>À mesurer après déploiement</td></tr>
+<tr><td>Réponses invalides</td><td>La part de générations sans priorité lisible, refusées par l'API (503)</td><td>À mesurer après déploiement</td></tr>
+<tr><td>Bout en bout</td><td><code>/health</code> à <code>ok</code>, puis un cas FR et un cas EN via <code>/docs</code></td><td>À vérifier après déploiement</td></tr>
+</tbody>
+</table>
 </div>
 </section>
 
@@ -436,7 +520,7 @@ Le seul lien entre les deux est l'adapter exporté.
 <div class="reflection-card"><h3>Données d'entraînement</h3><p>Détection et masquage des informations personnelles avec Presidio avant l'entraînement, et revue des cas où un nom de personne est détecté.</p></div>
 <div class="reflection-card"><h3>Entrées de l'API</h3><p>Schéma strict : langue contrôlée, question obligatoire, champs inconnus refusés. Les données du patient ne sont ni renvoyées ni écrites dans les métriques.</p></div>
 <div class="reflection-card"><h3>Conteneurs</h3><p>Utilisateur sans privilèges, option <code>no-new-privileges</code>, ports limités à la machine locale, CI en lecture seule sur le dépôt.</p></div>
-<div class="reflection-card"><h3>Secrets</h3><p>Clé W&amp;B, mot de passe Grafana et accès au serveur pilote restent hors du code : fichier <code>.env</code> non versionné en local, secrets GitHub pour le déploiement.</p></div>
+<div class="reflection-card"><h3>Secrets</h3><p>Clé W&amp;B, mot de passe Grafana et accès au serveur pilote restent hors du code : fichier <code>.env</code> non versionné en local, secrets GitHub pour le déploiement SSH, secrets RunPod (<code>HF_TOKEN</code>, <code>VLLM_API_KEY</code>) pour la démo. Le serveur vLLM exposé exige une clé.</p></div>
 </div>
 </div>
 </section>
@@ -464,10 +548,9 @@ Le seul lien entre les deux est l'adapter exporté.
 </table>
 <h3>Ce qui reste à faire</h3>
 <div class="reflection-grid">
-<div class="reflection-card"><h3>Déployer sur le cloud</h3><p>Choisir un serveur GPU, configurer les secrets du déploiement (hôte, utilisateur, clé SSH, URL de contrôle) et lancer le profil <code>gpu</code>.</p></div>
-<div class="reflection-card"><h3>Mesurer la latence</h3><p>Mesurer moyenne, P50, P95 et débit de <code>/triage</code> avec vLLM, et comparer le choix de priorité par génération (vLLM) au scoring conditionnel (évaluation).</p></div>
-<div class="reflection-card"><h3>Figer les images</h3><p>vLLM, Prometheus et Grafana utilisent encore l'étiquette <code>latest</code> : je dois figer leurs versions après validation.</p></div>
-<div class="reflection-card"><h3>Valider de bout en bout</h3><p>Rejouer le test gelé via vLLM (mode <code>vllm</code>) pour comparer le choix par génération au scoring conditionnel, déjà validé sur le modèle fusionné ; lancer la suite de tests dans la CI.</p></div>
+<div class="reflection-card"><h3>Mesurer le service en ligne</h3><p>Démarrer les deux pods RunPod, puis rejouer le test gelé via vLLM : latence (moyenne, P50, P95), F1 et sous-triage du choix par génération, réponses invalides. Voir <a href="#mesures-cloud">les mesures à faire</a>.</p></div>
+<div class="reflection-card"><h3>Valider de bout en bout</h3><p>Vérifier <code>/health</code> puis un cas français et un cas anglais depuis <code>/docs</code> sur l'URL publique de l'API, et garder ces captures comme preuve de fonctionnement.</p></div>
+<div class="reflection-card"><h3>Figer la version de vLLM</h3><p>Relever dans les logs du pod la version de vLLM utilisée pour ces mesures, et la reporter dans Docker Compose à la place de <code>latest</code>.</p></div>
 </div>
 </div>
 </section>

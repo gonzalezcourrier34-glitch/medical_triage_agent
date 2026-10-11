@@ -36,7 +36,7 @@
 <text x="874.0" y="158.0" fill="#edf4f4" font-size="18" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >API FastAPI</text>
 <text x="874.0" y="180.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Docker, CI/CD, monitoring</text>
 <text x="874.0" y="198.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >modèle final branché</text>
-<text x="874.0" y="216.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >déploiement cloud à faire</text>
+<text x="874.0" y="216.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >démo cloud : RunPod Europe</text>
 <rect x="40" y="318" width="22" height="14" rx="4" fill="#17232d" stroke="#2f9e8a" stroke-width="1.5"/>
 <text x="70.0" y="330.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Opérationnel</text>
 <rect x="186.4" y="318" width="22" height="14" rx="4" fill="#17232d" stroke="#cf7f3c" stroke-width="1.5"/>
