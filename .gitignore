@@ -1,31 +1,132 @@
-# Python-generated files
+# ============================================================
+# .gitignore - Medical Triage Agent
+#
+# Principe : Git ne contient que le code, la configuration, les notebooks
+# et la documentation. Données, modèles, secrets et fichiers générés
+# restent en local (ou sur Hugging Face / W&B pour les modèles et runs).
+# ============================================================
+
+
+# ------------------------------------------------------------
+# 1. Secrets et configuration locale
+# ------------------------------------------------------------
+
+# Clés W&B, Hugging Face, vLLM, mot de passe Grafana...
+.env
+.env.*
+!.env.example
+
+# Jetons et identifiants éventuels
+*.pem
+*.key
+.huggingface/
+.netrc
+
+
+# ------------------------------------------------------------
+# 2. Données (sources publiques retraitées, jamais versionnées)
+# ------------------------------------------------------------
+
+/data/
+
+
+# ------------------------------------------------------------
+# 3. Modèles, adapters, checkpoints et résultats d'entraînement
+# ------------------------------------------------------------
+
+# Adapters LoRA, checkpoints, métriques, modèle fusionné (3,3 Go)
+/artifacts/
+/models/
+
+# Poids isolés, où qu'ils se trouvent
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.gguf
+*.onnx
+
+
+# ------------------------------------------------------------
+# 4. Suivi d'expériences et caches d'entraînement
+# ------------------------------------------------------------
+
+# Runs Weights & Biases (synchronisés sur wandb.ai)
+wandb/
+
+# Code compilé à la volée par Unsloth
+unsloth_compiled_cache/
+
+# Cache Hugging Face local éventuel
+.cache/
+
+
+# ------------------------------------------------------------
+# 5. Python
+# ------------------------------------------------------------
+
 __pycache__/
-*.py[oc]
+*.py[cod]
+*.egg-info/
 build/
 dist/
 wheels/
-*.egg-info
 
-# Virtual environments
-.venv
-.env
+# Environnement virtuel uv
+.venv/
 
-# Datasets
-/data/
 
-# Fine-tuning models and checkpoints
-/artifacts/finetuning_sft_dpo/models/
+# ------------------------------------------------------------
+# 6. Tests, qualité et couverture
+# ------------------------------------------------------------
 
-# Notebook checkpoints
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+
+# ------------------------------------------------------------
+# 7. Notebooks
+# ------------------------------------------------------------
+
 .ipynb_checkpoints/
 
-# Experiment tracking
-wandb/
 
-# personnel
-perso/
+# ------------------------------------------------------------
+# 8. Journaux et fichiers temporaires
+# ------------------------------------------------------------
 
-artifacts/
-.coverage
+*.log
+logs/
+*.tmp
+*.tgz
 
+
+# ------------------------------------------------------------
+# 9. Notes personnelles
+# ------------------------------------------------------------
+
+/perso/
+
+
+# ------------------------------------------------------------
+# 10. Système et éditeurs
+# ------------------------------------------------------------
+
+# Windows
+Thumbs.db
+desktop.ini
 *.lnk
+
+# macOS
+.DS_Store
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
