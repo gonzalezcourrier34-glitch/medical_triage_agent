@@ -1724,3 +1724,4 @@ footer {
 .table-note{color:var(--muted);font-size:.9rem;margin-top:-1rem}
 .experiment-analysis + .story-figure{margin-top:3rem}
 @media(max-width:800px){.story-table{display:block;overflow-x:auto}.params-table td:first-child{white-space:normal}}
+.experiment-analysis + h3,.experiment-analysis + table{margin-top:3rem}

@@ -1,1585 +1,480 @@
 <!DOCTYPE html>
-
 <html lang="fr">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>
-   Expérimentations DPO | Medical Triage AI
-  </title>
+<title>Expérimentations DPO | Medical Triage AI</title>
+<meta content="Mon parcours DPO sur Qwen3-1.7B : construction des paires, sept essais, analyse des préférences et choix du modèle final." name="description"/>
 <link href="css/style.css" rel="stylesheet"/>
-<style>
-   .dpo-table-scroll{width:100%;overflow-x:auto;margin:25px 0 35px}.dpo-table{width:100%;border-collapse:collapse;min-width:640px;font-size:.94rem}.dpo-table th,.dpo-table td{text-align:left;padding:13px 16px;border-bottom:1px solid rgba(125,190,183,.23)}.dpo-table th{color:#48c9b0;background:rgba(72,201,176,.08);white-space:nowrap}.dpo-table tbody tr:hover{background:rgba(72,201,176,.055)}.dpo-table td:first-child{font-weight:600}.experiment-card{margin-bottom:28px}.experiment-analysis{margin-top:24px}.reflection-grid{margin-top:25px}@media(max-width:700px){.dpo-table{font-size:.85rem}.dpo-table th,.dpo-table td{padding:10px}}
-  </style>
 </head>
 <body>
 <header class="header">
 <nav class="nav container">
-<a class="logo" href="index.html">
-     MT
-     <span>
-      .
-     </span>
-     AI
-    </a>
+<a class="logo" href="index.html">MT<span>.</span>AI</a>
 <div class="nav-links"><a href="index.html">Projet</a><a href="data.html">Données</a><a href="experiments.html">SFT</a><a class="active" href="dpo.html">DPO</a><a href="architecture.html">Architecture</a></div>
 </nav>
 </header>
 <main>
+
+<!-- HERO -->
 <section class="hero project-hero">
 <div class="container hero-content">
-<p class="eyebrow">
-      PARCOURS EXPÉRIMENTAL DPO
-     </p>
-<h1>
-      Du SFT aux
-      <span>
-       préférences cliniques.
-      </span>
-</h1>
+<p class="eyebrow">MON PARCOURS EXPÉRIMENTAL DPO</p>
+<h1>Apprendre à mieux expliquer,<span>sans casser le triage.</span></h1>
 <p class="hero-text">
-      Deux étapes de DPO pour apprendre à mieux expliquer le triage sans perdre les compétences de classification. Des hypothèses, des mesures, des limites et des décisions documentées.
-     </p>
+Après le SFT, je voulais que le modèle préfère des explications précises à des formulations génériques.
+J'ai fait sept essais de DPO entre le 25 septembre et le 10 octobre. Résultat : le DPO n'a jamais déplacé le F1 de plus d'un point,
+et sur le modèle final il ne change aucune des 500 décisions. Cette page explique comment je l'ai construit, ce que j'ai mesuré,
+et pourquoi ce résultat est logique.
+</p>
 <div class="hero-tags">
-<span>
-       Qwen3-1.7B
-      </span>
-<span>
-       DPO
-      </span>
-<span>
-       QLoRA
-      </span>
-<span>
-       LoRA
-      </span>
-<span>
-       RTX 4050 • 6 Go
-      </span>
-<span>
-       Évaluation
-      </span>
+<span>DPO</span><span>QLoRA</span><span>Référence pré-calculée</span><span>β = 0,1</span><span>2 100 paires FR/EN</span><span>McNemar</span><span>RTX 4050 · 6 Go</span>
 </div>
 <div class="hero-actions">
-<a class="button primary" href="#runs">
-       Voir les runs
-      </a>
-<a class="button secondary" href="#benchmark">
-       Comparer au SFT
-      </a>
+<a class="button primary" href="#essais">Voir les essais</a>
+<a class="button secondary" href="#choix">Voir le choix final</a>
 </div>
 </div>
 </section>
+
+<!-- 01 POURQUOI -->
 <section class="section section-alt">
 <div class="container">
-<p class="section-number">
-      01
-     </p>
-<h2>
-      Une démarche expérimentale
-     </h2>
-<p class="section-intro">
-      Comme pour le SFT, chaque décision répond à un problème identifié. Le DPO optimise des préférences entre deux réponses, pas directement le F1 de classification.
-     </p>
-<div class="experiment-method">
-<div class="method-step">
-<span>
-        01
-       </span>
-<strong>
-        Problématique
-       </strong>
-<small>
-        Quel comportement améliorer ?
-       </small>
-</div>
-<div class="method-arrow">
-       →
-      </div>
-<div class="method-step">
-<span>
-        02
-       </span>
-<strong>
-        Hypothèse
-       </strong>
-<small>
-        Quel signal de préférence ?
-       </small>
-</div>
-<div class="method-arrow">
-       →
-      </div>
-<div class="method-step">
-<span>
-        03
-       </span>
-<strong>
-        Expérience
-       </strong>
-<small>
-        Quel corpus et quels réglages ?
-       </small>
-</div>
-<div class="method-arrow">
-       →
-      </div>
-<div class="method-step">
-<span>
-        04
-       </span>
-<strong>
-        Mesure
-       </strong>
-<small>
-        Quelles métriques observées ?
-       </small>
-</div>
-<div class="method-arrow">
-       →
-      </div>
-<div class="method-step">
-<span>
-        05
-       </span>
-<strong>
-        Décision
-       </strong>
-<small>
-        Quelle suite justifiée ?
-       </small>
+<p class="section-number">01</p>
+<h2>Pourquoi un DPO après le SFT</h2>
+<div class="about-grid">
+<div class="large-text">Le SFT apprend une réponse. Le DPO apprend à préférer une réponse à une autre.</div>
+<div>
+<p>Pendant le SFT, j'avais découvert que mes cibles contenaient des explications génériques (« The condition named in the case… ») qui ne justifiaient pas la priorité. Le modèle les reproduisait fidèlement.</p>
+<p>Le DPO (Direct Preference Optimization) répond à ce problème : pour un même cas, je montre au modèle une explication préférée (<em>chosen</em>) et une explication rejetée (<em>rejected</em>), et il apprend à rendre la première plus probable que la seconde, sans s'éloigner trop du SFT de départ.</p>
+<p>La mission demande aussi un modèle aligné par préférences. Mon objectif était donc double : améliorer les explications, et vérifier que cela ne dégrade pas la classification.</p>
 </div>
 </div>
 <div class="callout">
-<span class="eyebrow">
-       PRINCIPE
-      </span>
-<p>
-       Une loss DPO qui diminue démontre une optimisation du signal de préférence. Elle ne démontre ni la qualité clinique des explications ni la sécurité du triage.
-      </p>
+<span class="eyebrow">PRINCIPE QUE JE ME SUIS FIXÉ</span>
+<strong>Une loss DPO qui baisse ne prouve ni de meilleures explications, ni un triage plus sûr.</strong>
+<p>Je juge donc chaque DPO sur le même test gelé que le SFT, avec une comparaison appariée des 500 décisions (test de McNemar), en plus des métriques de préférence.</p>
 </div>
 </div>
 </section>
+
+<!-- 02 COMMENT -->
 <section class="section">
 <div class="container">
-<p class="section-number">
-      02
-     </p>
-<h2>
-      Le checkpoint SFT comme point de départ
-     </h2>
+<p class="section-number">02</p>
+<h2>Faire du DPO avec 6 Go de VRAM</h2>
 <p class="section-intro">
-      Le run SFT
-      <strong>
-       20261007-003909
-      </strong>
-      a sélectionné le
-      <strong>
-       checkpoint-950
-      </strong>
-      sur la validation, sans utiliser le test gelé pour ce choix.
-     </p>
-<div class="checkpoint-card">
-<div>
-<span class="experiment-status selected">
-        RÉFÉRENCE SFT
-       </span>
-<h3>
-        Qwen3-1.7B • checkpoint-950
-       </h3>
-<p>
-        La priorité P1/P2/P3 est déjà apprise. Le DPO cherche surtout à privilégier des explications plus utiles à priorité constante.
-       </p>
-</div>
-<div class="checkpoint-score">
-<strong>
-        78,71 %
-       </strong>
-<span>
-        F1 macro validation SFT
-       </span>
-</div>
-</div>
-<div class="config-grid">
-<div class="config-card">
-<span>
-        F1 macro test SFT
-       </span>
-<strong>
-        74,71 %
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Accuracy test SFT
-       </span>
-<strong>
-        74,40 %
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Test gelé
-       </span>
-<strong>
-        500 cas
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Sous-triage SFT
-       </span>
-<strong>
-        14,40 %
-       </strong>
-</div>
-</div>
+Un DPO classique garde en mémoire deux modèles : celui qu'on entraîne et une référence figée. Sur ma carte, c'était impossible.
+J'ai donc pré-calculé les log-probabilités de la référence (le SFT) une seule fois, avant l'entraînement, puis libéré la mémoire.
+</p>
+<figure class="story-figure"><svg class="story-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 560" role="img" aria-label="Mécanisme de la loss DPO pondérée." xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTo5MjgwZDI0Ni03ZTcxLTRiZmYtYWUxMy02Zjk5ODc1YjVmZGYAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaO8UweFKIlcn6jiU3VAYGF4AAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDo3YzExOWUxOC1lNDJiLTQyZjQtYWQwNC1mZjI3MjQ0NTdiNjFscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNo1CWaJ+m5ZLYMs/uH8qZNVwAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggF0HZzzkd7Yl5Do/ab1qqpHJBcYo7xJ/jjDGfqgMQKxKkZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaHPWKOtZ5WUw6Vv5nl38L/kAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCB4EMvwhpsvAsNifoPqqFkZELp1RJLy25+k32h8ySIgN2RuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBi7Zmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjkyODBkMjQ2LTdlNzEtNGJmZi1hZTEzLTZmOTk4NzViNWZkZi9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjcxMjcxMjEyLWU1ZGUtNGU3OC05YWZmLTEwODQ2NjUwODU3ZXJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCAXQdnPOR3tiXkOj9pvWqqkckFxijvEn+OMMZ+qAxArEqJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggmnDZEMs7ilFQwiILL/GX+9oNVJSNl19qqVdXUWopg0OiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFgguooWUd94Rfwx0aPRCvomI9+zXCulncHr5pn8MEZ2/vZ0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQFJp46GYXKKH7tVOYT6bCoNWR5nvME+N8rpPu2J8JphO8GfnauY3lskxJ2Le/nDY4Fl3fs4Koo1pTLyzbLb6KzM=</c2pa:manifest></metadata>
+<rect width="1080" height="560" rx="18" fill="#111a22"/>
+<text x="40.0" y="46.0" fill="#edf4f4" font-size="22" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Ce que mon DPO optimise vraiment</text>
+<text x="40.0" y="72.0" fill="#98a8ad" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Une loss DPO pondérée, avec une référence SFT pré-calculée pour tenir dans 6 Go</text>
+<defs><marker id="mechanism-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#98a8ad"/></marker><marker id="mechanism-arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#48c9b0"/></marker><pattern id="mechanism-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#2f9e8a" opacity="0.35"/><line x1="0" y1="0" x2="0" y2="7" stroke="#2f9e8a" stroke-width="3"/></pattern></defs>
+<rect x="40" y="110" width="200" height="300" rx="12" fill="#17232d" stroke="#3a4a54" stroke-width="1.5"/>
+<text x="54.0" y="134.0" fill="#98a8ad" font-size="10.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" letter-spacing="1.3">ENTRÉE</text>
+<text x="54.0" y="158.0" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Même cas clinique</text>
+<text x="54.0" y="180.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >contexte patient</text>
+<text x="54.0" y="198.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >prompt système FR/EN</text>
+<text x="54.0" y="216.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >identique pour les</text>
+<text x="54.0" y="234.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >deux réponses</text>
+<text x="270.0" y="128.0" fill="#48c9b0" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" letter-spacing="1.3">CHOSEN · RÉPONSE PRÉFÉRÉE</text>
+<rect x="270" y="140" width="170" height="64" rx="8" fill="#17232d" stroke="#3a4a54"/>
+<text x="355.0" y="168.0" fill="#edf4f4" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >PRIORITY: P1</text>
+<text x="355.0" y="188.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >poids 0,2</text>
+<rect x="448" y="140" width="300" height="64" rx="8" fill="#17232d" stroke="#48c9b0" stroke-width="1.5"/>
+<text x="462.0" y="164.0" fill="#edf4f4" font-size="13.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >EXPLANATION spécifique</text>
+<text x="462.0" y="186.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >« Votre fièvre et votre toux… »</text>
+<text x="740.0" y="186.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >poids 1,0</text>
+<text x="270.0" y="288.0" fill="#cf7f3c" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" letter-spacing="1.3">REJECTED · RÉPONSE REJETÉE</text>
+<rect x="270" y="300" width="170" height="64" rx="8" fill="#17232d" stroke="#3a4a54"/>
+<text x="355.0" y="328.0" fill="#edf4f4" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >PRIORITY: P1</text>
+<text x="355.0" y="348.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >poids 0,2</text>
+<rect x="448" y="300" width="300" height="64" rx="8" fill="#17232d" stroke="#cf7f3c" stroke-width="1.5"/>
+<text x="462.0" y="324.0" fill="#edf4f4" font-size="13.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >EXPLANATION générique</text>
+<text x="462.0" y="346.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >« The condition named in the case… »</text>
+<text x="740.0" y="346.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >poids 1,0</text>
+<line x1="242" y1="200" x2="266" y2="172" stroke="#98a8ad" stroke-width="1.6" marker-end="url(#mechanism-arr)"/>
+<line x1="242" y1="300" x2="266" y2="332" stroke="#98a8ad" stroke-width="1.6" marker-end="url(#mechanism-arr)"/>
+<path d="M 355 210 V 290" stroke="#48c9b0" stroke-width="1.5" stroke-dasharray="4 4"/>
+<text x="368.0" y="255.0" fill="#48c9b0" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >identiques :</text>
+<text x="368.0" y="270.0" fill="#48c9b0" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >s'annulent</text>
+<rect x="790" y="110" width="250" height="300" rx="12" fill="#17232d" stroke="#2f9e8a" stroke-width="1.5"/>
+<text x="804.0" y="134.0" fill="#48c9b0" font-size="10.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" letter-spacing="1.3">LOSS DPO</text>
+<text x="804.0" y="158.0" fill="#edf4f4" font-size="16" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Préférer « chosen »</text>
+<text x="804.0" y="180.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >log-prob pondérées</text>
+<text x="804.0" y="198.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >chosen − rejected</text>
+<text x="804.0" y="216.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >moins le même écart</text>
+<text x="804.0" y="234.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >calculé par le SFT figé</text>
+<text x="804.0" y="252.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" ></text>
+<text x="804.0" y="270.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >loss = −log σ(β · Δ)</text>
+<text x="804.0" y="288.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >β = 0,1</text>
+<line x1="750" y1="172" x2="786" y2="220" stroke="#98a8ad" stroke-width="1.6" marker-end="url(#mechanism-arr)"/>
+<line x1="750" y1="332" x2="786" y2="290" stroke="#98a8ad" stroke-width="1.6" marker-end="url(#mechanism-arr)"/>
+<rect x="40" y="440" width="1000" height="80" rx="12" fill="none" stroke="#48c9b0" stroke-opacity="0.6"/>
+<text x="58.0" y="468.0" fill="#edf4f4" font-size="13.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Conséquence : la priorité est la même dans les deux réponses, sa contribution disparaît de la différence.</text>
+<text x="58.0" y="492.0" fill="#98a8ad" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Le DPO n'agit que sur l'explication. Il ne peut pas, par construction, apprendre à mieux trier.</text>
+</svg><figcaption>Ma loss pondère les tokens de la priorité à 0,2 et ceux de l'explication à 1,0. Comme la priorité est la même dans les deux réponses, elle disparaît de la différence : le DPO ne travaille que sur l'explication.</figcaption></figure>
+<table class="story-table params-table">
+<thead><tr><th>Paramètre</th><th>Valeur (essais du 10 octobre)</th><th>Pourquoi</th></tr></thead>
+<tbody>
+<tr><td>Point de départ</td><td>Adapter SFT du checkpoint choisi</td><td>Le SFT est à la fois la politique initiale et la référence.</td></tr>
+<tr><td>Référence</td><td>Log-probabilités pré-calculées</td><td>Éviter de garder un second modèle en VRAM.</td></tr>
+<tr><td>Paramètres entraînés</td><td>Adapters LoRA (r = 16, α = 32), ≈ 1 % du modèle</td><td>Même socle QLoRA que le SFT.</td></tr>
+<tr><td>Poids des tokens</td><td>Priorité 0,2 · explication 1,0 · prompt 0</td><td>Concentrer la préférence sur la justification.</td></tr>
+<tr><td>β</td><td>0,1</td><td>Valeur standard : le modèle reste proche du SFT.</td></tr>
+<tr><td>Learning rate</td><td>5 × 10⁻⁶, cosine, warmup 5 %</td><td>40 fois plus faible qu'en SFT : ajuster, pas réapprendre.</td></tr>
+<tr><td>Batch effectif</td><td>8 (1 × accumulation 8)</td><td>210 mises à jour sur 1 680 paires.</td></tr>
+<tr><td>Époques</td><td>1</td><td>Un essai à 2 époques n'avait rien apporté et coûtait 7 h 31.</td></tr>
+<tr><td>Sélection</td><td>Plus basse loss de validation DPO, évaluée toutes les 50 étapes</td><td>Retenu : checkpoint-150 (loss 0,00313). Les écarts entre checkpoints sont minimes (0,0031 à 0,0034).</td></tr>
+<tr><td>Mémoire</td><td>Gradient checkpointing, AdamW 8 bits, longueur max 2 048</td><td>Tenir dans 6 Go avec deux réponses par exemple.</td></tr>
+</tbody>
+</table>
 </div>
 </section>
+
+<!-- 03 PAIRES -->
 <section class="section section-alt">
 <div class="container">
-<p class="section-number">
-      03
-     </p>
-<h2>
-      Faire du DPO sur 6 Go de VRAM
-     </h2>
-<div class="about-grid">
-<div class="large-text">
-       Une politique entraînable, une référence et seulement 6 Go de VRAM.
-      </div>
-<div>
-<p>
-        Le modèle Qwen3-1.7B est chargé en 4 bits avec QLoRA. Les log-probabilités du modèle de référence sont pré-calculées pour éviter de conserver deux modèles complets simultanément sur le GPU.
-       </p>
-<p>
-        Seuls les adapters LoRA sont entraînés, ce qui limite la mémoire nécessaire sans supprimer le coût de calcul du DPO.
-       </p>
-</div>
-</div>
-<div class="config-grid">
-<div class="config-card">
-<span>
-        GPU
-       </span>
-<strong>
-        RTX 4050 • 6 Go
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Quantification
-       </span>
-<strong>
-        4 bits
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        LoRA rank
-       </span>
-<strong>
-        16
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        LoRA alpha
-       </span>
-<strong>
-        32
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Paramètres entraînables
-       </span>
-<strong>
-        17 432 576
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Part entraînable
-       </span>
-<strong>
-        ≈ 1 %
-       </strong>
-</div>
-</div>
-<div class="callout">
-<span class="eyebrow">
-       CHOIX D’INGÉNIERIE
-      </span>
-<p>
-       Pré-calculer les log-probabilités de référence, libérer la VRAM puis entraîner la politique QLoRA.
-      </p>
+<p class="section-number">03</p>
+<h2>Les paires de préférences</h2>
+<p class="section-intro">Le corpus a évolué pendant le projet. Les essais du 7 octobre utilisaient un corpus de 2 307 paires (2 081 train, 226 validation, 769 par priorité). Les essais du 10 octobre utilisent un corpus bilingue reconstruit de 2 100 paires.</p>
+<table class="story-table params-table">
+<thead><tr><th>Corpus final</th><th>Valeur</th><th>Pourquoi c'est important</th></tr></thead>
+<tbody>
+<tr><td>Taille</td><td>2 100 paires · 1 680 train · 420 validation</td><td>Split 80/20 propre au DPO.</td></tr>
+<tr><td>Équilibre</td><td>1 050 FR / 1 050 EN · 280 paires par langue et par priorité (train)</td><td>Aucune langue ni priorité favorisée.</td></tr>
+<tr><td>Priorité</td><td>Identique dans <em>chosen</em> et <em>rejected</em> pour les 2 100 paires</td><td>La préférence porte uniquement sur l'explication.</td></tr>
+<tr><td>Longueur</td><td>25,3 mots en moyenne (chosen) contre 25,5 (rejected) · chosen plus long dans 38 % des cas</td><td>Le modèle ne peut pas apprendre « plus long = mieux ».</td></tr>
+<tr><td>Fuite</td><td>0 cas commun avec le train ou le test SFT (empreinte du contexte)</td><td>Le test gelé reste indépendant du DPO.</td></tr>
+</tbody>
+</table>
+<h3>Un exemple de paire (P1, français)</h3>
+<div class="reflection-grid">
+<div class="reflection-card"><span class="eyebrow">CAS</span><h3>Homme de 73 ans</h3><p>Fièvre et toux productive depuis 2 jours, fatigue et dyspnée croissantes depuis 2 semaines, tension 110/65.</p></div>
+<div class="reflection-card"><span class="eyebrow">CHOSEN · PRÉFÉRÉE</span><h3>Spécifique</h3><p>« Votre fièvre et votre toux avec crachats surviennent dans un contexte de syndrome myélodysplasique, avec un essoufflement croissant et un taux de plaquettes bas. Une évaluation immédiate est nécessaire… »</p></div>
+<div class="reflection-card"><span class="eyebrow">REJECTED · REJETÉE</span><h3>Générique</h3><p>« Chez ce patient, les résultats du bilan réalisé à l'arrivée. Les autres éléments utiles au triage sont la réponse du patient au traitement déjà administré. L'ensemble du tableau documenté conduit à une prise en charge immédiate. »</p></div>
+<div class="reflection-card"><span class="eyebrow">CE QUE J'EN RETIENS</span><h3>Trop facile à distinguer</h3><p>Les réponses rejetées reprennent les formulations génériques que j'avais corrigées dans le SFT. Un modèle déjà entraîné sur des explications spécifiques les reconnaît sans effort.</p></div>
 </div>
 </div>
 </section>
-<section class="section" id="runs">
+
+<!-- 04 ESSAIS -->
+<section class="section" id="essais">
 <div class="container">
-<p class="section-number">
-      04
-     </p>
-<h2>
-      Deux runs, deux questions différentes
-     </h2>
-<p class="section-intro">
-      Le premier run vérifie la faisabilité et la préservation du triage. Le second améliore d’abord la construction du signal de préférence. Les résultats absents ne sont pas estimés.
-     </p>
-<article class="experiment-card">
-<div class="experiment-header">
-<div>
-<span class="experiment-number">
-         EXPÉRIENCE DPO
-        </span>
-<h3>
-         Run 01 : établir une baseline DPO
-        </h3>
-</div>
-<span class="experiment-status selected">
-        MESURÉ
-       </span>
-</div>
-<div class="callout">
-<span class="eyebrow">
-        PROBLÉMATIQUE
-       </span>
-<p>
-        Peut-on apprendre une préférence pour de meilleures explications sans dégrader la classification P1/P2/P3 ?
-       </p>
-</div>
-<div class="experiment-metrics">
-<div>
-<strong>
-         1 040
-        </strong>
-<span>
-         Train
-        </span>
-</div>
-<div>
-<strong>
-         2
-        </strong>
-<span>
-         Epochs
-        </span>
-</div>
-<div>
-<strong>
-         130
-        </strong>
-<span>
-         Steps
-        </span>
-</div>
-<div>
-<strong>
-         ≈ 1 h 40
-        </strong>
-<span>
-         Durée
-        </span>
-</div>
-<div>
-<strong>
-         5 × 10⁻⁶
-        </strong>
-<span>
-         LR
-        </span>
-</div>
-<div>
-<strong>
-         0,10
-        </strong>
-<span>
-         β DPO
-        </span>
-</div>
-<div>
-<strong>
-         16
-        </strong>
-<span>
-         Accumulation
-        </span>
-</div>
-<div>
-<strong>
-         16
-        </strong>
-<span>
-         Batch effectif
-        </span>
-</div>
-</div>
+<p class="section-number">04</p>
+<h2>Sept essais DPO</h2>
+<p class="section-intro">J'ai lancé un DPO à chaque étape importante du SFT. Chaque essai est comparé à son propre SFT de départ, sur le même test.</p>
+<figure class="story-figure"><svg class="story-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 560" role="img" aria-label="Effet de chaque essai DPO sur le F1 macro." xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTo4NzY4MTVmYS0zN2E5LTQ5NDgtYTNjYy02NjE0Yzg4NGRmNWIAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaFdwgNDGAfuF/cObnC4zS+EAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDoxYTBiMWVmZi02ODYyLTQ4ZTYtYWZjMS02MmUyNjE2ODk5NTlscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNoc3pXSU3+f0OrtctwRkldzwAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggyV5OI3XOQkFsNIJIlJ/A0VUKna8bVuGXzEQLXrQNn8mkZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaJb2CCw3i9Kn4Ng6GHB4XnUAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCCBVyrs9wWB5kCHoWkgKT1GByecKJz+CTH66V4b2hpoeWRuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjAZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjg3NjgxNWZhLTM3YTktNDk0OC1hM2NjLTY2MTRjODg0ZGY1Yi9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjkyODU2NzQ0LTYzOTItNDM3OC05OTY5LTExNzMyYWQ0ODA0ZnJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCDJXk4jdc5CQWw0gkiUn8DRVQqdrxtW4ZfMRAtetA2fyaJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggvdm29wbQwvSmwpETfuTG5euUcaQYyYLGBPSxc+y5wIKiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggoZn0iJMvQBaV1OSmXFStpjlleE9re09ZVvPutRYLeOZ0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQPJSHCnaY0+rXYKnqZdZIt9McjJrCa3irmYiu04BELH/Hc3J2Zoz6uqdI1JYKSqQhozo/5HL8UyzfqLrVslmva4=</c2pa:manifest></metadata>
+<rect width="1080" height="560" rx="18" fill="#111a22"/>
+<text x="40.0" y="46.0" fill="#edf4f4" font-size="22" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Sept essais DPO, jamais plus d'un point d'écart</text>
+<text x="40.0" y="72.0" fill="#98a8ad" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Quel que soit le SFT de départ, le DPO déplace le F1 de moins d'un point, sans différence significative</text>
+<defs><marker id="runs-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#98a8ad"/></marker><marker id="runs-arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#48c9b0"/></marker><pattern id="runs-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#2f9e8a" opacity="0.35"/><line x1="0" y1="0" x2="0" y2="7" stroke="#2f9e8a" stroke-width="3"/></pattern></defs>
+<line x1="330.0" y1="110" x2="330.0" y2="462" stroke="#25333c"/>
+<text x="330.0" y="482.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >50 %</text>
+<line x1="388.9" y1="110" x2="388.9" y2="462" stroke="#25333c"/>
+<text x="388.9" y="482.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >55 %</text>
+<line x1="447.8" y1="110" x2="447.8" y2="462" stroke="#25333c"/>
+<text x="447.8" y="482.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >60 %</text>
+<line x1="506.7" y1="110" x2="506.7" y2="462" stroke="#25333c"/>
+<text x="506.7" y="482.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >65 %</text>
+<line x1="565.6" y1="110" x2="565.6" y2="462" stroke="#25333c"/>
+<text x="565.6" y="482.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >70 %</text>
+<line x1="624.4" y1="110" x2="624.4" y2="462" stroke="#25333c"/>
+<text x="624.4" y="482.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >75 %</text>
+<line x1="683.3" y1="110" x2="683.3" y2="462" stroke="#25333c"/>
+<text x="683.3" y="482.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >80 %</text>
+<line x1="742.2" y1="110" x2="742.2" y2="462" stroke="#25333c"/>
+<text x="742.2" y="482.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >85 %</text>
+<line x1="801.1" y1="110" x2="801.1" y2="462" stroke="#25333c"/>
+<text x="801.1" y="482.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >90 %</text>
+<line x1="860.0" y1="110" x2="860.0" y2="462" stroke="#25333c"/>
+<text x="860.0" y="482.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >95 %</text>
+<text x="1040.0" y="100.0" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="700" >décisions changées · McNemar</text>
+<text x="40.0" y="135.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >25 sept.</text>
+<text x="110.0" y="135.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >SFT run 01</text>
+<line x1="349.7" y1="130" x2="353.2" y2="130" stroke="#3a4a54" stroke-width="4" stroke-linecap="round"/>
+<circle cx="353.2" cy="130" r="8" fill="#2f9e8a" stroke="#111a22" stroke-width="2"/>
+<circle cx="349.7" cy="130" r="5" fill="#7b86ea" stroke="#111a22" stroke-width="1.5"/>
+<text x="367.2" y="134.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >−0,30</text>
+<text x="1040.0" y="135.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >504 cas</text>
+<text x="40.0" y="187.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >27 sept.</text>
+<text x="110.0" y="187.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >SFT run 02</text>
+<line x1="660.2" y1="182" x2="660.4" y2="182" stroke="#3a4a54" stroke-width="4" stroke-linecap="round"/>
+<circle cx="660.2" cy="182" r="8" fill="#2f9e8a" stroke="#111a22" stroke-width="2"/>
+<circle cx="660.4" cy="182" r="5" fill="#7b86ea" stroke="#111a22" stroke-width="1.5"/>
+<text x="674.4" y="186.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >+0,01</text>
+<text x="1040.0" y="187.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >—</text>
+<text x="40.0" y="239.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >7 oct.</text>
+<text x="110.0" y="239.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >ckpt-950 · 1 040 paires · 2 ép.</text>
+<line x1="619.0" y1="234" x2="621.0" y2="234" stroke="#3a4a54" stroke-width="4" stroke-linecap="round"/>
+<circle cx="621.0" cy="234" r="8" fill="#2f9e8a" stroke="#111a22" stroke-width="2"/>
+<circle cx="619.0" cy="234" r="5" fill="#7b86ea" stroke="#111a22" stroke-width="1.5"/>
+<text x="635.0" y="238.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >−0,17</text>
+<text x="1040.0" y="239.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >21 cas · p = 1,00</text>
+<text x="40.0" y="291.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >8 oct.</text>
+<text x="110.0" y="291.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >ckpt-950 · ≈ 336 paires</text>
+<line x1="611.7" y1="286" x2="621.0" y2="286" stroke="#3a4a54" stroke-width="4" stroke-linecap="round"/>
+<circle cx="621.0" cy="286" r="8" fill="#2f9e8a" stroke="#111a22" stroke-width="2"/>
+<circle cx="611.7" cy="286" r="5" fill="#7b86ea" stroke="#111a22" stroke-width="1.5"/>
+<text x="635.0" y="290.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >−0,79</text>
+<text x="1040.0" y="291.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >14 cas · p = 0,42</text>
+<text x="40.0" y="343.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >8 oct.</text>
+<text x="110.0" y="343.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >ckpt-950 · ≈ 336 paires</text>
+<line x1="609.7" y1="338" x2="621.0" y2="338" stroke="#3a4a54" stroke-width="4" stroke-linecap="round"/>
+<circle cx="621.0" cy="338" r="8" fill="#2f9e8a" stroke="#111a22" stroke-width="2"/>
+<circle cx="609.7" cy="338" r="5" fill="#7b86ea" stroke="#111a22" stroke-width="1.5"/>
+<text x="635.0" y="342.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >−0,96</text>
+<text x="1040.0" y="343.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >11 cas · p = 0,23</text>
+<text x="40.0" y="395.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >10 oct.</text>
+<text x="110.0" y="395.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >ckpt-750 · 1 680 paires</text>
+<line x1="784.6" y1="390" x2="791.6" y2="390" stroke="#3a4a54" stroke-width="4" stroke-linecap="round"/>
+<circle cx="784.6" cy="390" r="8" fill="#2f9e8a" stroke="#111a22" stroke-width="2"/>
+<circle cx="791.6" cy="390" r="5" fill="#7b86ea" stroke="#111a22" stroke-width="1.5"/>
+<text x="805.6" y="394.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >+0,59</text>
+<text x="1040.0" y="395.0" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >7 cas · p = 0,45</text>
+<text x="40.0" y="447.0" fill="#48c9b0" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >10 oct.</text>
+<text x="110.0" y="447.0" fill="#48c9b0" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >ckpt-450 · 1 680 paires</text>
+<line x1="823.0" y1="442" x2="823.0" y2="442" stroke="#3a4a54" stroke-width="4" stroke-linecap="round"/>
+<circle cx="823.0" cy="442" r="8" fill="#2f9e8a" stroke="#111a22" stroke-width="2"/>
+<circle cx="823.0" cy="442" r="5" fill="#7b86ea" stroke="#111a22" stroke-width="1.5"/>
+<text x="837.0" y="446.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >+0,00</text>
+<text x="1040.0" y="447.0" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >0 cas · p = 1,00</text>
+<circle cx="46" cy="530" r="7" fill="#2f9e8a"/>
+<text x="60.0" y="535.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >F1 du SFT de départ</text>
+<circle cx="236" cy="530" r="5" fill="#7b86ea"/>
+<text x="250.0" y="535.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >F1 après DPO</text>
+<text x="1040.0" y="535.0" fill="#98a8ad" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="end" font-weight="normal" >F1 macro sur le test de chaque run · écart en points</text>
+</svg><figcaption>Le plus grand écart observé est de −0,96 point. Aucun essai ne montre une différence significative avec son SFT.</figcaption></figure>
+<table class="story-table">
+<thead><tr><th>Date</th><th>SFT de départ</th><th>Données et réglages</th><th>Durée</th><th>F1 SFT → DPO</th><th>Sous-triage</th><th>Décisions changées</th></tr></thead>
+<tbody>
+<tr><td>25 sept.</td><td>Run 01</td><td>1 époque</td><td>6 h 35</td><td>51,97 → 51,67 %</td><td>—</td><td>Non mesuré</td></tr>
+<tr><td>27 sept.</td><td>Run 02</td><td>1 époque</td><td>11 h 06</td><td>78,04 → 78,05 %</td><td>—</td><td>Non mesuré</td></tr>
+<tr><td>7 oct.</td><td>ckpt-950</td><td>1 040 paires (50 % du corpus de 2 307) · 2 époques · accumulation 16</td><td>7 h 31</td><td>74,71 → 74,54 %</td><td>14,4 → 13,8 %</td><td>21 · p = 1,00</td></tr>
+<tr><td>8 oct.</td><td>ckpt-950</td><td>≈ 336 paires (20 %) · 1 époque · accumulation 8</td><td>30 min</td><td>74,71 → 73,92 %</td><td>14,4 → 14,0 %</td><td>14 · p = 0,42</td></tr>
+<tr><td>8 oct.</td><td>ckpt-950</td><td>≈ 336 paires (20 %) · mêmes réglages</td><td>1 h 50</td><td>74,71 → 73,75 %</td><td>14,4 → 14,2 %</td><td>11 · p = 0,23</td></tr>
+<tr><td>10 oct.</td><td>ckpt-750 (190331)</td><td>1 680 paires bilingues · 1 époque</td><td>2 h 10</td><td>88,60 → 89,19 %</td><td>6,4 → 6,8 %</td><td>7 · p = 0,45</td></tr>
+<tr><td>10 oct.</td><td><strong>ckpt-450 (154320)</strong></td><td>1 680 paires bilingues · 1 époque</td><td>1 h 39</td><td><strong>91,86 → 91,86 %</strong></td><td>5,8 → 5,8 %</td><td><strong>0</strong> · p = 1,00</td></tr>
+</tbody>
+</table>
+<p class="table-note">Un essai court du 2 octobre (26 étapes) n'a pas été évalué sur le test et n'est pas compté. Le premier essai est évalué sur 504 cas, les autres sur 500. Les tests diffèrent selon la version des données du SFT.</p>
 <div class="experiment-analysis">
-<div>
-<span>
-         ANALYSE
-        </span>
-<p>
-         Le premier relevé montre une validation loss décroissante jusqu’à 0,5388. Le test gelé montre un F1 macro pratiquement conservé, mais un recul de P3.
-        </p>
-</div>
-<div>
-<span>
-         DÉCISION
-        </span>
-<p>
-         Conserver ce run comme référence mesurée, puis auditer les explications, les paires et les erreurs individuelles.
-        </p>
+<div><span>SEPTEMBRE : DPO SUR DES SFT FAIBLES</span><p>Mes deux premiers DPO duraient 6 h 35 et 11 h 06 pour un effet nul. Le modèle reconnaissait la réponse préférée dans 80 % des cas au premier essai, mais le triage ne bougeait pas. Je ne pouvais pas espérer qu'un DPO corrige un SFT encore fragile.</p></div>
+<div><span>7–8 OCTOBRE : RÉDUIRE LE COÛT</span><p>Sur le checkpoint-950, deux époques sur la moitié des paires coûtent 7 h 31 sans gain. Avec 20 % des paires et une époque, l'essai descend à 30 minutes, mais le F1 baisse légèrement (−0,8 à −1,0 point) et le sous-triage P2→P3 bouge peu. J'en conclus qu'une seule époque suffit et que le corpus compte plus que la durée.</p></div>
+<div><span>10 OCTOBRE : LES DEUX CANDIDATS FINAUX</span><p>Avec le corpus bilingue complet, le DPO change 7 décisions sur le SFT non pondéré (5 corrigées, 2 dégradées) et aucune sur le SFT pondéré. Sur ce dernier, j'ai vérifié que l'adapter DPO était bien chargé : les scores bougent de 0,18 en moyenne, mais jamais assez pour changer une priorité.</p></div>
+<div><span>CE QUE CELA CONFIRME</span><p>C'est exactement ce que prévoit la construction de ma loss : la priorité étant identique dans les deux réponses, le DPO ne pousse pas la décision. Il rend seulement le modèle un peu plus sûr de ses choix.</p></div>
 </div>
 </div>
-</article>
-<article class="experiment-card">
-<div class="experiment-header">
-<div>
-<span class="experiment-number">
-         EXPÉRIENCE DPO
-        </span>
-<h3>
-         Run 02 : reconstruire le signal de préférence
-        </h3>
-</div>
-<span class="experiment-status promising">
-        PRÉPARÉ · NON MESURÉ
-       </span>
-</div>
-<div class="callout">
-<span class="eyebrow">
-        PROBLÉMATIQUE
-       </span>
-<p>
-        Des préférences trop faciles à distinguer enseignent-elles réellement une meilleure justification clinique ?
-       </p>
-</div>
-<div class="experiment-metrics">
-<div>
-<strong>
-         2 307
-        </strong>
-<span>
-         Paires totales
-        </span>
-</div>
-<div>
-<strong>
-         2 081
-        </strong>
-<span>
-         Train
-        </span>
-</div>
-<div>
-<strong>
-         226
-        </strong>
-<span>
-         Validation
-        </span>
-</div>
-<div>
-<strong>
-         769 / 769 / 769
-        </strong>
-<span>
-         P1 / P2 / P3
-        </span>
-</div>
-<div>
-<strong>
-         2
-        </strong>
-<span>
-         Epochs prévues
-        </span>
-</div>
-<div>
-<strong>
-         8
-        </strong>
-<span>
-         Accumulation
-        </span>
-</div>
-</div>
+</section>
+
+<!-- 05 PREFERENCES -->
+<section class="section section-alt">
+<div class="container">
+<p class="section-number">05</p>
+<h2>Ce que montrent les préférences</h2>
+<figure class="story-figure"><svg class="story-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 440" role="img" aria-label="Précision et marge de préférence des essais DPO." xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTo1N2JkM2UyMC0xMzdkLTRlZjgtOTg1My1mMGFmZWFhMzllODcAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaFK0MeBGJm/mmbNZrPrYtpwAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDo1MmYxYjYzZS0yY2NiLTQ4Y2MtOTc2NS0xZWJmOGFlYTJlNjlscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNoERW0OhWK4gvO6xzOXNmQgAAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggQwXzbCDrK/UtzDoshkaYqPj69hsAdRiyWbuUWtMsgIKkZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaCgFiDIneqdnQuTcb7+vOmQAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCDKGsiomI4AMCXAvLqa4wBteub50XOhTobZvUqfC8iFCmRuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjJZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjU3YmQzZTIwLTEzN2QtNGVmOC05ODUzLWYwYWZlYWEzOWU4Ny9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjRhODM0N2VhLTBjNTctNGIyZC04N2NjLTBhZmFhNGEyZDIxOXJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCBDBfNsIOsr9S3MOiyGRpio+Pr2GwB1GLJZu5Ra0yyAgqJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggS1lG/gEyXVUT1WH7UgwRraEvdXgbMTR53ffLEn4KZZuiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggibDNAuSFNtqwDoX7DbByoSPp1Av14s7UMMbMTk7sZCF0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQHVS5TAof2uWPmVNdj4XTC5dcLCoZR4qaGfi0CpQDnJ28gOhR0Cg1fcx1dTTdSEyKa7stYlDwaj4wXrHckkN/n8=</c2pa:manifest></metadata>
+<rect width="1080" height="440" rx="18" fill="#111a22"/>
+<text x="40.0" y="46.0" fill="#edf4f4" font-size="22" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Des paires devenues trop faciles</text>
+<text x="40.0" y="72.0" fill="#98a8ad" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Avec les 2 100 paires bilingues, le modèle reconnaît 100 % des bonnes réponses, avec une marge quatre fois plus grande</text>
+<defs><marker id="pref-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#98a8ad"/></marker><marker id="pref-arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#48c9b0"/></marker><pattern id="pref-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#2f9e8a" opacity="0.35"/><line x1="0" y1="0" x2="0" y2="7" stroke="#2f9e8a" stroke-width="3"/></pattern></defs>
+<text x="40.0" y="118.0" fill="#edf4f4" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Préférences correctes en validation</text>
+<line x1="40" y1="330" x2="520" y2="330" stroke="#3a4a54"/>
+<path d="M72.0,330.0 V162.088 Q72.0,158.088 76.0,158.088 H148.0 Q152.0,158.088 152.0,162.088 V330.0 Z" fill="#8a98a0" />
+<text x="112.0" y="150.1" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >90,5 %</text>
+<text x="112.0" y="350.0" fill="#edf4f4" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >8 oct.</text>
+<text x="112.0" y="366.0" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >ckpt-950</text>
+<path d="M184.0,330.0 V164.349 Q184.0,160.349 188.0,160.349 H260.0 Q264.0,160.349 264.0,164.349 V330.0 Z" fill="#8a98a0" />
+<text x="224.0" y="152.3" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >89,3 %</text>
+<text x="224.0" y="350.0" fill="#edf4f4" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >8 oct.</text>
+<text x="224.0" y="366.0" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >ckpt-950</text>
+<path d="M296.0,330.0 V144.0 Q296.0,140.0 300.0,140.0 H372.0 Q376.0,140.0 376.0,144.0 V330.0 Z" fill="#2f9e8a" />
+<text x="336.0" y="132.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >100,0 %</text>
+<text x="336.0" y="350.0" fill="#edf4f4" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >10 oct.</text>
+<text x="336.0" y="366.0" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >ckpt-750</text>
+<path d="M408.0,330.0 V144.0 Q408.0,140.0 412.0,140.0 H484.0 Q488.0,140.0 488.0,144.0 V330.0 Z" fill="#2f9e8a" />
+<text x="448.0" y="132.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >100,0 %</text>
+<text x="448.0" y="350.0" fill="#edf4f4" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >10 oct.</text>
+<text x="448.0" y="366.0" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >ckpt-450</text>
+<text x="560.0" y="118.0" fill="#edf4f4" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Marge moyenne de log-probabilité</text>
+<line x1="560" y1="330" x2="1040" y2="330" stroke="#3a4a54"/>
+<path d="M592.0,330.0 V298.375 Q592.0,294.375 596.0,294.375 H668.0 Q672.0,294.375 672.0,298.375 V330.0 Z" fill="#8a98a0" />
+<text x="632.0" y="286.4" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >1,50</text>
+<text x="632.0" y="350.0" fill="#edf4f4" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >8 oct.</text>
+<text x="632.0" y="366.0" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >ckpt-950</text>
+<path d="M704.0,330.0 V300.75 Q704.0,296.75 708.0,296.75 H780.0 Q784.0,296.75 784.0,300.75 V330.0 Z" fill="#8a98a0" />
+<text x="744.0" y="288.8" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >1,40</text>
+<text x="744.0" y="350.0" fill="#edf4f4" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >8 oct.</text>
+<text x="744.0" y="366.0" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >ckpt-950</text>
+<path d="M816.0,330.0 V175.5875 Q816.0,171.5875 820.0,171.5875 H892.0 Q896.0,171.5875 896.0,175.5875 V330.0 Z" fill="#2f9e8a" />
+<text x="856.0" y="163.6" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >6,67</text>
+<text x="856.0" y="350.0" fill="#edf4f4" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >10 oct.</text>
+<text x="856.0" y="366.0" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >ckpt-750</text>
+<path d="M928.0,330.0 V185.32500000000002 Q928.0,181.32500000000002 932.0,181.32500000000002 H1004.0 Q1008.0,181.32500000000002 1008.0,185.32500000000002 V330.0 Z" fill="#2f9e8a" />
+<text x="968.0" y="173.3" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >6,26</text>
+<text x="968.0" y="350.0" fill="#edf4f4" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >10 oct.</text>
+<text x="968.0" y="366.0" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >ckpt-450</text>
+<text x="40.0" y="410.0" fill="#6b7c83" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Mesures faites après le DPO uniquement : je n'ai pas mesuré la préférence du SFT seul, donc je ne peux pas chiffrer ce que le DPO a ajouté.</text>
+</svg><figcaption>Le 8 octobre, le modèle préférait la bonne réponse dans environ 90 % des cas. Avec le corpus bilingue du 10 octobre, il la préfère dans 100 % des cas, avec une marge plus de quatre fois plus grande.</figcaption></figure>
 <div class="experiment-analysis">
-<div>
-<span>
-         ANALYSE
-        </span>
-<p>
-         Le corpus v2 atteint 2 307 paires et un équilibre exact entre P1, P2 et P3. Les contrôles d’intégrité documentés sont satisfaits. Aucune métrique d’entraînement du Run 02 n’a été fournie.
-        </p>
+<div><span>OBSERVATION</span><p>Sur les 420 paires de validation, les deux DPO du 10 octobre atteignent 100 % de préférences correctes, pour les trois priorités. La loss de validation tombe à 0,0032 : le signal est saturé.</p></div>
+<div><span>POURQUOI</span><p>Les réponses rejetées sont des formulations génériques, très éloignées des explications spécifiques que le SFT v2 a déjà apprises. Le modèle n'a presque rien à apprendre pour les distinguer.</p></div>
+<div><span>LIMITE DE MA MESURE</span><p>Je n'ai mesuré la préférence qu'après le DPO. Sans la même mesure sur le SFT seul, je ne peux pas dire quelle part des 100 % vient du DPO et quelle part existait déjà.</p></div>
+<div><span>DÉCISION</span><p>Pour un prochain DPO, construire des réponses rejetées plausibles : correctes mais moins précises, ou s'appuyant sur un mauvais élément du cas. Et mesurer la préférence avant et après.</p></div>
 </div>
-<div>
-<span>
-         DÉCISION
-        </span>
-<p>
-         Dernière configuration consignée : 2 epochs, accumulation 8 et ajout de score_completion / score_dpo_preferences. Comparer sur le même test gelé avant de conclure.
-        </p>
-</div>
-</div>
-</article>
 </div>
 </section>
+
+<!-- 06 CHOIX FINAL -->
+<section class="section" id="choix">
+<div class="container">
+<p class="section-number">06</p>
+<p class="eyebrow">★ MODÈLE FINAL</p>
+<h2>SFT checkpoint-450 + DPO</h2>
+<p class="section-intro">J'ai lancé le même DPO sur les deux SFT candidats du 9 octobre, entraînés sur les mêmes données. La comparaison des deux couples a décidé du modèle final.</p>
+<figure class="story-figure"><svg class="story-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 460" role="img" aria-label="Comparaison des couples SFT et DPO des runs 190331 et 154320." xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTozZmFiN2IwMy1lMmRjLTQwNzAtOTMwNy0wZmFjMDY1M2EzMGQAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaNNwi6zRrfCLP9MRWHcHBEEAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDphM2NiOTY4Ni1hZTEwLTQyNTEtOWY1Ni0zNjYxYWYzNDE3MThscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNolopjbVYC6/kKQQRKjvpENQAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggYdLWz4e9zCipLS96buidLP+OzVIkESAdwGFNOmWgy9WkZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaGNdLv1t8H3WqmDZFVMVldsAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCCxnZ8qzVK0Bu/haPvzSC6FQmwxPQ4mKroHzTG5rUBSx2RuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjTZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjNmYWI3YjAzLWUyZGMtNDA3MC05MzA3LTBmYWMwNjUzYTMwZC9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjFhNjczMWVlLTdkZDYtNGQzNi1hZDc0LWFkZDBhNTM2YTVhNXJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCBh0tbPh73MKKktL3pu6J0s/47NUiQRIB3AYU06ZaDL1aJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggpmZ/Iocc0AoWdbGyinG9Oop7sI+azJtVbJM0VtQNaOyiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggeRMpXJHwduiABjfvQ99KAyMmlgLOUos+VeOeOo7OIAB0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQOf6HmXaAd8JtZAfQbCRai0mzGkDNo5Ij1hNlFn+E2ti+DZEmVmk3e3AjqtIKXdpbIorIF7ZBvPAd7u4QzrjZkA=</c2pa:manifest></metadata>
+<rect width="1080" height="460" rx="18" fill="#111a22"/>
+<text x="40.0" y="46.0" fill="#edf4f4" font-size="22" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Les deux couples SFT + DPO comparés</text>
+<text x="40.0" y="72.0" fill="#98a8ad" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Le choix du SFT compte bien plus que le DPO : +2,7 pts de F1 et +4,8 pts en français entre les deux couples</text>
+<defs><marker id="couples-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#98a8ad"/></marker><marker id="couples-arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#48c9b0"/></marker><pattern id="couples-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#2f9e8a" opacity="0.35"/><line x1="0" y1="0" x2="0" y2="7" stroke="#2f9e8a" stroke-width="3"/></pattern></defs>
+<text x="40.0" y="128.0" fill="#edf4f4" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >F1 macro (↑)</text>
+<line x1="40" y1="340" x2="360" y2="340" stroke="#3a4a54"/>
+<path d="M52,340.0 V175.66000000000003 Q52,171.66000000000003 56,171.66000000000003 H106 Q110,171.66000000000003 110,175.66000000000003 V340.0 Z" fill="#5d6b73" />
+<text x="81.0" y="163.7" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >88,60</text>
+<text x="81.0" y="360.0" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >SFT 750</text>
+<path d="M114,340.0 V174.539 Q114,170.539 118,170.539 H168 Q172,170.539 172,174.539 V340.0 Z" fill="#8a98a0" />
+<text x="143.0" y="162.5" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >89,19</text>
+<text x="143.0" y="360.0" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >+ DPO</text>
+<path d="M208,340.0 V169.466 Q208,165.466 212,165.466 H262 Q266,165.466 266,169.466 V340.0 Z" fill="#2f9e8a" />
+<text x="237.0" y="157.5" fill="#48c9b0" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >91,86</text>
+<text x="237.0" y="360.0" fill="#edf4f4" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >SFT 450</text>
+<path d="M270,340.0 V169.466 Q270,165.466 274,165.466 H324 Q328,165.466 328,169.466 V340.0 Z" fill="#7b86ea" />
+<text x="299.0" y="157.5" fill="#48c9b0" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >91,86</text>
+<text x="299.0" y="360.0" fill="#edf4f4" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >+ DPO</text>
+<text x="112.0" y="378.0" fill="#6b7c83" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >run 190331</text>
+<text x="268.0" y="378.0" fill="#48c9b0" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >run 154320 · retenu</text>
+<text x="380.0" y="128.0" fill="#edf4f4" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Accuracy FR (↑)</text>
+<line x1="380" y1="340" x2="700" y2="340" stroke="#3a4a54"/>
+<path d="M392,340.0 V188.20000000000002 Q392,184.20000000000002 396,184.20000000000002 H446 Q450,184.20000000000002 450,188.20000000000002 V340.0 Z" fill="#5d6b73" />
+<text x="421.0" y="176.2" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >82,0</text>
+<text x="421.0" y="360.0" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >SFT 750</text>
+<path d="M454,340.0 V186.68 Q454,182.68 458,182.68 H508 Q512,182.68 512,186.68 V340.0 Z" fill="#8a98a0" />
+<text x="483.0" y="174.7" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >82,8</text>
+<text x="483.0" y="360.0" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >+ DPO</text>
+<path d="M548,340.0 V177.56000000000003 Q548,173.56000000000003 552,173.56000000000003 H602 Q606,173.56000000000003 606,177.56000000000003 V340.0 Z" fill="#2f9e8a" />
+<text x="577.0" y="165.6" fill="#48c9b0" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >87,6</text>
+<text x="577.0" y="360.0" fill="#edf4f4" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >SFT 450</text>
+<path d="M610,340.0 V177.56000000000003 Q610,173.56000000000003 614,173.56000000000003 H664 Q668,173.56000000000003 668,177.56000000000003 V340.0 Z" fill="#7b86ea" />
+<text x="639.0" y="165.6" fill="#48c9b0" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >87,6</text>
+<text x="639.0" y="360.0" fill="#edf4f4" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >+ DPO</text>
+<text x="452.0" y="378.0" fill="#6b7c83" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >run 190331</text>
+<text x="608.0" y="378.0" fill="#48c9b0" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >run 154320 · retenu</text>
+<text x="720.0" y="128.0" fill="#edf4f4" font-size="14" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Sous-triage (↓)</text>
+<line x1="720" y1="340" x2="1040" y2="340" stroke="#3a4a54"/>
+<path d="M732,340.0 V222.39999999999998 Q732,218.39999999999998 736,218.39999999999998 H786 Q790,218.39999999999998 790,222.39999999999998 V340.0 Z" fill="#5d6b73" />
+<text x="761.0" y="210.4" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >6,40</text>
+<text x="761.0" y="360.0" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >SFT 750</text>
+<path d="M794,340.0 V214.8 Q794,210.8 798,210.8 H848 Q852,210.8 852,214.8 V340.0 Z" fill="#8a98a0" />
+<text x="823.0" y="202.8" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >6,80</text>
+<text x="823.0" y="360.0" fill="#98a8ad" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >+ DPO</text>
+<path d="M888,340.0 V233.8 Q888,229.8 892,229.8 H942 Q946,229.8 946,233.8 V340.0 Z" fill="#2f9e8a" />
+<text x="917.0" y="221.8" fill="#48c9b0" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >5,80</text>
+<text x="917.0" y="360.0" fill="#edf4f4" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >SFT 450</text>
+<path d="M950,340.0 V233.8 Q950,229.8 954,229.8 H1004 Q1008,229.8 1008,233.8 V340.0 Z" fill="#7b86ea" />
+<text x="979.0" y="221.8" fill="#48c9b0" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >5,80</text>
+<text x="979.0" y="360.0" fill="#edf4f4" font-size="11.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >+ DPO</text>
+<text x="792.0" y="378.0" fill="#6b7c83" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="normal" >run 190331</text>
+<text x="948.0" y="378.0" fill="#48c9b0" font-size="11" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="middle" font-weight="700" >run 154320 · retenu</text>
+<text x="40.0" y="430.0" fill="#6b7c83" font-size="12" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Même test gelé de 500 cas pour les quatre modèles. Le DPO change 7 décisions sur le run 190331, aucune sur le run 154320.</text>
+</svg><figcaption>L'écart entre les deux SFT est bien plus grand que l'effet du DPO sur chacun d'eux.</figcaption></figure>
+<table class="story-table">
+<thead><tr><th>Test gelé (500 cas)</th><th>SFT 750</th><th>SFT 750 + DPO</th><th>SFT 450</th><th>SFT 450 + DPO</th></tr></thead>
+<tbody>
+<tr><td>F1 macro</td><td>88,60 %</td><td>89,19 %</td><td>91,86 %</td><td><strong>91,86 %</strong></td></tr>
+<tr><td>Accuracy</td><td>88,60 %</td><td>89,20 %</td><td>91,80 %</td><td><strong>91,80 %</strong></td></tr>
+<tr><td>Sous-triage</td><td>6,40 %</td><td>6,80 %</td><td>5,80 %</td><td><strong>5,80 %</strong></td></tr>
+<tr><td>Rappel P1</td><td>93,41 %</td><td>93,41 %</td><td>93,41 %</td><td><strong>93,41 %</strong></td></tr>
+<tr><td>Accuracy FR / EN</td><td>82,0 / 95,2 %</td><td>82,8 / 95,6 %</td><td>87,6 / 96,0 %</td><td><strong>87,6 / 96,0 %</strong></td></tr>
+<tr><td>Préférences correctes (validation DPO)</td><td>—</td><td>100 %</td><td>—</td><td>100 %</td></tr>
+</tbody>
+</table>
+<div class="experiment-analysis">
+<div><span>POURQUOI CE COUPLE</span><p>Le SFT 154320 est meilleur sur la validation (F1 89,51 % contre 86,83 %, sous-triage 6,4 % contre 7,2 %). Le DPO ne modifie aucune de ses décisions, donc ce classement reste valable une fois le DPO ajouté. Sur le test, le couple retenu a aussi le meilleur F1, le plus bas sous-triage et 4,8 points de plus en français.</p></div>
+<div><span>POURQUOI GARDER LE DPO</span><p>Il ne dégrade rien sur le triage (0 décision changée), il rend le modèle un peu plus confiant dans ses choix, et la mission demande un modèle aligné par préférences. Les poids livrés sont donc l'adapter SFT du checkpoint-450 complété par l'adapter DPO du checkpoint-150 (sur 210 étapes), retenu sur la plus basse loss de validation DPO.</p></div>
+<div><span>CE QUI SURPREND</span><p>Sur le SFT non pondéré, le DPO gagnait 0,6 point de F1 mais ajoutait 2 sous-triages P2→P3 (6,4 % → 6,8 %). Un petit gain moyen peut donc cacher une légère perte de sécurité : c'est pour cela que je regarde toujours le détail des erreurs.</p></div>
+<div><span>CE QUI RESTE À PROUVER</span><p>Le bénéfice du DPO sur la qualité des explications n'est pas mesuré par un score indépendant. Je l'ai seulement observé dans les préférences, saturées à 100 %.</p></div>
+</div>
+</div>
+</section>
+
+<!-- 07 QUESTIONS OUVERTES -->
 <section class="section section-alt">
 <div class="container">
-<p class="section-number">
-      05
-     </p>
-<h2>
-      Run 01 : configuration et convergence
-     </h2>
-<div class="config-grid">
-<div class="config-card">
-<span>
-        Batch GPU
-       </span>
-<strong>
-        1
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Accumulation
-       </span>
-<strong>
-        16
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Scheduler
-       </span>
-<strong>
-        Cosine
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Warmup
-       </span>
-<strong>
-        5 %
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Train loss finale
-       </span>
-<strong>
-        0,3633
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Validation loss finale
-       </span>
-<strong>
-        0,5388
-       </strong>
-</div>
-</div>
-<h3>
-      Relevé principal
-     </h3>
-<div class="dpo-table-scroll">
-<table class="dpo-table">
-<thead>
-<tr>
-<th>
-          Step
-         </th>
-<th>
-          Validation loss
-         </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-          50
-         </td>
-<td>
-          0,5619
-         </td>
-</tr>
-<tr>
-<td>
-          100
-         </td>
-<td>
-          0,5405
-         </td>
-</tr>
-<tr>
-<td>
-          130
-         </td>
-<td>
-          0,5388
-         </td>
-</tr>
-</tbody>
-</table>
-</div>
-<h3>
-      Autre relevé du compte rendu complémentaire
-     </h3>
-<div class="dpo-table-scroll">
-<table class="dpo-table">
-<thead>
-<tr>
-<th>
-          Step
-         </th>
-<th>
-          Train loss
-         </th>
-<th>
-          Validation loss
-         </th>
-<th>
-          F1 macro validation
-         </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-          50
-         </td>
-<td>
-          0,002796
-         </td>
-<td>
-          0,539433
-         </td>
-<td>
-          39,2929 %
-         </td>
-</tr>
-<tr>
-<td>
-          100
-         </td>
-<td>
-          0,000992
-         </td>
-<td>
-          0,561331
-         </td>
-<td>
-          38,3521 %
-         </td>
-</tr>
-</tbody>
-</table>
-</div>
+<p class="section-number">07</p>
+<h2>Ce que je n'explique pas encore</h2>
 <div class="callout">
-<span class="eyebrow">
-       PRÉCAUTION DE LECTURE
-      </span>
-<p>
-       Les deux séries de losses proviennent de relevés distincts dont l’identité expérimentale exacte n’est pas établie. Elles ne sont pas fusionnées. La hausse de la validation loss du relevé complémentaire est un signal de vigilance, pas une preuve isolée de surapprentissage.
-      </p>
-</div>
-</div>
-</section>
-<section class="section" id="benchmark">
-<div class="container">
-<p class="section-number">
-      06
-     </p>
-<h2>
-      Le test gelé : le triage est globalement préservé
-     </h2>
-<p class="section-intro">
-      Les deux modèles sont évalués sur les mêmes 500 cas. Les écarts sont exprimés en points de pourcentage.
-     </p>
-<div class="config-grid">
-<div class="config-card">
-<span>
-        F1 macro SFT
-       </span>
-<strong>
-        74,71 %
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        F1 macro DPO
-       </span>
-<strong>
-        74,54 %
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Accuracy DPO
-       </span>
-<strong>
-        74,20 %
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Sous-triage DPO
-       </span>
-<strong>
-        13,80 %
-       </strong>
-</div>
-</div>
-<div class="dpo-table-scroll">
-<table class="dpo-table">
-<thead>
-<tr>
-<th>
-          Métrique
-         </th>
-<th>
-          SFT
-         </th>
-<th>
-          DPO
-         </th>
-<th>
-          Écart
-         </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-          Accuracy
-         </td>
-<td>
-          74,40 %
-         </td>
-<td>
-          74,20 %
-         </td>
-<td>
-          −0,20 pt
-         </td>
-</tr>
-<tr>
-<td>
-          Précision macro
-         </td>
-<td>
-          75,4476 %
-         </td>
-<td>
-          75,4256 %
-         </td>
-<td>
-          −0,0220 pt
-         </td>
-</tr>
-<tr>
-<td>
-          Recall macro
-         </td>
-<td>
-          74,3832 %
-         </td>
-<td>
-          74,1824 %
-         </td>
-<td>
-          −0,2008 pt
-         </td>
-</tr>
-<tr>
-<td>
-          F1 macro
-         </td>
-<td>
-          74,7071 %
-         </td>
-<td>
-          74,5393 %
-         </td>
-<td>
-          −0,1678 pt
-         </td>
-</tr>
-<tr>
-<td>
-          F1 pondéré
-         </td>
-<td>
-          74,7456 %
-         </td>
-<td>
-          74,5797 %
-         </td>
-<td>
-          −0,1660 pt
-         </td>
-</tr>
-<tr>
-<td>
-          Sous-triage
-         </td>
-<td>
-          14,40 %
-         </td>
-<td>
-          13,80 %
-         </td>
-<td>
-          −0,60 pt
-         </td>
-</tr>
-<tr>
-<td>
-          F1 P1
-         </td>
-<td>
-          84,3450 %
-         </td>
-<td>
-          84,6154 %
-         </td>
-<td>
-          +0,2704 pt
-         </td>
-</tr>
-<tr>
-<td>
-          F1 P2
-         </td>
-<td>
-          68,0115 %
-         </td>
-<td>
-          68,7324 %
-         </td>
-<td>
-          +0,7209 pt
-         </td>
-</tr>
-<tr>
-<td>
-          F1 P3
-         </td>
-<td>
-          71,7647 %
-         </td>
-<td>
-          70,2703 %
-         </td>
-<td>
-          −1,4944 pt
-         </td>
-</tr>
-<tr>
-<td>
-          Recall P1
-         </td>
-<td>
-          78,5714 %
-         </td>
-<td>
-          78,5714 %
-         </td>
-<td>
-          0 pt
-         </td>
-</tr>
-<tr>
-<td>
-          Recall P2
-         </td>
-<td>
-          71,0843 %
-         </td>
-<td>
-          73,4940 %
-         </td>
-<td>
-          +2,4097 pt
-         </td>
-</tr>
-<tr>
-<td>
-          Recall P3
-         </td>
-<td>
-          73,4940 %
-         </td>
-<td>
-          70,4819 %
-         </td>
-<td>
-          −3,0121 pt
-         </td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="callout">
-<span class="eyebrow">
-       INTERPRÉTATION
-      </span>
-<p>
-       Le F1 macro recule de 0,17 point. Le recall P1 est stable, P2 progresse et P3 recule. La diminution de sous-triage de 0,60 point représente trois cas sur 500, sans démonstration d’un gain de sécurité robuste.
-      </p>
-</div>
-</div>
-</section>
-<section class="section section-alt">
-<div class="container">
-<p class="section-number">
-      07
-     </p>
-<h2>
-      L’analyse appariée des décisions
-     </h2>
-<div class="config-grid">
-<div class="config-card">
-<span>
-        Cas testés
-       </span>
-<strong>
-        500
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Corrects pour les deux
-       </span>
-<strong>
-        361
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        SFT seul correct
-       </span>
-<strong>
-        11
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        DPO seul correct
-       </span>
-<strong>
-        10
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Discordances de justesse
-       </span>
-<strong>
-        21
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        McNemar exact • p
-       </span>
-<strong>
-        1,000
-       </strong>
-</div>
-</div>
-<div class="callout">
-<span class="eyebrow">
-       LIMITE STATISTIQUE
-      </span>
-<p>
-       Le test exact de McNemar ne met pas en évidence de différence significative de justesse. Les 21 discordances de justesse ne représentent pas nécessairement toutes les prédictions différentes. L’absence de significativité ne prouve pas l’équivalence clinique.
-      </p>
-</div>
-</div>
-</section>
-<section class="section" id="dataset-v2">
-<div class="container">
-<p class="section-number">
-      08
-     </p>
-<h2>
-      Pourquoi reconstruire le dataset DPO ?
-     </h2>
-<div class="about-grid">
-<div class="large-text">
-       Un rejected crédible vaut mieux qu’une erreur évidente.
-      </div>
-<div>
-<p>
-        Le
-        <strong>
-         chosen
-        </strong>
-        doit être plus informatif et directement justifié par le contexte clinique. Le
-        <strong>
-         rejected
-        </strong>
-        reste plausible et correct, mais moins utile.
-       </p>
-<p>
-        La priorité est identique dans les deux réponses. Les contextes, priorités et empreintes restent inchangés ; les champs bruts sont conservés pour l’audit.
-       </p>
-</div>
-</div>
-<div class="dpo-table-scroll">
-<table class="dpo-table">
-<thead>
-<tr>
-<th>
-          Corpus DPO v2
-         </th>
-<th>
-          P1
-         </th>
-<th>
-          P2
-         </th>
-<th>
-          P3
-         </th>
-<th>
-          Total
-         </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-          Train
-         </td>
-<td>
-          694
-         </td>
-<td>
-          694
-         </td>
-<td>
-          693
-         </td>
-<td>
-          2 081
-         </td>
-</tr>
-<tr>
-<td>
-          Validation
-         </td>
-<td>
-          75
-         </td>
-<td>
-          75
-         </td>
-<td>
-          76
-         </td>
-<td>
-          226
-         </td>
-</tr>
-<tr>
-<td>
-          Total
-         </td>
-<td>
-          769
-         </td>
-<td>
-          769
-         </td>
-<td>
-          769
-         </td>
-<td>
-          2 307
-         </td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="config-grid">
-<div class="config-card">
-<span>
-        Priorités modifiées
-       </span>
-<strong>
-        0
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Contextes modifiés
-       </span>
-<strong>
-        0
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Hash invalides
-       </span>
-<strong>
-        0
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        IDs dupliqués
-       </span>
-<strong>
-        0
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Chosen = rejected
-       </span>
-<strong>
-        0
-       </strong>
-</div>
-<div class="config-card">
-<span>
-        Priorités divergentes
-       </span>
-<strong>
-        0
-       </strong>
-</div>
-</div>
-<div class="callout">
-<span class="eyebrow">
-       DISTINCTION
-      </span>
-<p>
-       Le corpus de 1 153 paires décrit dans le compte rendu du Run 01 et les 2 307 paires de la version 2 sont deux états différents des données. Le bilan FR/EN du corpus v2 n’est pas chiffré dans les sources.
-      </p>
-</div>
-</div>
-</section>
-<section class="section section-alt" id="run-02">
-<div class="container">
-<p class="section-number">
-      09
-     </p>
-<h2>
-      Run 02 : paramètres décidés et mesures attendues
-     </h2>
-<div class="dpo-table-scroll">
-<table class="dpo-table">
-<thead>
-<tr>
-<th>
-          Élément
-         </th>
-<th>
-          Run 01
-         </th>
-<th>
-          Run 02 / statut
-         </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-          Dataset
-         </td>
-<td>
-          1 153 paires (compte rendu)
-         </td>
-<td>
-          2 307 paires v2
-         </td>
-</tr>
-<tr>
-<td>
-          Epochs
-         </td>
-<td>
-          2
-         </td>
-<td>
-          2 (dernière décision)
-         </td>
-</tr>
-<tr>
-<td>
-          Gradient accumulation
-         </td>
-<td>
-          16
-         </td>
-<td>
-          8 (dernière décision)
-         </td>
-</tr>
-<tr>
-<td>
-          Learning rate
-         </td>
-<td>
-          5 × 10⁻⁶
-         </td>
-<td>
-          À confirmer
-         </td>
-</tr>
-<tr>
-<td>
-          β DPO
-         </td>
-<td>
-          0,10
-         </td>
-<td>
-          À confirmer
-         </td>
-</tr>
-<tr>
-<td>
-          Score des complétions
-         </td>
-<td>
-          Non documenté
-         </td>
-<td>
-          score_completion prévu
-         </td>
-</tr>
-<tr>
-<td>
-          Score de préférence
-         </td>
-<td>
-          Non documenté
-         </td>
-<td>
-          score_dpo_preferences prévu
-         </td>
-</tr>
-<tr>
-<td>
-          Loss / F1 / sous-triage
-         </td>
-<td>
-          Mesurés
-         </td>
-<td>
-          Non renseignés
-         </td>
-</tr>
-<tr>
-<td>
-          Durée
-         </td>
-<td>
-          ≈ 1 h 40
-         </td>
-<td>
-          Non renseignée
-         </td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="callout">
-<span class="eyebrow">
-       CHRONOLOGIE
-      </span>
-<p>
-       Une proposition intermédiaire prévoyait 1 epoch et accumulation 8. La dernière annotation retient 2 epochs et accumulation 8. Aucun résultat d’exécution de ce nouveau run n’est présent dans les sources.
-      </p>
-</div>
-</div>
-</section>
-<section class="section" id="comparaison">
-<div class="container">
-<p class="section-number">
-      10
-     </p>
-<h2>
-      Comparer les runs sans inventer les résultats
-     </h2>
-<div class="dpo-table-scroll">
-<table class="dpo-table">
-<thead>
-<tr>
-<th>
-          Métrique
-         </th>
-<th>
-          SFT
-         </th>
-<th>
-          DPO documenté
-         </th>
-<th>
-          Run 02
-         </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-          Accuracy
-         </td>
-<td>
-          74,40 %
-         </td>
-<td>
-          74,20 %
-         </td>
-<td>
-          Non renseigné
-         </td>
-</tr>
-<tr>
-<td>
-          F1 macro
-         </td>
-<td>
-          74,71 %
-         </td>
-<td>
-          74,54 %
-         </td>
-<td>
-          Non renseigné
-         </td>
-</tr>
-<tr>
-<td>
-          F1 P1
-         </td>
-<td>
-          84,35 %
-         </td>
-<td>
-          84,62 %
-         </td>
-<td>
-          Non renseigné
-         </td>
-</tr>
-<tr>
-<td>
-          F1 P2
-         </td>
-<td>
-          68,01 %
-         </td>
-<td>
-          68,73 %
-         </td>
-<td>
-          Non renseigné
-         </td>
-</tr>
-<tr>
-<td>
-          F1 P3
-         </td>
-<td>
-          71,76 %
-         </td>
-<td>
-          70,27 %
-         </td>
-<td>
-          Non renseigné
-         </td>
-</tr>
-<tr>
-<td>
-          Sous-triage
-         </td>
-<td>
-          14,40 %
-         </td>
-<td>
-          13,80 %
-         </td>
-<td>
-          Non renseigné
-         </td>
-</tr>
-<tr>
-<td>
-          Évaluation qualitative
-         </td>
-<td>
-          Non fournie
-         </td>
-<td>
-          Non fournie
-         </td>
-<td>
-          Non renseignée
-         </td>
-</tr>
-</tbody>
-</table>
+<span class="eyebrow">ANOMALIE À VÉRIFIER</span>
+<strong>Pendant l'entraînement, le F1 de triage mesuré sur la validation DPO n'est que de 62,42 %.</strong>
+<p>Ce suivi est calculé sur les 420 cas de la validation DPO, pas sur la validation SFT. Le rappel P1 y tombe à 46,4 %, alors que le même modèle atteint 93,4 % sur le test gelé. Je n'ai pas mesuré le SFT seul sur ces 420 cas : je ne sais donc pas si l'écart vient du DPO ou de ces cas eux-mêmes (autre source, autre façon d'attribuer la priorité). Comme le DPO ne change aucune décision sur le test, la seconde hypothèse est la plus probable. Je ne cite pas ce chiffre comme une performance du modèle tant que je ne l'ai pas compris.</p>
 </div>
 <div class="reflection-grid">
-<div class="reflection-card">
-<h3>
-        Ce qui est démontré
-       </h3>
-<p>
-        Le DPO est faisable sur 6 Go et le premier modèle documenté conserve approximativement le F1 macro du SFT.
-       </p>
-</div>
-<div class="reflection-card">
-<h3>
-        Ce qui reste à démontrer
-       </h3>
-<p>
-        Le bénéfice réel des explications, la généralisation du Run 02, les résultats FR/EN et l’effet du nouveau corpus sur les erreurs de triage.
-       </p>
-</div>
+<div class="reflection-card"><h3>Explications non évaluées</h3><p>Aucun score ne mesure encore la fidélité au cas, la pertinence clinique ou la clarté des explications générées, avant et après DPO.</p></div>
+<div class="reflection-card"><h3>Paires trop faciles</h3><p>Avec 100 % de préférences correctes, le DPO ne reçoit presque plus de signal. Le corpus est le premier levier à retravailler.</p></div>
+<div class="reflection-card"><h3>Écart entre langues</h3><p>Le DPO ne réduit pas l'écart français / anglais : 23 des 29 sous-triages du modèle final sont français.</p></div>
+<div class="reflection-card"><h3>Coût</h3><p>Chaque DPO complet coûte entre 1 h 39 et 2 h 10 sur ma carte. Les premiers essais montaient jusqu'à 11 h pour un effet nul.</p></div>
 </div>
 </div>
 </section>
-<section class="section section-alt">
-<div class="container">
-<p class="section-number">
-      11
-     </p>
-<h2>
-      Les décisions pour la suite
-     </h2>
-<div class="reflection-grid">
-<div class="reflection-card">
-<h3>
-        Évaluer les explications
-       </h3>
-<p>
-        Fidélité au contexte, pertinence clinique, clarté patient, concision et absence d’invention.
-       </p>
-</div>
-<div class="reflection-card">
-<h3>
-        Auditer les erreurs
-       </h3>
-<p>
-        Examiner les cas gagnés/perdus, notamment les transitions P2/P3 et les erreurs P1.
-       </p>
-</div>
-<div class="reflection-card">
-<h3>
-        Contrôler les langues
-       </h3>
-<p>
-        Comparer les performances françaises et anglaises séparément.
-       </p>
-</div>
-<div class="reflection-card">
-<h3>
-        Mesurer les préférences
-       </h3>
-<p>
-        Analyser score_completion, score_dpo_preferences, losses et marges, sans confondre optimisation et bénéfice clinique.
-       </p>
-</div>
-<div class="reflection-card">
-<h3>
-        Isoler les variables
-       </h3>
-<p>
-        Le dataset et l’accumulation changent ensemble : une ablation sera nécessaire pour attribuer un gain à une cause.
-       </p>
-</div>
-</div>
-<div class="callout">
-<span class="eyebrow">
-       RÈGLE DE DÉCISION
-      </span>
-<p>
-       Ne retenir un nouveau DPO qu’après une évaluation sur le test gelé identique et un audit qualitatif des explications. Aucun résultat du Run 02 n’est présumé.
-      </p>
-</div>
-</div>
-</section>
+
+<!-- 08 SUITE -->
 <section class="section">
 <div class="container">
-<p class="section-number">
-      12
-     </p>
-<h2>
-      Ce que le DPO m’a appris
-     </h2>
-<div class="about-grid">
-<div class="large-text">
-       Une optimisation qui converge n’est pas automatiquement une amélioration du produit.
-      </div>
-<div>
-<p>
-        Le premier run a validé une méthode techniquement réalisable et a montré les limites d’une évaluation centrée sur la loss.
-       </p>
-<p>
-        La reconstruction du corpus de préférences améliore la qualité du protocole expérimental. Elle ne constitue pas encore un gain mesuré du modèle.
-       </p>
-<p>
-        La suite repose sur des mesures comparables, un audit clinique et une traçabilité des configurations et des données.
-       </p>
-</div>
+<p class="section-number">08</p>
+<h2>Ce que je ferais ensuite</h2>
+<div class="timeline">
+<div class="timeline-item"><span>01 • Mesurer</span><h3>Évaluer les explications</h3><p>Relire 50 explications FR et 50 EN, avant et après DPO, avec une grille simple : fidélité au cas, justification de la priorité, absence d'invention, clarté pour le patient.</p></div>
+<div class="timeline-item"><span>02 • Durcir</span><h3>Des paires plus exigeantes</h3><p>Remplacer les réponses génériques par des réponses plausibles mais moins utiles : correctes mais vagues, ou appuyées sur un détail secondaire du cas.</p></div>
+<div class="timeline-item"><span>03 • Comparer</span><h3>Mesurer avant et après</h3><p>Calculer la préférence du SFT seul sur les mêmes paires, pour isoler ce que le DPO apporte réellement.</p></div>
+<div class="timeline-item"><span>04 • Comprendre</span><h3>Expliquer les 62 %</h3><p>Évaluer le SFT seul sur les 420 cas de validation DPO et vérifier l'origine de leurs priorités.</p></div>
 </div>
 </div>
 </section>
+
+<!-- 09 LECONS -->
+<section class="section section-alt">
+<div class="container">
+<p class="section-number">09</p>
+<h2>Ce que le DPO m'a appris</h2>
+<div class="reflection-grid">
+<div class="reflection-card"><h3>Comprendre ce que la loss peut changer</h3><p>En relisant ma propre loss, j'ai compris pourquoi le triage ne bougeait pas : la priorité s'annule entre les deux réponses. J'aurais pu le prévoir avant de lancer sept essais.</p></div>
+<div class="reflection-card"><h3>Une préférence facile n'apprend rien</h3><p>100 % de bonnes préférences n'est pas un succès : c'est le signe que les paires ne posent plus de difficulté au modèle.</p></div>
+<div class="reflection-card"><h3>Le SFT décide du triage</h3><p>Entre les deux couples, l'écart vient entièrement du SFT. Le DPO est un réglage fin, pas une correction.</p></div>
+<div class="reflection-card"><h3>Revenir sur une décision</h3><p>Ce test m'a fait abandonner mon premier choix de modèle. Je préfère une décision révisée et argumentée à une décision défendue par principe.</p></div>
+</div>
+</div>
+</section>
+
+<!-- NAVIGATION -->
 <section class="section contact">
 <div class="container">
-<p class="eyebrow">
-      SUITE DU PROJET
-     </p>
-<h2>
-      Du signal de préférence au système évalué.
-     </h2>
-<p>
-      Le DPO doit maintenant être jugé sur les explications, la stabilité du triage et la reproductibilité des résultats.
-     </p>
+<p class="eyebrow">SUITE DU PROJET</p>
+<h2>Le modèle final est choisi.</h2>
+<p>SFT checkpoint-450 du run 20261009-154320 et adapter DPO du checkpoint-150 : 91,86 % de F1 macro et 5,80 % de sous-triage sur le test gelé (90,83 % de F1 sans les cas trop proches du train).</p>
 <div class="hero-actions">
-<a class="button secondary" href="experiments.html">
-       Revoir le SFT
-      </a>
-<a class="button primary" href="architecture.html">
-       Voir l’architecture
-      </a>
+<a class="button primary" href="experiments.html">Expérimentations SFT</a>
+<a class="button secondary" href="architecture.html">Voir l'architecture</a>
+<a class="button secondary" href="index.html">Retour au projet</a>
 </div>
 </div>
 </section>
-<section class="section" id="visualisations-dpo"><div class="container">
-<p class="section-number">ANALYSE COMPARATIVE</p><h2>Ce que le DPO a changé, et ce qu'il reste à démontrer</h2>
-<p class="story-intro">Sur le même test gelé de 500 cas, la classification varie peu après DPO. Les changements par classe sont plus instructifs que le score agrégé. La qualité des explications, objectif principal du DPO, nécessite une évaluation dédiée.</p>
-<figure class="story-figure"><img alt="Variations de performance du modèle DPO par rapport au SFT sur le test gelé, en points de pourcentage." loading="lazy" src="assets/sft-dpo-deltas.svg"/><figcaption>Variations de performance du modèle DPO par rapport au SFT sur le test gelé, en points de pourcentage.</figcaption></figure>
-<figure class="story-figure"><img alt="Décomposition des 500 cas selon la justesse des modèles SFT et DPO." loading="lazy" src="assets/accord-sft-dpo.svg"/><figcaption>Décomposition des 500 cas selon la justesse des modèles SFT et DPO.</figcaption></figure>
-<div class="story-note"><strong>Conclusion limitée mais utile.</strong> Le test exact de McNemar (p = 1,000) ne met pas en évidence de différence de justesse. Il ne prouve ni l'équivalence clinique ni la supériorité des explications DPO. La décision de conserver l'adapter DPO reste conditionnée à une évaluation qualitative et quantitative de ces explications.</div>
-</div></section>
 </main>
 <footer>
 <div class="container footer-content">
-<span>
-     Medical Triage AI • Expérimentations SFT
-    </span>
-<span>
-     AI Engineering • 2026
-    </span>
+<span>Medical Triage AI • Expérimentations DPO</span>
+<span>AI Engineering • 2026</span>
 </div>
 </footer>
-<script src="js/main.js">
-</script>
+<script src="js/main.js"></script>
 </body>
 </html>
