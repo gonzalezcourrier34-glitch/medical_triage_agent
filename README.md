@@ -16,7 +16,7 @@ Qwen3-1.7B · QLoRA · SFT + DPO · vLLM · FastAPI · Docker · GitHub Actions
 [Documentation technique](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/) ·
 [Expériences](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/experiments.html) ·
 [Architecture](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/architecture.html) ·
-[Synthèse et feuille de route](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/synthese.html)
+[Résultats et conclusion](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/resultats.html) · [Synthèse et feuille de route](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/synthese.html)
 
 </div>
 

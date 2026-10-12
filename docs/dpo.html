@@ -11,7 +11,7 @@
 <header class="header">
 <nav class="nav container">
 <a class="logo" href="index.html">MT<span>.</span>AI</a>
-<div class="nav-links"><a href="index.html">Projet</a><a href="data.html">Données</a><a href="experiments.html">SFT</a><a class="active" href="dpo.html">DPO</a><a href="architecture.html">Architecture</a><a href="synthese.html">Synthèse</a></div>
+<div class="nav-links"><a href="index.html">Projet</a><a href="data.html">Données</a><a href="experiments.html">SFT</a><a class="active" href="dpo.html">DPO</a><a href="architecture.html">Architecture</a><a href="resultats.html">Résultats</a><a href="synthese.html">Synthèse</a></div>
 </nav>
 </header>
 <main>
@@ -148,6 +148,7 @@ J'ai donc pré-calculé les log-probabilités de la référence (le SFT) une seu
 <tr><td>Priorité</td><td>Identique dans <em>chosen</em> et <em>rejected</em> pour les 2 100 paires</td><td>La préférence porte uniquement sur l'explication.</td></tr>
 <tr><td>Longueur</td><td>25,3 mots en moyenne (chosen) contre 25,5 (rejected) · chosen plus long dans 38 % des cas</td><td>Le modèle ne peut pas apprendre « plus long = mieux ».</td></tr>
 <tr><td>Fuite</td><td>0 cas commun avec le train ou le test SFT (empreinte du contexte)</td><td>Le test gelé reste indépendant du DPO.</td></tr>
+<tr><td>Étiquettes de priorité</td><td>Conformes au protocole FRENCH dans 42 % des cas vérifiables (47 sur 113)</td><td>Sans effet sur la loss, mais inutilisables pour mesurer le triage (<a href="#jeux">détail</a>).</td></tr>
 </tbody>
 </table>
 <h3>Un exemple de paire (P1, français)</h3>
@@ -156,6 +157,34 @@ J'ai donc pré-calculé les log-probabilités de la référence (le SFT) une seu
 <div class="reflection-card"><span class="eyebrow">CHOSEN · PRÉFÉRÉE</span><h3>Spécifique</h3><p>« Votre fièvre et votre toux avec crachats surviennent dans un contexte de syndrome myélodysplasique, avec un essoufflement croissant et un taux de plaquettes bas. Une évaluation immédiate est nécessaire… »</p></div>
 <div class="reflection-card"><span class="eyebrow">REJECTED · REJETÉE</span><h3>Générique</h3><p>« Chez ce patient, les résultats du bilan réalisé à l'arrivée. Les autres éléments utiles au triage sont la réponse du patient au traitement déjà administré. L'ensemble du tableau documenté conduit à une prise en charge immédiate. »</p></div>
 <div class="reflection-card"><span class="eyebrow">CE QUE J'EN RETIENS</span><h3>Trop facile à distinguer</h3><p>Les réponses rejetées reprennent les formulations génériques que j'avais corrigées dans le SFT. Un modèle déjà entraîné sur des explications spécifiques les reconnaît sans effort.</p></div>
+</div>
+<h3 id="jeux">Quel jeu de données sert à quoi</h3>
+<p>En suivant le triage pendant le DPO, j'ai obtenu un résultat inquiétant : sur les 420 cas de la validation DPO, le rappel P1 tombait sous 50 % et le F1 autour de 62 %, alors que le même modèle classe correctement 453 cas sur 500 du test gelé. J'ai d'abord mesuré le SFT seul sur ces 420 cas : 59,4 % de F1 et 35,7 % de rappel P1. Le DPO n'était donc pas en cause. Restait une question : quand le modèle et l'étiquette d'une paire ne sont pas d'accord, qui a raison ?</p>
+<p>Pour 113 de ces 420 cas, le pipeline qui a construit les paires avait conservé la décision automatique du protocole FRENCH. Je l'ai utilisée comme arbitre :</p>
+<table class="story-table params-table">
+<thead><tr><th>Cas avec décision FRENCH</th><th>Étiquette de la paire DPO conforme</th><th>Prédiction du SFT seul conforme</th></tr></thead>
+<tbody>
+<tr><td>Tous (113 cas)</td><td>47 (42 %)</td><td><strong>68 (60 %)</strong></td></tr>
+<tr><td>Décision FRENCH de confiance haute (51 cas)</td><td>23 (45 %)</td><td><strong>35 (69 %)</strong></td></tr>
+<tr><td>Désaccords entre le SFT et l'étiquette (48 cas)</td><td>FRENCH donne raison à l'étiquette 11 fois</td><td><strong>FRENCH donne raison au SFT 32 fois</strong></td></tr>
+</tbody>
+</table>
+<p class="table-note">Prédictions : <code>merged_eval/hf_dpo_validation_checkpoint-450/</code> ; décisions FRENCH : champ <code>triage_reference</code> du master DPO.</p>
+<p>Les étiquettes des paires DPO suivent le protocole dans moins d'un cas sur deux. Elles viennent d'une réserve construite avant la reconstruction de mes données : quand j'ai rebâti le SFT sur le corpus maître FRENCH, je n'ai pas rebâti les paires. Le SFT respecte mieux le protocole que ces étiquettes : un rappel bas sur la validation DPO mesure l'écart entre deux façons d'étiqueter, pas la qualité du modèle.</p>
+<p>J'en ai tiré une règle simple : chaque jeu de données n'est comparé qu'à ce pour quoi il a été construit.</p>
+<table class="story-table params-table">
+<thead><tr><th>Jeu</th><th>Rôle</th><th>Pourquoi c'est cohérent</th></tr></thead>
+<tbody>
+<tr><td><code>dpo_train</code> (1 680 paires)</td><td>Entraîner la préférence entre deux explications</td><td>La priorité est identique dans les deux réponses et s'annule dans la loss : l'étiquette, même discutable, ne pousse pas le triage.</td></tr>
+<tr><td><code>dpo_validation</code> (420 paires)</td><td>Loss DPO de validation : choix du checkpoint et arrêt anticipé, taux de préférences correctes</td><td>Cette loss ne compare que des explications ; elle ne dépend pas de la justesse de la priorité.</td></tr>
+<tr><td><code>sft_validation</code> (500 cas)</td><td>Suivre le triage pendant le DPO : garde-fou contre une dégradation</td><td>Étiquetée selon FRENCH, comme le train SFT et le test : c'est la seule référence fiable pour le triage. Elle ne sert jamais au calcul des gradients.</td></tr>
+<tr><td><code>sft_test</code> (500 cas, gelé)</td><td>Mesure finale, une seule fois, après tous les choix</td><td>Même étiquetage que le SFT et indépendant de tous les jeux précédents (aucun contexte commun) : c'est le seul chiffre que je rapporte.</td></tr>
+</tbody>
+</table>
+<div class="callout subtle">
+<span class="eyebrow">CE QUE J'AI CHANGÉ</span>
+<strong>Le notebook 06 suit désormais le triage sur la validation SFT, et non plus sur la validation DPO.</strong>
+<p>Le trainer reçoit <code>triage_validation_df</code> chargé depuis <code>sft_validation.jsonl</code>, son empreinte est enregistrée dans W&amp;B, et le notebook vérifie que le test gelé ne partage aucun contexte avec le train DPO, la validation DPO ou la validation SFT. La validation SFT a déjà servi à choisir le checkpoint-450 : c'est un jeu de sélection, pas une mesure indépendante, et c'est pourquoi le chiffre final reste celui du test gelé. Le DPO décrit sur cette page a été entraîné avec l'ancien suivi, qui n'intervenait pas dans le choix du checkpoint : ses résultats restent valides.</p>
 </div>
 </div>
 </section>
@@ -427,10 +456,10 @@ J'ai donc pré-calculé les log-probabilités de la référence (le SFT) une seu
 <p class="section-number">07</p>
 <h2>Les limites de ce DPO</h2>
 <div class="reflection-grid">
-<div class="reflection-card"><h3>Explications non évaluées</h3><p>Aucun score ne mesure encore la fidélité au cas, la pertinence clinique ou la clarté des explications générées, avant et après DPO.</p></div>
+<div class="reflection-card"><h3>Explications peu évaluées</h3><p>Une première mesure automatique compare le SFT et les deux DPO sur 90 cas (gabarits, formules toutes faites, copies). Elle ne juge pas encore la fidélité au cas ni la pertinence clinique, qui demandent une relecture humaine (<a href="resultats.html#dpo-realigne">comparaison</a>).</p></div>
 <div class="reflection-card"><h3>Paires trop faciles</h3><p>Avec 100 % de préférences correctes, le DPO ne reçoit presque plus de signal. Le corpus est le premier levier à retravailler.</p></div>
 <div class="reflection-card"><h3>Écart entre langues</h3><p>Le DPO ne réduit pas l'écart français / anglais : 23 des 29 sous-triages du modèle final sont français.</p></div>
-<div class="reflection-card"><h3>Un suivi de triage mal choisi</h3><p>Pendant l'entraînement, je suivais aussi le triage sur les 420 cas de la validation DPO (environ 62 % de F1, stable du premier au dernier pas). Ce chiffre ne mesure pas le modèle. Quand j'ai reconstruit le SFT à partir du corpus maître FRENCH, je n'ai pas reconstruit les paires DPO : elles viennent encore d'une réserve antérieure (pipeline de septembre, vignettes longues, priorités souvent fixées hors de la règle FRENCH automatique). Le SFT n'est donc pas d'accord avec une partie de ces étiquettes : mesuré seul sur ces 420 cas, il n'obtient que 59,4 % de F1. Le DPO n'a donc pas dégradé le triage. Ce suivi n'a eu aucun rôle : le checkpoint est choisi sur la loss DPO, la priorité s'annule dans la loss, et le DPO ne change aucune décision du test gelé.</p></div>
+<div class="reflection-card"><h3>Des étiquettes DPO hors protocole</h3><p>Les priorités des paires ne suivaient FRENCH que dans 42 % des cas vérifiables. J'ai reconstruit les 2 100 paires sur le protocole du SFT et réécrit toutes les explications préférées : le DPO réentraîné donne le même triage et des explications à peine différentes (<a href="resultats.html#dpo-realigne">résultats de l'essai</a>).</p></div>
 <div class="reflection-card"><h3>Coût</h3><p>Chaque DPO complet coûte entre 1 h 39 et 2 h 10 sur ma carte. Les premiers essais montaient jusqu'à 11 h pour un effet nul.</p></div>
 </div>
 </div>
@@ -444,7 +473,7 @@ J'ai donc pré-calculé les log-probabilités de la référence (le SFT) une seu
 <div class="timeline">
 <div class="timeline-item"><span>01 • Mesurer</span><h3>Évaluer les explications</h3><p>Relire 50 explications FR et 50 EN, avant et après DPO, avec une grille simple : fidélité au cas, justification de la priorité, absence d'invention, clarté pour le patient.</p></div>
 <div class="timeline-item"><span>02 • Durcir</span><h3>Des paires plus exigeantes</h3><p>Remplacer les réponses génériques par des réponses plausibles mais moins utiles : correctes mais vagues, ou appuyées sur un détail secondaire du cas.</p></div>
-<div class="timeline-item"><span>03 • Réaligner</span><h3>Reconstruire les paires sur le corpus du SFT</h3><p>Construire les paires DPO à partir du corpus maître FRENCH (hors cas SFT et hors cas proches du test), avec les mêmes étiquettes que le SFT, et suivre le triage sur la validation SFT plutôt que sur la validation DPO.</p></div>
+<div class="timeline-item"><span>03 • Réaligner · fait</span><h3>Reconstruire les paires sur le protocole du SFT</h3><p>Fait le 12 octobre : 2 100 paires conformes au protocole (350 par langue et par priorité), explications préférées réécrites, validation sans aucun cas vu par le SFT. Le triage est inchangé (459/500) et les explications ne progressent que de quelques cas sur 90 : j'ai gardé le modèle livré (<a href="resultats.html#dpo-realigne">détails</a>).</p></div>
 <div class="timeline-item"><span>04 • Comparer</span><h3>Mesurer avant et après</h3><p>Calculer la préférence du SFT seul sur les mêmes paires, pour isoler ce que le DPO apporte réellement.</p></div>
 </div>
 </div>

@@ -12,6 +12,7 @@ Ouvrir `index.html` dans un navigateur : aucune dépendance externe, aucun CDN, 
 | `experiments.html` | Six runs SFT historiques, reconstruction des données, choix du modèle final, test gelé, analyse de fuite, reproductibilité |
 | `dpo.html` | Mécanisme du DPO sous 6 Go, paires de préférences, sept essais, saturation des préférences, choix final |
 | `architecture.html` | Chaîne de données, entraînement, API, Docker, CI/CD, monitoring, sécurité, corrections et reste à faire |
+| `resultats.html` | Résultats finaux, essai du DPO réaligné, comparaison des explications, test sur dix cas inédits, format d'entrée, limites et conclusion |
 | `synthese.html` | Bilan, réponses à la mission, recommandation pour le CHSA, feuille de route, passage à l'échelle, cadre réglementaire, risques |
 
 ## Modèle final documenté

@@ -11,7 +11,7 @@ Exemples (depuis la racine du projet) :
   (serveur distant protégé : définir VLLM_API_KEY avant de lancer le script)
 
 Options d'analyse (mode hf) :
-  --split dpo_validation   les 420 cas de validation DPO au lieu du test gelé
+  --split dpo_validation   les 420 cas de validation DPO au lieu du test gelé (ou dpo_train)
   --adapter <dossier>      base Qwen/Qwen3-1.7B (BF16) + adapter LoRA, au lieu du modèle fusionné
   ex. SFT seul : --split dpo_validation --adapter artifacts/finetuning_sft_dpo/models/
                  20261009-154320/sft_checkpoints/checkpoint-450
@@ -41,6 +41,7 @@ RUN_DIR = ROOT / "artifacts/finetuning_sft_dpo/metrics/20261009-154320"
 SPLITS = {
     "test": ROOT / "data/raw/datasets/splits/sft_test.jsonl",
     "dpo_validation": ROOT / "data/raw/datasets/splits/dpo_validation.jsonl",
+    "dpo_train": ROOT / "data/raw/datasets/splits/dpo_train.jsonl",
 }
 BASE_MODEL = "Qwen/Qwen3-1.7B"  # base réelle de unsloth/Qwen3-1.7B-unsloth-bnb-4bit
 MODEL_PATH = ROOT / "artifacts/deployment/qwen3-triage-20261009-154320"

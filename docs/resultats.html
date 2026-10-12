@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Résultats et conclusion | Medical Triage AI</title>
+<meta content="Résultats finaux du modèle de triage, essai du DPO réaligné, comparaison des explications, test sur dix cas inédits, format d'entrée minimal et conclusion." name="description"/>
+<link href="css/style.css" rel="stylesheet"/>
+</head>
+<body>
+<header class="header">
+<nav class="nav container">
+<a class="logo" href="index.html">MT<span>.</span>AI</a>
+<div class="nav-links"><a href="index.html">Projet</a><a href="data.html">Données</a><a href="experiments.html">SFT</a><a href="dpo.html">DPO</a><a href="architecture.html">Architecture</a><a class="active" href="resultats.html">Résultats</a><a href="synthese.html">Synthèse</a></div>
+</nav>
+</header>
+<main>
+
+<!-- HERO -->
+<section class="hero project-hero">
+<div class="container hero-content">
+<p class="eyebrow">RÉSULTATS ET CONCLUSION</p>
+<h1>Ce que mesure le modèle livré,<span>et ce que révèlent des cas qu'il n'a jamais vus.</span></h1>
+<p class="hero-text">
+Cette page rassemble les résultats finaux du projet et les trois expériences menées en dernier : un DPO entraîné sur des paires
+réalignées sur le protocole FRENCH, une comparaison chiffrée des explications générées, et un test sur dix cas patients
+que j'ai écrits moi-même pour la démonstration. Ce dernier test a changé ma lecture du modèle : il trie bien les cas qui
+ressemblent à son entraînement, mais il peut sous-trier une urgence vitale quand les constantes ne sont pas alarmantes.
+</p>
+<div class="hero-tags">
+<span>Test gelé</span><span>DPO réaligné</span><span>Explications</span><span>Cas inédits</span><span>Causes d'erreur</span><span>Format d'entrée</span><span>Conclusion</span>
+</div>
+<div class="hero-actions">
+<a class="button primary" href="#cas-inedits">Voir le test sur cas inédits</a>
+<a class="button secondary" href="#conclusion">Aller à la conclusion</a>
+</div>
+</div>
+</section>
+
+<!-- 01 RÉSULTATS FINAUX -->
+<section class="section">
+<div class="container">
+<p class="section-number">01</p>
+<h2>Les résultats sur le test gelé</h2>
+<p class="section-intro">Le test gelé compte 500 cas (250 FR, 250 EN) qui n'ont servi à aucun choix. Je rapporte trois mesures, parce que le modèle évalué pendant l'entraînement et le modèle réellement servi ne sont pas tout à fait le même objet.</p>
+<div class="result-grid">
+<div class="result-card"><strong>90,66 %</strong><span>F1 macro du modèle servi</span></div>
+<div class="result-card"><strong>7,20 %</strong><span>Sous-triage du modèle servi</span></div>
+<div class="result-card"><strong>84,8 · 96,4 %</strong><span>Accuracy FR · EN</span></div>
+<div class="result-card"><strong>492/500</strong><span>Décisions identiques après fusion</span></div>
+</div>
+<table class="story-table params-table">
+<thead><tr><th>Modèle</th><th>Cas justes</th><th>F1 macro</th><th>Sous-triage</th><th>FR · EN</th><th>Statut</th></tr></thead>
+<tbody>
+<tr><td>SFT checkpoint-450 + DPO livré (adapter, base 4 bits)</td><td>459/500</td><td>91,86 %</td><td>5,8 %</td><td>87,6 · 96,0 %</td><td><span class="experiment-status promising">Référence d'évaluation</span></td></tr>
+<tr><td><strong>Modèle livré : adapter fusionné dans Qwen3-1.7B (BF16), servi par vLLM</strong></td><td><strong>453/500</strong></td><td><strong>90,66 %</strong></td><td><strong>7,20 %</strong></td><td><strong>84,8 · 96,4 %</strong></td><td><span class="experiment-status selected">Livré</span></td></tr>
+<tr><td>SFT checkpoint-450 + DPO réaligné (adapter, base 4 bits)</td><td>459/500</td><td>91,86 %</td><td>5,8 %</td><td>87,6 · 96,0 %</td><td><span class="experiment-status rejected">Non retenu</span></td></tr>
+</tbody>
+</table>
+<p class="table-note">Le passage de l'adapter 4 bits au modèle fusionné BF16 change 8 décisions sur 500 (test de McNemar, p = 0,070 : écart non significatif). Le modèle servi sous-trie 36 cas, dont 13 P1. Détails : <a href="architecture.html#verif-fusion">vérification de la fusion</a>.</p>
+</div>
+</section>
+
+<!-- 02 DPO RÉALIGNÉ -->
+<section class="section section-alt" id="dpo-realigne">
+<div class="container">
+<p class="section-number">02</p>
+<h2>L'essai du DPO réaligné</h2>
+<p class="section-intro">Les paires du DPO livré venaient d'une ancienne réserve dont les priorités ne suivaient le protocole FRENCH que dans 42 % des cas vérifiables (<a href="dpo.html#jeux">analyse détaillée</a>). J'ai reconstruit le jeu de paires pour qu'il suive le même protocole que le SFT, puis relancé le DPO avec exactement les mêmes réglages.</p>
+<h3>Ce que j'ai changé dans les données</h3>
+<table class="story-table params-table">
+<thead><tr><th>Étape</th><th>Script</th><th>Résultat</th></tr></thead>
+<tbody>
+<tr><td>Garder les paires conformes au protocole</td><td><code>scr/data/dpo_alignment.py</code></td><td>265 paires confirmées par la décision FRENCH, 642 confirmées par le SFT (marge ≥ 0,25), les paires contredites écartées</td></tr>
+<tr><td>Compléter jusqu'à l'équilibre demandé</td><td><code>scr/data/dpo_balance.py</code></td><td>2 100 paires : 50 % FR, 50 % EN, 350 par langue et par priorité, complétées avec des cas du train SFT</td></tr>
+<tr><td>Réécrire toutes les explications préférées</td><td><code>scr/data/dpo_chosen_rewrite.py</code></td><td>2 100 « chosen » rédigés à partir du seul contexte : deux phrases au plus, adressées au patient, sans formule de triage toute faite ; l'original est conservé dans les métadonnées</td></tr>
+<tr><td>Redécouper train et validation</td><td><code>scr/data/dpo_resplit.py</code></td><td>1 680 / 420 paires (280 / 70 par cellule) ; les cas issus du train SFT restent en train, les couples FR/EN d'un même cas restent ensemble, la validation ne contient aucun cas vu par le SFT</td></tr>
+</tbody>
+</table>
+<h3>Ce que l'entraînement a donné</h3>
+<table class="story-table params-table">
+<thead><tr><th>Indicateur</th><th>Valeur</th><th>Ce que j'en lis</th></tr></thead>
+<tbody>
+<tr><td>Loss d'entraînement</td><td>0,56 au pas 10, 0,006 au pas 30</td><td>La préférence est apprise en une trentaine de pas : les paires restent trop faciles à distinguer.</td></tr>
+<tr><td>Loss de validation DPO</td><td>0,0031 (pas 50) → 0,0005 (pas 200, retenu)</td><td>Checkpoint-200 choisi sur cette loss, comme prévu.</td></tr>
+<tr><td>Préférences correctes (validation)</td><td>100 %, marge moyenne 5,7</td><td>Le score est parfait, donc il ne départage plus rien.</td></tr>
+<tr><td>Triage suivi sur la validation SFT</td><td>F1 89,7 %, rappel P1 97,0 %, sous-triage 6,4 %, stable du pas 50 au pas 210</td><td>Le DPO n'abîme pas le triage.</td></tr>
+<tr><td>Test gelé</td><td>459/500, 0 décision différente du SFT seul</td><td>Attendu : la priorité est identique dans les deux réponses et s'annule dans la loss.</td></tr>
+<tr><td>Durée</td><td>52 minutes (210 pas) sur RTX 4050 6 Go</td><td>Deux fois plus court que les essais précédents.</td></tr>
+</tbody>
+</table>
+<h3>Les explications, mesurées</h3>
+<p>Comme le DPO ne peut changer que les explications, je les ai comparées sur 90 cas du test gelé (15 par langue et par priorité), en génération déterministe, pour les trois modèles : <code>benchmarks/compare_explanations.py</code>.</p>
+<table class="story-table params-table">
+<thead><tr><th>Indicateur (sur 90 explications)</th><th>SFT seul</th><th>DPO livré</th><th>DPO réaligné</th></tr></thead>
+<tbody>
+<tr><td>Reprend un gabarit du SFT (« Your reported clinical information includes… »)</td><td>21,1 %</td><td>21,1 %</td><td>21,1 %</td></tr>
+<tr><td>Contient une formule toute faite de triage</td><td>17,8 %</td><td>15,6 %</td><td>13,3 %</td></tr>
+<tr><td>Copie mot pour mot la cible du SFT</td><td>14,4 %</td><td>12,2 %</td><td>10,0 %</td></tr>
+<tr><td>S'adresse au patient</td><td>92 %</td><td>93 %</td><td>92 %</td></tr>
+<tr><td>Explications distinctes</td><td>96,7 %</td><td>98,9 %</td><td>98,9 %</td></tr>
+<tr><td>Longueur moyenne</td><td>22 mots</td><td>22 mots</td><td>22 mots</td></tr>
+</tbody>
+</table>
+<p class="table-note">Résultats : <code>metrics/20261009-154320/explanations_compare/</code>. Base Qwen/Qwen3-1.7B en BF16 avec chaque adapter, génération gloutonne.</p>
+<div class="callout subtle">
+<span class="eyebrow">MA DÉCISION</span>
+<strong>Je garde le modèle livré.</strong>
+<p>Le DPO réaligné va dans le bon sens (moins de formules toutes faites, moins de copies), mais l'écart porte sur deux à quatre cas sur 90 : ce n'est pas une différence que je peux défendre. Les deux DPO restent très proches du SFT, parce qu'un bêta de 0,1 et un taux d'apprentissage de 5e-6 sur 210 pas ne déplacent le modèle que de quelques mots. Le gabarit du SFT, présent dans 81 des 500 cibles du test, n'est corrigé par aucun des deux : aucune réponse rejetée ne lui ressemblait. Le travail sur les données reste acquis : les paires suivent désormais le même protocole que le SFT, et c'est sur cette base qu'un prochain DPO devra être construit.</p>
+</div>
+</div>
+</section>
+
+<!-- 03 CAS INÉDITS -->
+<section class="section" id="cas-inedits">
+<div class="container">
+<p class="section-number">03</p>
+<h2>Dix cas que le modèle n'a jamais vus</h2>
+<p class="section-intro">Pour préparer la démonstration, j'ai écrit dix cas qui ne viennent d'aucun dataset : cinq en français, cinq en anglais, quatre P1, trois P2 et trois P3, avec la priorité que j'attends. Chaque cas est envoyé au modèle livré sous trois formes, pour savoir de quoi il a besoin : <code>benchmarks/demo_cas_inconnus.py</code>.</p>
+<table class="story-table params-table">
+<thead><tr><th>Forme</th><th>Contenu</th><th>Priorités justes</th><th>Sous-triages</th><th>Latence médiane</th></tr></thead>
+<tbody>
+<tr><td><strong>Complète</strong></td><td>En-tête, âge, symptômes, signes cliniques, constantes, antécédents</td><td><strong>7/10</strong></td><td>2</td><td>2,0 s</td></tr>
+<tr><td>Minimale</td><td>En-tête, âge, symptômes</td><td>5/10</td><td>4</td><td>1,5 s</td></tr>
+<tr><td>Libre</td><td>Une phrase rédigée, sans rubriques</td><td>6/10</td><td>4</td><td>1,7 s</td></tr>
+</tbody>
+</table>
+<p class="table-note">Mode local : modèle fusionné BF16, Transformers, RTX 4050 6 Go. La latence du service cloud (vLLM) sera mesurée sur RunPod.</p>
+<table class="story-table params-table">
+<thead><tr><th>Cas</th><th>Attendu</th><th>Complète</th><th>Minimale</th><th>Libre</th></tr></thead>
+<tbody>
+<tr><td>Douleur thoracique, sueurs, tension 92/60 (EN)</td><td>P1</td><td>P2 ✗</td><td>P2 ✗</td><td>P2 ✗</td></tr>
+<tr><td>AVC depuis une heure, hémiplégie et trouble de la parole (EN)</td><td>P1</td><td>P2 ✗</td><td>P2 ✗</td><td>P2 ✗</td></tr>
+<tr><td>Anaphylaxie après piqûre de guêpe, SpO2 89 % (FR)</td><td>P1</td><td>P1 ✓</td><td>P2 ✗</td><td>P2 ✗</td></tr>
+<tr><td>Fièvre 39,8 °C et purpura extensif (FR)</td><td>P1</td><td>P1 ✓</td><td>P2 ✗</td><td>P2 ✗</td></tr>
+<tr><td>Douleur de la fosse iliaque droite, 38,1 °C (EN)</td><td>P2</td><td>P2 ✓</td><td>P2 ✓</td><td>P2 ✓</td></tr>
+<tr><td>Poussée de BPCO, SpO2 91 % (FR)</td><td>P2</td><td>P2 ✓</td><td>P2 ✓</td><td>P2 ✓</td></tr>
+<tr><td>Fracture déformante du poignet chez un enfant (FR)</td><td>P2</td><td>P2 ✓</td><td>P2 ✓</td><td>P2 ✓</td></tr>
+<tr><td>Mal de gorge sans fièvre (EN)</td><td>P3</td><td>P3 ✓</td><td>P3 ✓</td><td>P3 ✓</td></tr>
+<tr><td>Lombalgie après un déménagement (FR)</td><td>P3</td><td>P3 ✓</td><td>P3 ✓</td><td>P3 ✓</td></tr>
+<tr><td>Entorse de cheville, marche possible (EN)</td><td>P3</td><td>P2 ✗</td><td>P2 ✗</td><td>P3 ✓</td></tr>
+</tbody>
+</table>
+<div class="reflection-grid">
+<div class="reflection-card"><h3>Des urgences vitales sous-triées</h3><p>L'infarctus et l'AVC sont classés P2 sous toutes les formes, alors même que l'explication écrit « suggests a heart attack » ou « suggests a stroke ». Le modèle reconnaît la maladie mais ne la relie pas toujours à l'urgence : ces deux urgences dépendent du temps, pas des constantes.</p></div>
+<div class="reflection-card"><h3>Les constantes font la différence</h3><p>L'anaphylaxie et le purpura fébrile ne sont classés P1 que lorsque la tension basse, la saturation ou la raideur de nuque figurent dans l'entrée. Sans elles, ils tombent en P2.</p></div>
+<div class="reflection-card"><h3>Des détails inventés</h3><p>Pour la douleur abdominale d'un homme, une explication cite « a pelvic inflammatory disease », une autre « a history of diverticulitis ». Une chute de trottinette devient « frappé par la trottinette ». La priorité est juste, mais l'explication ajoute des faits absents du cas.</p></div>
+<div class="reflection-card"><h3>Le bas de l'échelle est fiable</h3><p>Les P2 et P3 sont reconnus dans 16 réponses sur 18, toutes formes confondues. Les deux erreurs sont des surtriages (l'entorse classée P2), l'erreur la moins grave aux urgences.</p></div>
+</div>
+</div>
+</section>
+
+<!-- 04 POURQUOI -->
+<section class="section section-alt" id="pourquoi">
+<div class="container">
+<p class="section-number">04</p>
+<h2>Pourquoi le modèle se trompe</h2>
+<p class="section-intro">Pour comprendre les deux urgences manquées, je suis retourné aux 4 000 cas du train SFT. L'explication ne vient ni du DPO (les décisions sont identiques sans lui) ni de la fusion (492 décisions sur 500 inchangées) : elle vient de ce que le modèle a vu pendant l'entraînement.</p>
+<table class="story-table params-table">
+<thead><tr><th>Cause</th><th>Ce que montrent les données d'entraînement</th><th>Effet sur les cas inédits</th></tr></thead>
+<tbody>
+<tr><td><strong>Des mots-clés plutôt qu'un raisonnement</strong></td><td>58 % des P1 contiennent un signe de gravité écrit en toutes lettres : convulsion (25 %), inconscience ou coma (16 %), détresse respiratoire ou cyanose (15 %), hémorragie (9 %). 52 % des P1 sont de courtes fiches « maladie + symptôme ».</td><td>Le modèle associe P1 à la présence d'un mot alarmant. L'infarctus et l'AVC n'en contiennent aucun : il les nomme dans son explication (« suggests a heart attack ») mais les classe P2.</td></tr>
+<tr><td><strong>Des urgences dépendantes du temps trop rares</strong></td><td>30 infarctus et 25 AVC sur 4 000 cas, soit environ 1,4 %. Les 25 AVC sont pourtant tous étiquetés P1 : l'étiquette n'est pas en cause, le nombre d'exemples l'est.</td><td>Trop peu d'exemples pour apprendre qu'un déficit neurologique d'une heure est une urgence vitale, même avec des constantes peu perturbées.</td></tr>
+<tr><td><strong>Des étiquettes contradictoires</strong></td><td>La douleur thoracique apparaît 48 fois en P1, 13 fois en P2 et 8 fois en P3 ; une dissection aortique est étiquetée P2. La tournure « X suggests Y. You need a prompt assessment » est fréquente dans les cibles P2.</td><td>La douleur thoracique devient un signe ambigu ; la réponse sur l'infarctus reprend mot pour mot ce gabarit de P2.</td></tr>
+<tr><td><strong>Peu de constantes à l'entraînement</strong></td><td>Seuls 23 % des P1, 20 % des P2 et 8 % des P3 contiennent des constantes.</td><td>Le modèle réagit aux valeurs très anormales (SpO<sub>2</sub> 89 %, tension 82/45) mais pas aux valeurs modérément anormales (tension 92/60, pouls 110). D'où l'écart entre la forme complète et les autres.</td></tr>
+<tr><td><strong>Un format un peu différent</strong></td><td>Les contextes du train sont courts (médiane 24 mots) et souvent issus de fiches de maladies.</td><td>Des cas rédigés comme en pratique, plus riches, sortent de ce que le modèle connaît le mieux.</td></tr>
+</tbody>
+</table>
+<p class="table-note">Comptages par recherche de mots-clés (FR et EN) dans <code>sft_train.jsonl</code> ; ordres de grandeur, pas une annotation clinique.</p>
+<div class="callout subtle">
+<span class="eyebrow">CE QUE J'EN RETIENS</span>
+<strong>Le modèle fait un diagnostic, mais il a appris l'urgence à partir de mots, pas à partir du délai.</strong>
+<p>La correction passe d'abord par les données : quelques centaines de cas d'urgences dépendantes du temps (infarctus, AVC, embolie pulmonaire, dissection), étiquetés P1 selon FRENCH et accompagnés de leurs constantes ; des étiquettes contradictoires corrigées ; un jeu de test ciblé sur ces urgences pour vérifier le rappel P1. En attendant, un filet de sécurité par règles sur des drapeaux rouges explicites reste la protection la plus simple.</p>
+</div>
+</div>
+</section>
+
+<!-- 05 FORMAT D'ENTRÉE -->
+<section class="section" id="format">
+<div class="container">
+<p class="section-number">05</p>
+<h2>Le format d'entrée à utiliser</h2>
+<p class="section-intro">Aucune forme ne donne dix bonnes réponses sur dix, mais la forme complète est nettement la meilleure, et c'est elle qui retrouve les P1 quand les constantes sont anormales. C'est donc le format que je retiens pour l'API et pour la démonstration.</p>
+<div class="code-panel">
+<div class="code-panel-header"><span>POST /triage</span><small>champ <code>question</code>, langue <code>fr</code> ou <code>en</code></small></div>
+<pre><code>Informations patient:
+Age: 31
+
+Reported symptoms: lèvres et langue gonflées, sifflements, urticaire
+  15 minutes après une piqûre de guêpe
+Clinical signs: gêne respiratoire, voix rauque
+Vital signs: heart_rate: 128, systolic_bp: 82, diastolic_bp: 45, spo2: 89
+Medical history: allergie connue aux hyménoptères</code></pre>
+</div>
+<table class="story-table params-table">
+<thead><tr><th>Rubrique</th><th>Obligatoire</th><th>Pourquoi</th></tr></thead>
+<tbody>
+<tr><td>En-tête <code>Informations patient:</code> / <code>Patient information:</code></td><td>Oui</td><td>C'est la forme vue à l'entraînement ; les rubriques restent en anglais, même pour un cas français, comme dans le SFT.</td></tr>
+<tr><td><code>Age:</code></td><td>Oui</td><td>L'âge change le risque : un même symptôme ne pèse pas pareil chez un nourrisson, un adulte ou une personne âgée.</td></tr>
+<tr><td><code>Reported symptoms:</code></td><td>Oui</td><td>Le cœur du cas : motif, durée, évolution.</td></tr>
+<tr><td><code>Vital signs:</code></td><td>Fortement recommandé</td><td>C'est ce qui fait passer un cas de P2 à P1 : tension, fréquence cardiaque, saturation, température.</td></tr>
+<tr><td><code>Clinical signs:</code> · <code>Medical history:</code></td><td>Utile</td><td>Précise le risque (raideur de nuque, terrain allergique, anticoagulant…).</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- 06 LIMITES -->
+<section class="section section-alt">
+<div class="container">
+<p class="section-number">06</p>
+<h2>Les limites que je retiens</h2>
+<div class="reflection-grid">
+<div class="reflection-card"><h3>Sous-triage des urgences dépendantes du temps</h3><p>Infarctus et AVC sans constantes alarmantes passent en P2. Sur le test gelé, 13 P1 sont sous-triés. C'est la limite principale : le modèle ne peut pas décider seul (<a href="#pourquoi">causes</a>).</p></div>
+<div class="reflection-card"><h3>Explications parfois inexactes</h3><p>Le modèle peut ajouter un antécédent ou un mécanisme absent du cas. Certaines cibles du SFT contenaient déjà ce défaut : il vient en partie des données.</p></div>
+<div class="reflection-card"><h3>Un DPO qui bouge peu</h3><p>Avec des réponses rejetées trop faciles, le DPO apprend en trente pas et modifie à peine les explications. Il faudra des paires plus exigeantes, par exemple rejeter le gabarit du SFT lui-même.</p></div>
+<div class="reflection-card"><h3>Des données encore hétérogènes</h3><p>La validation DPO garde des contextes plus longs que le SFT (médiane 96 mots contre 23), et une partie des étiquettes du SFT reste discutable (une dissection aortique classée P2, par exemple).</p></div>
+<div class="reflection-card"><h3>Une évaluation limitée</h3><p>Dix cas inédits ne font pas une statistique, et les priorités attendues sont les miennes, pas celles d'IOA. Ce test sert d'alerte, pas de mesure.</p></div>
+<div class="reflection-card"><h3>Écart entre langues</h3><p>Le français reste en retrait : 84,8 % d'accuracy contre 96,4 % en anglais sur le test gelé.</p></div>
+</div>
+</div>
+</section>
+
+<!-- 07 CONCLUSION -->
+<section class="section" id="conclusion">
+<div class="container">
+<p class="section-number">07</p>
+<h2>Conclusion</h2>
+<div class="about-grid">
+<div class="large-text">Le POC fonctionne. Il n'est pas prêt à trier seul.</div>
+<div>
+<p>Le projet montre qu'un modèle de 1,7 milliard de paramètres, entraîné sur une carte de 6 Go, apprend à classer des cas cliniques en P1, P2 ou P3 et à justifier sa décision : 90,66 % de F1 macro sur un test gelé, avec une chaîne complète de la donnée jusqu'au service vLLM, testée et automatisée.</p>
+<p>Les dernières expériences précisent ce que ce chiffre ne dit pas. Le DPO soigne la forme des explications sans changer le triage, et la reconstruction des paires n'a pas modifié ce constat. Surtout, le test sur des cas inédits montre que le modèle peut classer en P2 un infarctus ou un AVC qu'il a pourtant nommé dans son explication. C'est l'erreur la plus coûteuse aux urgences.</p>
+<p>Ma conclusion rejoint donc la <a href="synthese.html#recommandation">recommandation de la synthèse</a> : un second avis pour l'IOA, avec une entrée structurée comprenant les constantes, jamais une décision autonome.</p>
+</div>
+</div>
+<div class="timeline" style="margin-top:3rem">
+<div class="timeline-item"><span>01 • Sécuriser</span><h3>Un filet de sécurité par règles</h3><p>Passer en P1 tout cas qui présente un drapeau rouge explicite (saturation sous 90 %, tension systolique sous 90, signes d'AVC, douleur thoracique avec sueurs, purpura fébrile), en conservant la priorité du modèle pour la traçabilité.</p></div>
+<div class="timeline-item"><span>02 • Corriger</span><h3>Des étiquettes et des paires plus exigeantes</h3><p>Revoir les P1 manquants du SFT (urgences dépendantes du temps), puis construire un DPO dont les réponses rejetées incluent le gabarit du SFT et des explications plausibles mais inexactes.</p></div>
+<div class="timeline-item"><span>03 • Évaluer</span><h3>Des cas réels étiquetés par des IOA</h3><p>Mesurer la concordance et le sous-triage sur des cas du CHSA, avec une grille de relecture des explications : fidélité au cas, absence d'invention, clarté.</p></div>
+</div>
+</div>
+</section>
+
+<!-- NAVIGATION -->
+<section class="section contact">
+<div class="container">
+<p class="eyebrow">EN RÉSUMÉ</p>
+<h2>Un modèle utile comme second avis, à condition de lui donner les constantes.</h2>
+<p>Le modèle livré reste celui du SFT checkpoint-450 avec le premier DPO : le DPO réaligné ne l'améliore pas de façon mesurable. Le test sur cas inédits fixe le format d'entrée de la démonstration et la limite principale à présenter : le sous-triage des urgences vitales dépendantes du temps.</p>
+<div class="hero-actions">
+<a class="button primary" href="synthese.html">Synthèse et recommandations</a>
+<a class="button secondary" href="dpo.html">Le DPO en détail</a>
+<a class="button secondary" href="architecture.html">Architecture</a>
+</div>
+</div>
+</section>
+</main>
+<footer>
+<div class="container footer-content">
+<span>Medical Triage AI • Résultats et conclusion</span>
+<span>AI Engineering • 2026</span>
+</div>
+</footer>
+<script src="js/main.js"></script>
+</body>
+</html>

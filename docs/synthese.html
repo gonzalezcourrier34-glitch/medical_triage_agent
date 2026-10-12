@@ -11,7 +11,7 @@
 <header class="header">
 <nav class="nav container">
 <a class="logo" href="index.html">MT<span>.</span>AI</a>
-<div class="nav-links"><a href="index.html">Projet</a><a href="data.html">Données</a><a href="experiments.html">SFT</a><a href="dpo.html">DPO</a><a href="architecture.html">Architecture</a><a class="active" href="synthese.html">Synthèse</a></div>
+<div class="nav-links"><a href="index.html">Projet</a><a href="data.html">Données</a><a href="experiments.html">SFT</a><a href="dpo.html">DPO</a><a href="architecture.html">Architecture</a><a href="resultats.html">Résultats</a><a class="active" href="synthese.html">Synthèse</a></div>
 </nav>
 </header>
 <main>
@@ -234,9 +234,9 @@ d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommand
 <table class="story-table params-table">
 <thead><tr><th>Risque</th><th>Ce qu'on observe déjà</th><th>Garde-fou proposé</th></tr></thead>
 <tbody>
-<tr><td>Sous-triage d'un patient grave</td><td>7,2 % de sous-triage sur le test, dont 13 P1</td><td>Décision humaine ; alerte seulement quand le modèle est plus urgent que l'IOA ; seuil de sous-triage bloquant à chaque nouvelle version</td></tr>
+<tr><td>Sous-triage d'un patient grave</td><td>7,2 % de sous-triage sur le test, dont 13 P1 ; sur dix cas inédits, un infarctus et un AVC classés P2 (<a href="resultats.html#cas-inedits">test</a>)</td><td>Décision humaine ; alerte seulement quand le modèle est plus urgent que l'IOA ; seuil de sous-triage bloquant à chaque nouvelle version</td></tr>
 <tr><td>Écart entre langues</td><td>84,8 % d'accuracy en français contre 96,4 % en anglais</td><td>Données françaises réelles en priorité ; métriques suivies par langue, jamais seulement globales</td></tr>
-<tr><td>Explication trompeuse</td><td>Explications non évaluées ; le DPO a appris sur des paires trop faciles</td><td>Grille de relecture clinique ; affichage de l'explication comme aide, jamais comme preuve</td></tr>
+<tr><td>Explication trompeuse</td><td>Détails parfois inventés (antécédent absent du cas) ; le DPO, même réaligné, modifie peu les explications</td><td>Grille de relecture clinique ; affichage de l'explication comme aide, jamais comme preuve</td></tr>
 <tr><td>Dérive des données</td><td>Le modèle a appris sur des cas publics, souvent courts et structurés</td><td>Suivi de la répartition des priorités et des cas entrants ; réévaluation périodique sur des cas récents étiquetés</td></tr>
 <tr><td>Confiance excessive des soignants</td><td>Risque connu des aides à la décision</td><td>Formation, pilote silencieux d'abord, mesure de l'effet du second avis sur les décisions des IOA</td></tr>
 <tr><td>Erreur de livraison du modèle</td><td>Une première fusion sur la mauvaise base est passée de 459 à 417 cas justes sans aucune erreur visible</td><td>Le test gelé est rejoué sur le modèle exact qui sera servi, avant chaque mise en service</td></tr>
@@ -267,6 +267,7 @@ d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommand
 <p>Le modèle livré atteint 90,66 % de F1 macro sur un test gelé, avec une chaîne complète de la donnée au service. La prochaine étape n'est pas technique : c'est l'évaluation sur des cas réels du CHSA, étiquetés par des IOA, dans un cadre conforme.</p>
 <div class="hero-actions">
 <a class="button primary" href="index.html">Retour au projet</a>
+<a class="button secondary" href="resultats.html">Résultats</a>
 <a class="button secondary" href="experiments.html">Expérimentations</a>
 <a class="button secondary" href="architecture.html">Architecture</a>
 </div>
