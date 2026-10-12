@@ -16,7 +16,7 @@ Qwen3-1.7B · QLoRA · SFT + DPO · vLLM · FastAPI · Docker · GitHub Actions
 [Documentation technique](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/) ·
 [Expériences](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/experiments.html) ·
 [Architecture](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/architecture.html) ·
-[Résultats et conclusion](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/resultats.html) · [Synthèse et feuille de route](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/synthese.html)
+[Rapport technique (20 pages)](https://github.com/gonzalezcourrier34-glitch/medical_triage_agent/blob/master/docs/rapport_technique.md) · [Résultats et conclusion](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/resultats.html) · [Synthèse et feuille de route](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/synthese.html)
 
 </div>
 
@@ -72,7 +72,8 @@ Test gelé de **500 cas** (250 FR, 250 EN), jamais utilisé pour choisir un mod�
 - Sans les cas du test trop proches d'un cas d'entraînement, le F1 macro de référence est de 90,83 % : pas de fuite massive, un effet de gabarit d'environ 1 point.
 - Le DPO ne change aucune décision de triage : il agit sur la formulation des explications, et son effet mesuré est faible.
   Le premier DPO (checkpoint-150) et le DPO réaligné livré prennent les mêmes 500 décisions une fois fusionnés.
-- La latence du service en ligne (vLLM sur GPU RunPod) est mesurée après déploiement avec `benchmarks/eval_test_gele.py --mode vllm`.
+- Service en ligne (vLLM 0.31.0 sur RTX 4000 Ada, RunPod Europe, 12 octobre) : mêmes 500 décisions que le modèle évalué,
+  0 réponse invalide, latence moyenne 792 ms, P50 801 ms, P95 1 028 ms (`benchmarks/eval_test_gele.py --mode vllm`).
 
 Le détail des runs, des erreurs et des décisions est dans la [page Expériences](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/experiments.html).
 

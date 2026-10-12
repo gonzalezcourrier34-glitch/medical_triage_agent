@@ -196,7 +196,7 @@ def predict_vllm(rows: list[dict], url: str, model: str) -> list[dict]:
 def metrics(results: list[dict]) -> dict:
     """Accuracy, F1 macro, sous-triage, matrice de confusion, scores par langue."""
 
-    def block(rows: list[dict]) -> dict:
+    def block(rows: list[dict]) -> dict | None:
         n = len(rows)
         f1s, per_class = [], {}
 
@@ -215,6 +215,8 @@ def metrics(results: list[dict]) -> dict:
             or (r["expected"] == 2 and r["predicted"] == 3)
             for r in rows
         )
+        if n == 0:
+            return None  # ex. --limit court : une seule langue présente
         return {
             "rows": n,
             "accuracy": sum(r["expected"] == r["predicted"] for r in rows) / n,
@@ -308,10 +310,15 @@ def main() -> None:
 
     cmp = report["comparison_with_reference"]
     p1 = report["per_class"]["P1"]["recall"]
+    by_language = " · ".join(
+        f"{lang.upper()} {report[lang]['accuracy']:.2%}"
+        for lang in ("fr", "en")
+        if report[lang]
+    )
     print(
         f"\nAccuracy {report['accuracy']:.2%} · F1 macro {report['f1_macro']:.2%} · "
         f"rappel P1 {p1:.2%} · sous-triage {report['undertriage_rate']:.2%} · "
-        f"FR {report['fr']['accuracy']:.2%} · EN {report['en']['accuracy']:.2%}"
+        f"{by_language} · réponses invalides {report['invalid_outputs']}"
     )
     if cmp:
         print(

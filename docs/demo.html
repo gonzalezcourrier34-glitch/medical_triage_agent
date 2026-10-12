@@ -41,22 +41,36 @@ le trafic qui apparaît dans Grafana, puis la limite connue du modèle. Compter 
 <div class="container">
 <p class="section-number">01</p>
 <h2>La veille ou le matin</h2>
-<p class="section-intro">Tout ce qui est gratuit se prépare avant d'allumer le moindre pod.</p>
+<p class="section-intro">Tout ce qui est gratuit se prépare avant d'allumer le moindre pod. La configuration RunPod (secrets et templates) est faite une fois pour toutes ; il suffit de vérifier qu'elle est toujours là.</p>
 <table class="story-table params-table">
 <thead><tr><th>À vérifier</th><th>Où</th><th>C'est bon quand…</th></tr></thead>
 <tbody>
-<tr><td>CI et CD au vert sur <code>master</code></td><td>GitHub › Actions</td><td>Les deux workflows sont verts ; noter le tag <code>api:sha-&lt;commit&gt;</code> publié</td></tr>
+<tr><td>CI et CD au vert sur <code>master</code></td><td>GitHub › Actions</td><td>Les deux workflows sont verts ; l'étiquette de l'image est <code>api:sha-&lt;SHA complet du commit&gt;</code> (<code>git rev-parse HEAD</code>)</td></tr>
 <tr><td>Image de l'API publique</td><td>GitHub › Packages › <code>api</code></td><td>Visibilité « Public »</td></tr>
-<tr><td>Poids du modèle</td><td>Hugging Face › <code>SteGONZALEZ/qwen3-triage-chsa</code></td><td>Le dépôt privé contient le modèle fusionné (453/500 au test gelé)</td></tr>
-<tr><td>Secrets RunPod</td><td>RunPod › Settings › Secrets</td><td><code>HF_TOKEN</code> et <code>VLLM_API_KEY</code> présents</td></tr>
-<tr><td>Templates RunPod</td><td>RunPod › My Templates</td><td><code>triage-vllm</code> prêt ; <code>triage-api</code> à jour avec le dernier tag (si l'API tourne aussi dans le cloud)</td></tr>
+<tr><td>Poids du modèle</td><td>Hugging Face › <code>SteGONZALEZ/qwen3-triage-chsa</code></td><td>Dernier commit « DPO realigne checkpoint-200 » ; <code>merge_metadata.json</code> cite <code>dpo_aligned_adapter</code></td></tr>
+<tr><td>Secrets RunPod</td><td>RunPod › Settings › Secrets</td><td><code>HF_TOKEN</code> (jeton Hugging Face en lecture) et <code>VLLM_API_KEY</code> présents</td></tr>
+<tr><td>Templates RunPod</td><td>RunPod › Templates</td><td><code>triage-vllm</code> et <code>triage-api</code> présents ; <code>triage-api</code> pointe vers l'image du dernier commit (tableau ci-dessous)</td></tr>
+<tr><td>Pas de volume réseau</td><td>RunPod › Storage</td><td>Aucun volume inutile (facturé même pod arrêté)</td></tr>
 <tr><td>Crédit RunPod</td><td>RunPod › Billing</td><td>Au moins 2 $ disponibles</td></tr>
-<tr><td>Fichier <code>.env</code></td><td>Racine du projet</td><td><code>VLLM_API_KEY</code> et <code>GRAFANA_ADMIN_PASSWORD</code> remplis ; jamais affiché à l'écran</td></tr>
+<tr><td>Fichier <code>.env</code></td><td>Racine du projet</td><td><code>VLLM_API_KEY</code> identique au secret RunPod (40 caractères) et <code>GRAFANA_ADMIN_PASSWORD</code> rempli ; jamais affiché à l'écran</td></tr>
 <tr><td>Docker Desktop</td><td>Poste</td><td>Démarré, <code>docker ps</code> répond</td></tr>
+<tr><td>Ports libres</td><td>Poste</td><td>Rien n'écoute sur 8000, 9090 ni 3000 (<code>netstat -ano | findstr :8000</code>) ; un autre conteneur sur 8000 (ex. <code>chess-agent-backend</code>) est arrêté avec <code>docker stop</code></td></tr>
 <tr><td>Site de documentation</td><td>GitHub Pages</td><td>Les pages Résultats et Démo sont en ligne</td></tr>
 <tr><td>Captures de secours</td><td>Dossier local</td><td>Swagger, Grafana, résultats du test gelé : prêtes si le réseau tombe</td></tr>
 </tbody>
 </table>
+<h3>Les deux templates RunPod (déjà créés)</h3>
+<table class="story-table params-table">
+<thead><tr><th>Champ</th><th><code>triage-vllm</code> · Pod · NVIDIA GPU</th><th><code>triage-api</code> · Pod · CPU</th></tr></thead>
+<tbody>
+<tr><td>Container image</td><td><code>vllm/vllm-openai:v0.31.0</code> (version des mesures du 12 octobre ; remplacer <code>latest</code> dans le template)</td><td><code>ghcr.io/gonzalezcourrier34-glitch/medical_triage_agent/api:sha-&lt;SHA complet&gt;</code></td></tr>
+<tr><td>Start command</td><td><code>--host 0.0.0.0 --port 8000 --model SteGONZALEZ/qwen3-triage-chsa --served-model-name triage-qwen3 --dtype bfloat16 --max-model-len 2048</code></td><td>vide (uvicorn est dans l'image)</td></tr>
+<tr><td>Disques</td><td>Container 30 Go · volume 0</td><td>Container 5 Go · volume 0</td></tr>
+<tr><td>HTTP port</td><td><code>8000</code></td><td><code>8000</code></td></tr>
+<tr><td>Variables</td><td><code>HF_TOKEN</code> = <code>{{ RUNPOD_SECRET_HF_TOKEN }}</code> · <code>VLLM_API_KEY</code> = <code>{{ RUNPOD_SECRET_VLLM_API_KEY }}</code></td><td><code>INFERENCE_BACKEND</code> = <code>vllm</code> · <code>VLLM_API_KEY</code> = <code>{{ RUNPOD_SECRET_VLLM_API_KEY }}</code> · <code>VLLM_BASE_URL</code> = à remplir au déploiement</td></tr>
+</tbody>
+</table>
+<p class="table-note">La clé n'apparaît jamais dans une commande : vLLM lit <code>VLLM_API_KEY</code> dans son environnement. Les deux pods écoutent sur 8000 sans conflit, chacun a sa propre adresse.</p>
 <div class="callout subtle">
 <span class="eyebrow">SÉCURITÉ</span>
 <strong>Aucune clé à l'écran.</strong>
@@ -70,38 +84,52 @@ le trafic qui apparaît dans Grafana, puis la limite connue du modèle. Compter 
 <div class="container">
 <p class="section-number">02</p>
 <h2>Lancer le service, 30 minutes avant</h2>
-<p class="section-intro">Le démarrage de vLLM prend plusieurs minutes (téléchargement du modèle depuis Hugging Face). Les commandes sont en PowerShell, depuis la racine du projet ; remplacer <code>&lt;pod-gpu&gt;</code> par l'identifiant du pod.</p>
+<p class="section-intro">Le démarrage de vLLM prend environ 3 à 8 minutes (image, puis 3,4 Go de poids depuis Hugging Face, puis préparation du GPU). Les commandes sont en PowerShell, depuis la racine du projet, dans une seule fenêtre gardée ouverte : les variables <code>$env:VLLM_API_KEY</code> et <code>$POD</code> disparaissent quand on la ferme.</p>
 <div class="timeline">
-<div class="timeline-item"><span>T-30 • GPU</span><h3>Déployer le pod vLLM</h3><p>RunPod › Deploy, template <code>triage-vllm</code>, GPU en Europe (RTX PRO 4000 ou A5000). Dans les logs, attendre <code>Application startup complete</code> et noter la version de vLLM et le temps de démarrage.</p></div>
-<div class="timeline-item"><span>T-20 • Contrôle</span><h3>Vérifier que le modèle répond</h3><p>Charger la clé dans le terminal sans l'afficher, puis interroger la liste des modèles : la réponse doit contenir <code>triage-qwen3</code>.</p></div>
-<div class="timeline-item"><span>T-15 • Poste</span><h3>Lancer l'API et le monitoring</h3><p>Renseigner dans <code>.env</code> l'adresse du pod (deux lignes), puis démarrer l'API, Prometheus et Grafana avec Docker Compose.</p></div>
-<div class="timeline-item"><span>T-10 • Vérifier</span><h3>Cibles et premier appel</h3><p>Prometheus › Status › Targets : API et vLLM « UP ». Un premier appel <code>/triage</code> pour réveiller le service, puis la rafale des dix cas pour remplir Grafana.</p></div>
-<div class="timeline-item"><span>T-5 • Onglets</span><h3>Ouvrir les onglets dans l'ordre</h3><p>Voir la section suivante. Zoom du navigateur à 125 %, notifications coupées, terminal en grande police.</p></div>
+<div class="timeline-item"><span>T-30 • GPU</span><h3>Déployer le pod vLLM</h3><p>RunPod › Pods › Deploy : datacenter en Europe, RTX 4000 Ada (20 Go, environ 0,28 $/h) ou RTX A5000, On-Demand, template <code>triage-vllm</code>, Deploy. Noter l'heure, l'identifiant du pod et la région. Onglet <strong>Container logs</strong> (pas les logs système) : version de vLLM, puis <code>Application startup complete</code>.</p></div>
+<div class="timeline-item"><span>T-20 • Contrôle</span><h3>Vérifier que le modèle répond</h3><p>Charger la clé sans l'afficher, définir <code>$POD</code>, interroger <code>/v1/models</code> : la réponse doit contenir <code>"id":"triage-qwen3"</code> et <code>max_model_len 2048</code>. Un 502 = pas encore prêt ; un 401 = clé différente entre <code>.env</code> et le secret.</p></div>
+<div class="timeline-item"><span>T-15 • Poste</span><h3>Lancer l'API et le monitoring</h3><p>Renseigner dans <code>.env</code> l'adresse du pod (quatre lignes, hors écran), puis démarrer l'API, Prometheus et Grafana avec Docker Compose (<code>--build</code> pour embarquer le dernier code).</p></div>
+<div class="timeline-item"><span>T-12 • Cloud (option)</span><h3>L'API en ligne</h3><p>RunPod › Deploy d'un pod CPU, template <code>triage-api</code>, Edit template : <code>VLLM_BASE_URL</code> = adresse du pod GPU + <code>/v1</code>. Vérifier <code>/health</code> (ok) et <code>/version</code> (<code>…dpoaligned-ckpt200</code>).</p></div>
+<div class="timeline-item"><span>T-10 • Vérifier</span><h3>Cibles et premier appel</h3><p>Prometheus › Status › Targets : API et vLLM « UP ». La rafale des dix cas inédits réveille le service et remplit Grafana ; le journal d'audit doit montrer une ligne par appel.</p></div>
+<div class="timeline-item"><span>T-5 • Onglets</span><h3>Ouvrir les onglets dans l'ordre</h3><p>Voir la section suivante. Se connecter à Grafana avant (le mot de passe ne doit pas apparaître), zoom du navigateur à 125 %, notifications coupées, terminal en grande police.</p></div>
 </div>
 <div class="code-panel" style="margin-top:2.5rem">
-<div class="code-panel-header"><span>PowerShell</span><small>à lancer dans l'ordre</small></div>
-<pre style="white-space:pre-wrap;word-break:break-word"><code># 1. Clé vLLM chargée depuis .env, sans l'afficher
-$env:VLLM_API_KEY = (Get-Content .env | Select-String '^VLLM_API_KEY=').ToString().Split('=',2)[1]
+<div class="code-panel-header"><span>PowerShell</span><small>à lancer dans l'ordre, une seule fenêtre</small></div>
+<pre style="white-space:pre-wrap;word-break:break-word"><code># 1. Clé vLLM chargée depuis .env, sans l'afficher (attendu ensuite : 40)
+$env:VLLM_API_KEY = ((Get-Content .env | Select-String '^VLLM_API_KEY=').Line -split '=',2)[1]
+$env:VLLM_API_KEY.Length
 
-# 2. Le modèle répond ?
-curl.exe -H "Authorization: Bearer $env:VLLM_API_KEY" https://&lt;pod-gpu&gt;-8000.proxy.runpod.net/v1/models
+# 2. Adresse du pod GPU (l'identifiant change à chaque déploiement)
+$POD = "https://&lt;id-du-pod&gt;-8000.proxy.runpod.net"
 
-# 3. Dans .env (éditeur, hors écran) :
+# 3. Le modèle répond ? (attendu : "id":"triage-qwen3")
+curl.exe -s -H "Authorization: Bearer $env:VLLM_API_KEY" "$POD/v1/models"
+
+# 4. Dans .env (notepad .env, hors écran) :
 #    INFERENCE_BACKEND=vllm
-#    VLLM_BASE_URL=https://&lt;pod-gpu&gt;-8000.proxy.runpod.net/v1
+#    VLLM_BASE_URL=https://&lt;id-du-pod&gt;-8000.proxy.runpod.net/v1
 #    VLLM_METRICS_SCHEME=https
-#    VLLM_METRICS_TARGET=&lt;pod-gpu&gt;-8000.proxy.runpod.net
+#    VLLM_METRICS_TARGET=&lt;id-du-pod&gt;-8000.proxy.runpod.net
 
-# 4. API + Prometheus + Grafana sur le poste
-docker compose --profile monitoring up -d api prometheus grafana
+# 5. API + Prometheus + Grafana sur le poste
+docker compose --profile monitoring up -d --build api prometheus grafana
 
-# 5. Santé de l'API (attendu : model_ready true)
+# 6. Santé et version de l'API (attendu : ok, model_ready true, …dpoaligned-ckpt200)
 curl.exe http://127.0.0.1:8000/health
+curl.exe http://127.0.0.1:8000/version
 
-# 6. Rafale des dix cas inédits (remplit Grafana, sert de répétition)
-uv run python benchmarks/demo_cas_inconnus.py --mode api --api-url http://127.0.0.1:8000</code></pre>
+# 7. Rafale des dix cas inédits (remplit Grafana, sert de répétition)
+uv run python benchmarks/demo_cas_inconnus.py --mode api --api-url http://127.0.0.1:8000
+
+# 8. Journal d'audit : une ligne par décision, sans texte patient
+docker compose exec api tail -n 3 /app/logs/audit.jsonl</code></pre>
 </div>
-<p class="table-note">Mesure de latence du service (à faire une fois, hors démo) : <code>uv run python benchmarks/eval_test_gele.py --mode vllm --vllm-url https://&lt;pod-gpu&gt;-8000.proxy.runpod.net/v1</code>.</p>
+<p class="table-note">Mesure de latence et test gelé du service (à faire une fois, hors démo, environ 5 minutes) : <code>uv run python benchmarks/eval_test_gele.py --mode vllm --vllm-url "$POD/v1"</code>, d'abord avec <code>--limit 20</code>.</p>
+<div class="callout subtle">
+<span class="eyebrow">EN CAS DE PROBLÈME AU LANCEMENT</span>
+<strong>Lire l'onglet Container logs du pod avant tout.</strong>
+<p><code>401</code> ou <code>Repository not found</code> au chargement : secret <code>HF_TOKEN</code> absent ou sans accès au dépôt. <code>CUDA out of memory</code> : GPU trop petit, en prendre un de 16 Go ou plus. Rien après 10 minutes : Terminate et redéployer sur un autre datacenter européen. Si le cloud reste indisponible, passer au <a href="#plan-b">plan B</a> (modèle local).</p>
+</div>
 </div>
 </section>
 

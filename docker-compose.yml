@@ -73,7 +73,8 @@ services:
       - gpu
 
     # Version à figer après validation de compatibilité.
-    image: vllm/vllm-openai:latest
+    # Version relevée sur RunPod le 12 octobre (mesures du test gelé).
+    image: vllm/vllm-openai:v0.31.0
 
     container_name: medical-triage-vllm
 

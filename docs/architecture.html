@@ -128,7 +128,7 @@ Le seul lien entre les deux est l'adapter exporté.
 <tr><td>Entraînement SFT / DPO</td><td><span class="experiment-status selected">Opérationnel</span></td><td>Notebooks 05 et 06, manifestes par run, suivi W&amp;B, adapters sauvegardés.</td></tr>
 <tr><td>API FastAPI</td><td><span class="experiment-status selected">Opérationnel</span></td><td>Routes, validation, recommandations, métriques, journal d'audit. 40 fonctions de test.</td></tr>
 <tr><td>Inférence réelle dans l'API</td><td><span class="experiment-status selected">Opérationnel</span></td><td>Moteurs <code>local</code> (GPU) et <code>vllm</code> branchés sur le modèle final, avec le prompt exact de l'entraînement.</td></tr>
-<tr><td>Serveur vLLM</td><td><span class="experiment-status selected">Prêt</span></td><td>Modèle fusionné validé au test gelé (453/500, 492 décisions identiques à la référence), publié sur Hugging Face (dépôt privé), servi par vLLM en local (profil <code>gpu</code>) et sur RunPod (<a href="#cloud">déploiement de la démo</a>). Restent les <a href="#mesures-cloud">mesures en ligne</a>.</td></tr>
+<tr><td>Serveur vLLM</td><td><span class="experiment-status selected">Opérationnel</span></td><td>Modèle fusionné validé au test gelé (453/500, 492 décisions identiques à la référence), publié sur Hugging Face (dépôt privé), servi par vLLM en local (profil <code>gpu</code>) et sur RunPod (<a href="#cloud">déploiement de la démo</a>). Mesuré en ligne : mêmes 500 décisions, P95 de 1,03 s (<a href="#mesures-cloud">détail</a>).</td></tr>
 <tr><td>Docker et monitoring</td><td><span class="experiment-status selected">Opérationnel</span></td><td>Dockerfile, Compose à profils, Prometheus, dashboard Grafana provisionné.</td></tr>
 <tr><td>CI/CD</td><td><span class="experiment-status selected">Opérationnel</span></td><td>CI à chaque push et pull request sur <code>master</code> : Ruff, 40 tests, couverture minimale de 90 %. CD : image de l'API publiée sur GHCR après chaque CI réussie ; déploiement SSH vers un serveur pilote activable par <code>DEPLOY_ENABLED</code>.</td></tr>
 </tbody>
@@ -473,7 +473,7 @@ Le seul lien entre les deux est l'adapter exporté.
 <table class="story-table params-table">
 <thead><tr><th>Élément</th><th>Choix</th><th>Pourquoi</th></tr></thead>
 <tbody>
-<tr><td>GPU</td><td>RTX PRO 4000 (24 Go, 0,57 $/h) ou RTX A5000 (24 Go, 0,27 $/h), datacenter européen</td><td>Le modèle occupe environ 4 Go avec son cache : une carte d'entrée de gamme suffit. L'Europe garde requêtes et poids dans l'UE.</td></tr>
+<tr><td>GPU</td><td>RTX 4000 Ada (20 Go, 0,28 $/h) pour les mesures ; RTX A5000 ou RTX PRO 4000 en alternative ; datacenter européen</td><td>Le modèle occupe environ 4 Go avec son cache : une carte d'entrée de gamme suffit. L'Europe garde requêtes et poids dans l'UE.</td></tr>
 <tr><td>Image vLLM</td><td><code>vllm/vllm-openai</code>, version relevée dans les logs et figée</td><td>La même image que le profil <code>gpu</code> de Docker Compose ; une version figée rend la mesure reproductible.</td></tr>
 <tr><td>Commande vLLM</td><td><code>--model SteGONZALEZ/qwen3-triage-chsa --served-model-name triage-qwen3 --dtype bfloat16 --max-model-len 2048</code></td><td>Mêmes réglages qu'en local : BF16, contexte de 2 048 tokens comme à l'entraînement.</td></tr>
 <tr><td>Image de l'API</td><td><code>ghcr.io/gonzalezcourrier34-glitch/medical_triage_agent/api:sha-&lt;commit&gt;</code></td><td>Image construite par la CD après une CI réussie ; l'étiquette relie le service à un commit précis.</td></tr>
@@ -482,17 +482,19 @@ Le seul lien entre les deux est l'adapter exporté.
 <tr><td>Procédure</td><td><code>deploy/runpod.md</code> : préparation gratuite, puis une session payante d'environ 45 minutes</td><td>Le déploiement est reproductible pas à pas, et le coût d'une démo reste de l'ordre d'un dollar.</td></tr>
 </tbody>
 </table>
-<h3 id="mesures-cloud">Les mesures à faire sur le service en ligne</h3>
-<p>Une fois les deux pods démarrés, le script <code>benchmarks/eval_test_gele.py --mode vllm</code> envoie les 500 cas du test gelé au service, comme le ferait l'API. Il fournit les derniers chiffres attendus par la mission.</p>
+<h3 id="mesures-cloud">Les mesures sur le service en ligne</h3>
+<p>Le 12 octobre, le script <code>benchmarks/eval_test_gele.py --mode vllm</code> a envoyé les 500 cas du test gelé au pod vLLM, depuis mon poste et à travers le proxy RunPod, comme le ferait l'API. Le choix de priorité se fait ici par génération du texte, comme en production.</p>
 <table class="story-table params-table">
 <thead><tr><th>Mesure</th><th>Ce qu'elle vérifie</th><th>Résultat</th></tr></thead>
 <tbody>
-<tr><td>Latence moyenne, P50, P95, débit</td><td>Le temps de réponse du modèle servi par vLLM sur un GPU cloud</td><td>À mesurer après déploiement</td></tr>
-<tr><td>Accuracy, F1 et sous-triage par génération</td><td>Le choix de priorité en générant le texte (production) comparé au scoring conditionnel de l'évaluation (453/500)</td><td>À mesurer après déploiement</td></tr>
-<tr><td>Réponses invalides</td><td>La part de générations sans priorité lisible, refusées par l'API (503)</td><td>À mesurer après déploiement</td></tr>
-<tr><td>Bout en bout</td><td><code>/health</code> à <code>ok</code>, puis un cas FR et un cas EN via <code>/docs</code></td><td>À vérifier après déploiement</td></tr>
+<tr><td>Environnement</td><td>Le service mesuré</td><td>RTX 4000 Ada (20 Go, 0,28 $/h), datacenter européen, vLLM 0.31.0, BF16, contexte 2 048 tokens ; démarrage en environ 2 minutes (image en cache), moteur prêt en 40 s</td></tr>
+<tr><td>Latence par requête</td><td>Le temps de réponse, réseau compris</td><td><strong>moyenne 792 ms · P50 801 ms · P95 1 028 ms · max 1 733 ms</strong> ; 44 tokens générés en moyenne, environ 56 tokens/s</td></tr>
+<tr><td>Accuracy, F1 et sous-triage par génération</td><td>Le choix de priorité en générant le texte (production) comparé au scoring conditionnel de l'évaluation</td><td><strong>453 / 500, F1 macro 90,66 %, sous-triage 7,20 %</strong> (FR 84,8 %, EN 96,4 %) : <strong>les 500 décisions sont identiques</strong> à celles du modèle fusionné évalué par scoring</td></tr>
+<tr><td>Réponses invalides</td><td>La part de générations sans priorité lisible, refusées par l'API (503)</td><td><strong>0 sur 500</strong> ; 500 requêtes, toutes en succès</td></tr>
+<tr><td>Bout en bout</td><td><code>/health</code> à <code>ok</code>, puis un cas FR et un cas EN via <code>/docs</code></td><td>Vérifié le 12 octobre : API en ligne (pod CPU, image de la CD) branchée sur ce pod ; API locale avec Prometheus et Grafana, dix cas inédits sous trois formes : mêmes décisions qu'en local (7, 5 et 6 sur 10), latence médiane d'environ 1 s par appel ; journal d'audit vérifié, pannes comprises</td></tr>
 </tbody>
 </table>
+<p class="table-note">Résultats : <code>metrics/20261009-154320/merged_eval/vllm/</code>. Les requêtes imposent <code>temperature 0</code> : la génération est déterministe malgré les réglages d'échantillonnage par défaut du modèle (temperature 0,6), signalés par vLLM au démarrage. Le cache de préfixe de vLLM réutilise le prompt système commun (85 à 90 % de réutilisation), ce qui réduit la latence.</p>
 </div>
 </section>
 
@@ -555,9 +557,9 @@ Le seul lien entre les deux est l'adapter exporté.
 </table>
 <h3>Ce qui reste à faire</h3>
 <div class="reflection-grid">
-<div class="reflection-card"><h3>Mesurer le service en ligne</h3><p>Démarrer les deux pods RunPod, puis rejouer le test gelé via vLLM : latence (moyenne, P50, P95), F1 et sous-triage du choix par génération, réponses invalides. Voir <a href="#mesures-cloud">les mesures à faire</a>.</p></div>
+<div class="reflection-card"><h3>Mesurer le service en ligne · fait</h3><p>Test gelé rejoué sur vLLM le 12 octobre : mêmes 500 décisions, aucune réponse invalide, P95 de 1,03 s (<a href="#mesures-cloud">détail</a>). Reste un test de charge avec plusieurs requêtes simultanées.</p></div>
 <div class="reflection-card"><h3>Valider de bout en bout</h3><p>Vérifier <code>/health</code> puis un cas français et un cas anglais depuis <code>/docs</code> sur l'URL publique de l'API, et garder ces captures comme preuve de fonctionnement.</p></div>
-<div class="reflection-card"><h3>Figer la version de vLLM</h3><p>Relever dans les logs du pod la version de vLLM utilisée pour ces mesures, et la reporter dans Docker Compose à la place de <code>latest</code>.</p></div>
+<div class="reflection-card"><h3>Figer la version de vLLM · fait</h3><p>vLLM 0.31.0, relevé dans les logs du pod, est figé dans Docker Compose et dans la procédure RunPod.</p></div>
 </div>
 </div>
 </section>

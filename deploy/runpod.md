@@ -22,7 +22,7 @@ Aucun secret dans ce fichier ni dans Git : tokens et clés vivent dans RunPod (S
 5. Templates RunPod (My Templates › New Template, gratuit) :
 
    **triage-vllm** (pod GPU)
-   - Image : `vllm/vllm-openai:<version figée>`
+   - Image : `vllm/vllm-openai:v0.31.0` (version des mesures du 12 octobre)
    - Container disk : 30 Go · aucun volume · HTTP port `8000`
    - Env : `HF_TOKEN={{ RUNPOD_SECRET_HF_TOKEN }}` et `VLLM_API_KEY={{ RUNPOD_SECRET_VLLM_API_KEY }}`
      (vLLM lit `VLLM_API_KEY` comme `--api-key` : la clé n'apparaît pas dans la commande)

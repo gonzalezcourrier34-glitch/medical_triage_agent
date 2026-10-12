@@ -73,12 +73,12 @@ d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommand
 <tr><td>Dataset nettoyé, anonymisé, bilingue</td><td><span class="experiment-status selected">Livré</span></td><td>5 000 cas FR/EN, Presidio, déduplication, empreintes SHA-256 : <a href="data.html">Données</a></td></tr>
 <tr><td>Qwen3-1.7B fine-tuné (SFT + LoRA) et aligné (DPO)</td><td><span class="experiment-status selected">Livré</span></td><td>Six runs SFT, sept essais DPO puis le DPO réaligné, livré, choix argumenté, version post-entraînée au lieu de la Base (<a href="experiments.html#base">pourquoi</a>) : <a href="experiments.html">SFT</a>, <a href="dpo.html">DPO</a> et <a href="resultats.html">Résultats</a></td></tr>
 <tr><td>Poids finaux</td><td><span class="experiment-status selected">Livré</span></td><td>Modèle fusionné BF16 (3,3 Go), vérifié sur le test gelé, dépôt Hugging Face privé : <a href="architecture.html#verif-fusion">Architecture</a></td></tr>
-<tr><td>Endpoint cloud optimisé avec vLLM</td><td><span class="experiment-status selected">Prêt</span></td><td>vLLM sur GPU RunPod en Europe, API dans un second pod, procédure <code>deploy/runpod.md</code> ; latence à mesurer sur le service en ligne : <a href="architecture.html#cloud">Architecture</a></td></tr>
+<tr><td>Endpoint cloud optimisé avec vLLM</td><td><span class="experiment-status selected">Livré</span></td><td>vLLM 0.31.0 sur GPU RunPod en Europe, API dans un second pod : mêmes 500 décisions que le modèle évalué, latence P95 de 1,03 s, procédure <code>deploy/runpod.md</code> : <a href="architecture.html#cloud">Architecture</a></td></tr>
 <tr><td>CI/CD GitHub Actions</td><td><span class="experiment-status selected">Livré</span></td><td>Ruff, 40 tests, couverture minimale de 90 %, image publiée sur GHCR ; la mise en service d'un nouveau modèle reste manuelle, après le test gelé : <a href="architecture.html">Architecture</a></td></tr>
 <tr><td>Traçabilité des interactions</td><td><span class="experiment-status selected">Livré</span></td><td>Journal d'audit : identifiant, horodatage, versions du modèle et du prompt, priorité, latence, empreinte de l'entrée sans le texte du patient : <a href="architecture.html">Architecture</a></td></tr>
 <tr><td>Checklist go / no-go</td><td><span class="experiment-status selected">Livré</span></td><td>Onze critères, seuils et verdict pour le modèle livré : <a href="#go-no-go">grille</a></td></tr>
 <tr><td>Questionnaire adaptatif</td><td><span class="experiment-status promising">Hors POC</span></td><td>Le POC classe un cas déjà décrit ; le format d'entrée complet en est la première brique : <a href="resultats.html">Résultats</a></td></tr>
-<tr><td>Rapport technique</td><td><span class="experiment-status selected">Livré</span></td><td>Ce site : méthodologie, métriques, analyses, limites et cette synthèse</td></tr>
+<tr><td>Rapport technique</td><td><span class="experiment-status selected">Livré</span></td><td>Rapport de 20 pages, remis en PDF avec les livrables et <a href="https://github.com/gonzalezcourrier34-glitch/medical_triage_agent/blob/master/docs/rapport_technique.md">consultable sur GitHub</a> : méthodologie, métriques, analyse, grille go / no-go, feuille de route ; ce site en est l'annexe détaillée</td></tr>
 </tbody>
 </table>
 </div>
@@ -112,8 +112,8 @@ d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommand
 <tr><td>P1 classés P3</td><td>Aucun</td><td>6 sur 167</td><td><span class="experiment-status rejected">Non atteint</span></td></tr>
 <tr><td>Sous-triage</td><td>≤ 5 %</td><td>7,2 %</td><td><span class="experiment-status rejected">Non atteint</span></td></tr>
 <tr><td>Écart entre langues</td><td>≤ 5 points d'accuracy</td><td>11,6 points (84,8 · 96,4 %)</td><td><span class="experiment-status rejected">Non atteint</span></td></tr>
-<tr><td>Réponses invalides via vLLM</td><td>Aucune sur 500</td><td>À mesurer sur RunPod</td><td><span class="experiment-status promising">À mesurer</span></td></tr>
-<tr><td>Latence</td><td>P95 ≤ 3 s par requête à l'API</td><td>À mesurer sur RunPod</td><td><span class="experiment-status promising">À mesurer</span></td></tr>
+<tr><td>Réponses invalides via vLLM</td><td>Aucune sur 500</td><td>0 sur 500</td><td><span class="experiment-status selected">Atteint</span></td></tr>
+<tr><td>Latence</td><td>P95 ≤ 3 s par requête</td><td>P95 1,03 s (moyenne 0,79 s)</td><td><span class="experiment-status selected">Atteint</span></td></tr>
 <tr><td>Qualité du code</td><td>CI verte, couverture ≥ 90 %</td><td>CI verte</td><td><span class="experiment-status selected">Atteint</span></td></tr>
 <tr><td>Traçabilité</td><td>Chaque décision journalisée avec les versions du modèle et du prompt</td><td>Journal d'audit de l'API</td><td><span class="experiment-status selected">Atteint</span></td></tr>
 <tr><td>Conformité</td><td>AIPD validée, hébergement HDS</td><td>Non engagées</td><td><span class="experiment-status rejected">Non atteint</span></td></tr>
