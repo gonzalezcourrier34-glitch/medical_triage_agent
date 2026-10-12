@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Préparation de la démo | Medical Triage AI</title>
+<meta content="Checklist de préparation, lancement du service cloud et du monitoring, onglets à ouvrir, déroulé, cas à coller, questions probables et plan de secours pour la démonstration." name="description"/>
+<link href="css/style.css" rel="stylesheet"/>
+</head>
+<body>
+<header class="header">
+<nav class="nav container">
+<a class="logo" href="index.html">MT<span>.</span>AI</a>
+<div class="nav-links"><a href="index.html">Projet</a><a href="data.html">Données</a><a href="experiments.html">SFT</a><a href="dpo.html">DPO</a><a href="architecture.html">Architecture</a><a href="resultats.html">Résultats</a><a href="synthese.html">Synthèse</a><a class="active" href="demo.html">Démo</a></div>
+</nav>
+</header>
+<main>
+
+<!-- HERO -->
+<section class="hero project-hero">
+<div class="container hero-content">
+<p class="eyebrow">PRÉPARATION DE LA DÉMO</p>
+<h1>Tout ce qu'il faut lancer, ouvrir et dire,<span>dans l'ordre.</span></h1>
+<p class="hero-text">
+Cette page est ma liste de contrôle pour la soutenance. Le modèle tourne sur un GPU RunPod derrière vLLM ; l'API et le monitoring
+tournent sur mon poste, branchés sur ce GPU. Je montre un parcours complet : un cas saisi dans l'API, la priorité et l'explication,
+le trafic qui apparaît dans Grafana, puis la limite connue du modèle. Compter 30 minutes de préparation et environ 1 $ de GPU.
+</p>
+<div class="hero-tags">
+<span>Checklist</span><span>Lancement</span><span>Onglets</span><span>Déroulé</span><span>Cas à coller</span><span>Questions</span><span>Plan B</span>
+</div>
+<div class="hero-actions">
+<a class="button primary" href="#lancement">Lancer la démo</a>
+<a class="button secondary" href="#cas">Les cas à coller</a>
+</div>
+</div>
+</section>
+
+<!-- 01 LA VEILLE -->
+<section class="section">
+<div class="container">
+<p class="section-number">01</p>
+<h2>La veille ou le matin</h2>
+<p class="section-intro">Tout ce qui est gratuit se prépare avant d'allumer le moindre pod.</p>
+<table class="story-table params-table">
+<thead><tr><th>À vérifier</th><th>Où</th><th>C'est bon quand…</th></tr></thead>
+<tbody>
+<tr><td>CI et CD au vert sur <code>master</code></td><td>GitHub › Actions</td><td>Les deux workflows sont verts ; noter le tag <code>api:sha-&lt;commit&gt;</code> publié</td></tr>
+<tr><td>Image de l'API publique</td><td>GitHub › Packages › <code>api</code></td><td>Visibilité « Public »</td></tr>
+<tr><td>Poids du modèle</td><td>Hugging Face › <code>SteGONZALEZ/qwen3-triage-chsa</code></td><td>Le dépôt privé contient le modèle fusionné (453/500 au test gelé)</td></tr>
+<tr><td>Secrets RunPod</td><td>RunPod › Settings › Secrets</td><td><code>HF_TOKEN</code> et <code>VLLM_API_KEY</code> présents</td></tr>
+<tr><td>Templates RunPod</td><td>RunPod › My Templates</td><td><code>triage-vllm</code> prêt ; <code>triage-api</code> à jour avec le dernier tag (si l'API tourne aussi dans le cloud)</td></tr>
+<tr><td>Crédit RunPod</td><td>RunPod › Billing</td><td>Au moins 2 $ disponibles</td></tr>
+<tr><td>Fichier <code>.env</code></td><td>Racine du projet</td><td><code>VLLM_API_KEY</code> et <code>GRAFANA_ADMIN_PASSWORD</code> remplis ; jamais affiché à l'écran</td></tr>
+<tr><td>Docker Desktop</td><td>Poste</td><td>Démarré, <code>docker ps</code> répond</td></tr>
+<tr><td>Site de documentation</td><td>GitHub Pages</td><td>Les pages Résultats et Démo sont en ligne</td></tr>
+<tr><td>Captures de secours</td><td>Dossier local</td><td>Swagger, Grafana, résultats du test gelé : prêtes si le réseau tombe</td></tr>
+</tbody>
+</table>
+<div class="callout subtle">
+<span class="eyebrow">SÉCURITÉ</span>
+<strong>Aucune clé à l'écran.</strong>
+<p>Ne pas ouvrir <code>.env</code> pendant la démo, ne pas afficher la page Secrets de RunPod ni les variables d'environnement d'un pod. Si une clé apparaît, la régénérer après la séance. Les cas présentés sont fictifs : RunPod n'est pas un hébergeur certifié HDS.</p>
+</div>
+</div>
+</section>
+
+<!-- 02 LANCEMENT -->
+<section class="section section-alt" id="lancement">
+<div class="container">
+<p class="section-number">02</p>
+<h2>Lancer le service, 30 minutes avant</h2>
+<p class="section-intro">Le démarrage de vLLM prend plusieurs minutes (téléchargement du modèle depuis Hugging Face). Les commandes sont en PowerShell, depuis la racine du projet ; remplacer <code>&lt;pod-gpu&gt;</code> par l'identifiant du pod.</p>
+<div class="timeline">
+<div class="timeline-item"><span>T-30 • GPU</span><h3>Déployer le pod vLLM</h3><p>RunPod › Deploy, template <code>triage-vllm</code>, GPU en Europe (RTX PRO 4000 ou A5000). Dans les logs, attendre <code>Application startup complete</code> et noter la version de vLLM et le temps de démarrage.</p></div>
+<div class="timeline-item"><span>T-20 • Contrôle</span><h3>Vérifier que le modèle répond</h3><p>Charger la clé dans le terminal sans l'afficher, puis interroger la liste des modèles : la réponse doit contenir <code>triage-qwen3</code>.</p></div>
+<div class="timeline-item"><span>T-15 • Poste</span><h3>Lancer l'API et le monitoring</h3><p>Renseigner dans <code>.env</code> l'adresse du pod (deux lignes), puis démarrer l'API, Prometheus et Grafana avec Docker Compose.</p></div>
+<div class="timeline-item"><span>T-10 • Vérifier</span><h3>Cibles et premier appel</h3><p>Prometheus › Status › Targets : API et vLLM « UP ». Un premier appel <code>/triage</code> pour réveiller le service, puis la rafale des dix cas pour remplir Grafana.</p></div>
+<div class="timeline-item"><span>T-5 • Onglets</span><h3>Ouvrir les onglets dans l'ordre</h3><p>Voir la section suivante. Zoom du navigateur à 125 %, notifications coupées, terminal en grande police.</p></div>
+</div>
+<div class="code-panel" style="margin-top:2.5rem">
+<div class="code-panel-header"><span>PowerShell</span><small>à lancer dans l'ordre</small></div>
+<pre style="white-space:pre-wrap;word-break:break-word"><code># 1. Clé vLLM chargée depuis .env, sans l'afficher
+$env:VLLM_API_KEY = (Get-Content .env | Select-String '^VLLM_API_KEY=').ToString().Split('=',2)[1]
+
+# 2. Le modèle répond ?
+curl.exe -H "Authorization: Bearer $env:VLLM_API_KEY" https://&lt;pod-gpu&gt;-8000.proxy.runpod.net/v1/models
+
+# 3. Dans .env (éditeur, hors écran) :
+#    INFERENCE_BACKEND=vllm
+#    VLLM_BASE_URL=https://&lt;pod-gpu&gt;-8000.proxy.runpod.net/v1
+#    VLLM_METRICS_SCHEME=https
+#    VLLM_METRICS_TARGET=&lt;pod-gpu&gt;-8000.proxy.runpod.net
+
+# 4. API + Prometheus + Grafana sur le poste
+docker compose --profile monitoring up -d api prometheus grafana
+
+# 5. Santé de l'API (attendu : model_ready true)
+curl.exe http://127.0.0.1:8000/health
+
+# 6. Rafale des dix cas inédits (remplit Grafana, sert de répétition)
+uv run python benchmarks/demo_cas_inconnus.py --mode api --api-url http://127.0.0.1:8000</code></pre>
+</div>
+<p class="table-note">Mesure de latence du service (à faire une fois, hors démo) : <code>uv run python benchmarks/eval_test_gele.py --mode vllm --vllm-url https://&lt;pod-gpu&gt;-8000.proxy.runpod.net/v1</code>.</p>
+</div>
+</section>
+
+<!-- 03 ONGLETS -->
+<section class="section" id="onglets">
+<div class="container">
+<p class="section-number">03</p>
+<h2>Ce qu'il faut ouvrir</h2>
+<p class="section-intro">Dans cet ordre, de gauche à droite : je n'ai qu'à passer d'un onglet au suivant pendant la présentation.</p>
+<table class="story-table params-table">
+<thead><tr><th>#</th><th>Onglet ou fenêtre</th><th>Adresse</th><th>Ce que je montre</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Site · Projet</td><td><code>…github.io/medical_triage_agent/index.html</code></td><td>Le problème, la démarche, le parcours en une image</td></tr>
+<tr><td>2</td><td>Site · Résultats</td><td><code>…/resultats.html</code></td><td>Test gelé, cas inédits, pourquoi le modèle se trompe</td></tr>
+<tr><td>3</td><td>Site · Architecture</td><td><code>…/architecture.html#cloud</code></td><td>Le schéma API → vLLM sur RunPod</td></tr>
+<tr><td>4</td><td>API · Swagger</td><td><code>http://127.0.0.1:8000/docs</code></td><td><strong>La démo en direct</strong> : <code>POST /triage</code> › Try it out</td></tr>
+<tr><td>5</td><td>Grafana</td><td><code>http://127.0.0.1:3000</code></td><td>Dashboard « Operations Overview » : trafic, latence moyenne et p95, erreurs, disponibilité</td></tr>
+<tr><td>6</td><td>Prometheus</td><td><code>http://127.0.0.1:9090/targets</code></td><td>API et vLLM « UP » (en secours, si Grafana tarde)</td></tr>
+<tr><td>7</td><td>RunPod · pod GPU</td><td>console RunPod › Pods › Logs</td><td>Le modèle servi par vLLM, les requêtes qui arrivent (sans afficher les variables)</td></tr>
+<tr><td>8</td><td>GitHub · Actions</td><td><code>github.com/gonzalezcourrier34-glitch/medical_triage_agent/actions</code></td><td>CI (ruff, 34 tests, couverture) et CD (image GHCR)</td></tr>
+<tr><td>9</td><td>Terminal PowerShell</td><td>racine du projet</td><td>La rafale de cas inédits en direct, si le temps le permet</td></tr>
+<tr><td>10</td><td>Site · Démo</td><td><code>…/demo.html#cas</code></td><td>Cette page, pour copier les cas</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- 04 DÉROULÉ -->
+<section class="section section-alt" id="deroule">
+<div class="container">
+<p class="section-number">04</p>
+<h2>Le déroulé, en dix minutes</h2>
+<div class="timeline">
+<div class="timeline-item"><span>0:00 • Contexte</span><h3>Le besoin du CHSA</h3><p>Onglet 1. Trier les patients en P1, P2, P3 avec une justification, sur du matériel modeste. Un petit modèle (Qwen3-1.7B) entraîné sur une carte de 6 Go.</p></div>
+<div class="timeline-item"><span>1:30 • Méthode</span><h3>Données, SFT, DPO</h3><p>Onglet 2. 5 000 cas FR/EN nettoyés et anonymisés, SFT puis DPO, choix sur la validation, mesure unique sur un test gelé : 90,66 % de F1, 7,2 % de sous-triage.</p></div>
+<div class="timeline-item"><span>3:00 • Architecture</span><h3>Du modèle au service</h3><p>Onglet 3. Modèle fusionné et vérifié, servi par vLLM sur un GPU RunPod ; API FastAPI ; Docker ; CI/CD.</p></div>
+<div class="timeline-item"><span>4:00 • Démo</span><h3>Trois cas en direct</h3><p>Onglet 4. Anaphylaxie (P1), poussée de BPCO (P2), mal de gorge en anglais (P3). Lire la priorité, l'explication, la recommandation et la latence renvoyées.</p></div>
+<div class="timeline-item"><span>6:00 • Monitoring</span><h3>Le service observé</h3><p>Onglet 5. Les requêtes qui viennent d'arriver, la latence moyenne et p95, aucune erreur, API et vLLM disponibles. Aucune donnée patient dans les métriques.</p></div>
+<div class="timeline-item"><span>7:00 • Limite</span><h3>Le cas qui échoue</h3><p>Onglet 4 puis 2. Douleur thoracique : le modèle écrit « suggests a heart attack » mais répond P2. Expliquer pourquoi (mots-clés, urgences dépendantes du temps trop rares).</p></div>
+<div class="timeline-item"><span>8:30 • Conclusion</span><h3>Second avis, pas décision</h3><p>Le POC est faisable et industrialisable ; il ne doit pas trier seul. Proposition : second avis pour l'IOA, filet de sécurité par règles, évaluation sur cas réels.</p></div>
+</div>
+</div>
+</section>
+
+<!-- 05 CAS -->
+<section class="section" id="cas">
+<div class="container">
+<p class="section-number">05</p>
+<h2>Les cas à coller dans <code>POST /triage</code></h2>
+<p class="section-intro">Format complet, le seul qui retrouve les P1 quand les constantes sont anormales (<a href="resultats.html#format">pourquoi</a>). Copier un bloc entier dans le corps de la requête de Swagger. Les résultats attendus viennent du test en local ; vLLM peut différer légèrement.</p>
+<div class="code-panel" style="margin-bottom:1.5rem">
+<div class="code-panel-header"><span>Anaphylaxie après piqûre de guêpe</span><small>attendu : P1 · FR · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
+<pre style="white-space:pre-wrap;word-break:break-word"><code>{
+  &quot;language&quot;: &quot;fr&quot;,
+  &quot;question&quot;: &quot;Informations patient:\nAge: 31\n\nReported symptoms: gonflement des lèvres et de la langue, sifflements respiratoires, urticaire diffuse 15 minutes après une piqûre de guêpe\nClinical signs: gêne respiratoire, voix rauque\nVital signs: heart_rate: 128, systolic_bp: 82, diastolic_bp: 45, spo2: 89\nMedical history: allergie connue aux hyménoptères&quot;
+}</code></pre>
+</div>
+<p class="table-note" style="margin:-0.8rem 0 2rem">P1 en local. Montre que les constantes font basculer en P1.</p>
+<div class="code-panel" style="margin-bottom:1.5rem">
+<div class="code-panel-header"><span>Fièvre et purpura extensif</span><small>attendu : P1 · FR · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
+<pre style="white-space:pre-wrap;word-break:break-word"><code>{
+  &quot;language&quot;: &quot;fr&quot;,
+  &quot;question&quot;: &quot;Informations patient:\nAge: 19\n\nReported symptoms: fièvre à 39,8 °C, maux de tête, taches violacées qui s&#x27;étendent sur les jambes, somnolence depuis ce matin\nClinical signs: purpura extensif, raideur de nuque\nVital signs: temperature: 39.8, heart_rate: 132, systolic_bp: 86, diastolic_bp: 50\nMedical history: aucun&quot;
+}</code></pre>
+</div>
+<p class="table-note" style="margin:-0.8rem 0 2rem">P1 en local, explication spécifique au cas.</p>
+<div class="code-panel" style="margin-bottom:1.5rem">
+<div class="code-panel-header"><span>Poussée de BPCO</span><small>attendu : P2 · FR · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
+<pre style="white-space:pre-wrap;word-break:break-word"><code>{
+  &quot;language&quot;: &quot;fr&quot;,
+  &quot;question&quot;: &quot;Informations patient:\nAge: 58\n\nReported symptoms: essoufflement aggravé depuis 3 jours, toux grasse avec crachats verts\nClinical signs: sibilants diffus, parle en phrases complètes\nVital signs: spo2: 91, respiratory_rate: 24, temperature: 38.4, heart_rate: 102\nMedical history: BPCO, ancien fumeur&quot;
+}</code></pre>
+</div>
+<p class="table-note" style="margin:-0.8rem 0 2rem">P2 dans les trois formats testés.</p>
+<div class="code-panel" style="margin-bottom:1.5rem">
+<div class="code-panel-header"><span>Right lower abdominal pain</span><small>attendu : P2 · EN · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
+<pre style="white-space:pre-wrap;word-break:break-word"><code>{
+  &quot;language&quot;: &quot;en&quot;,
+  &quot;question&quot;: &quot;Patient information:\nAge: 42\n\nReported symptoms: right lower abdominal pain for 18 hours, nausea, loss of appetite\nClinical signs: tenderness in the right lower quadrant\nVital signs: temperature: 38.1, heart_rate: 98, systolic_bp: 128, diastolic_bp: 78\nMedical history: none&quot;
+}</code></pre>
+</div>
+<p class="table-note" style="margin:-0.8rem 0 2rem">P2. Bon exemple en anglais.</p>
+<div class="code-panel" style="margin-bottom:1.5rem">
+<div class="code-panel-header"><span>Sore throat</span><small>attendu : P3 · EN · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
+<pre style="white-space:pre-wrap;word-break:break-word"><code>{
+  &quot;language&quot;: &quot;en&quot;,
+  &quot;question&quot;: &quot;Patient information:\nAge: 29\n\nReported symptoms: sore throat for two days, eating and drinking normally\nClinical signs: no difficulty breathing or swallowing\nVital signs: temperature: 37.4, heart_rate: 76\nMedical history: none&quot;
+}</code></pre>
+</div>
+<p class="table-note" style="margin:-0.8rem 0 2rem">P3 dans les trois formats.</p>
+<div class="code-panel" style="margin-bottom:1.5rem">
+<div class="code-panel-header"><span>Lombalgie après un déménagement</span><small>attendu : P3 · FR · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
+<pre style="white-space:pre-wrap;word-break:break-word"><code>{
+  &quot;language&quot;: &quot;fr&quot;,
+  &quot;question&quot;: &quot;Informations patient:\nAge: 45\n\nReported symptoms: douleur du bas du dos depuis 3 jours après un déménagement, sans irradiation, sans trouble urinaire\nClinical signs: marche normale, force normale des jambes\nVital signs: temperature: 36.8, heart_rate: 72\nMedical history: aucun&quot;
+}</code></pre>
+</div>
+<p class="table-note" style="margin:-0.8rem 0 2rem">P3 dans les trois formats.</p>
+<div class="code-panel" style="margin-bottom:1.5rem">
+<div class="code-panel-header"><span>LIMITE · Douleur thoracique (infarctus)</span><small>attendu : P1 attendu · EN · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
+<pre style="white-space:pre-wrap;word-break:break-word"><code>{
+  &quot;language&quot;: &quot;en&quot;,
+  &quot;question&quot;: &quot;Patient information:\nAge: 67\n\nReported symptoms: crushing chest pain for 40 minutes radiating to the left arm, sweating\nClinical signs: pale, clammy skin\nVital signs: heart_rate: 110, systolic_bp: 92, diastolic_bp: 60, spo2: 94\nMedical history: type 2 diabetes, smoker&quot;
+}</code></pre>
+</div>
+<p class="table-note" style="margin:-0.8rem 0 2rem">Le modèle répond P2 tout en écrivant « suggests a heart attack ». À montrer comme la limite connue, puis renvoyer à la section « Pourquoi le modèle se trompe ».</p></div>
+</section>
+
+<!-- 06 QUESTIONS -->
+<section class="section section-alt" id="questions">
+<div class="container">
+<p class="section-number">06</p>
+<h2>Les questions probables</h2>
+<table class="story-table params-table">
+<thead><tr><th>Question</th><th>Ma réponse courte</th><th>Où le montrer</th></tr></thead>
+<tbody>
+<tr><td>Pourquoi un si petit modèle ?</td><td>Contrainte de la mission : entraînement sur 6 Go de VRAM et service peu coûteux. 1,7 milliard de paramètres en QLoRA tient sur ce matériel.</td><td><a href="experiments.html">SFT</a></td></tr>
+<tr><td>Le score est-il fiable ?</td><td>Test gelé de 500 cas jamais utilisé pour choisir, analyse de fuite, vérification après fusion (492/500 décisions identiques).</td><td><a href="resultats.html">Résultats</a></td></tr>
+<tr><td>À quoi sert le DPO s'il ne change pas le triage ?</td><td>La priorité est la même dans les deux réponses et s'annule dans la loss : le DPO ne règle que le style des explications, et l'effet mesuré est faible.</td><td><a href="resultats.html#dpo-realigne">DPO réaligné</a></td></tr>
+<tr><td>Pourquoi rate-t-il l'infarctus ?</td><td>Il a appris l'urgence à partir de mots alarmants ; infarctus et AVC sont rares dans le train et sans mot de gravité.</td><td><a href="resultats.html#pourquoi">Causes</a></td></tr>
+<tr><td>Que se passe-t-il si vLLM tombe ?</td><td>L'API renvoie une erreur 503 explicite, la disponibilité passe au rouge dans Grafana ; aucune priorité n'est inventée.</td><td><a href="architecture.html">Architecture</a></td></tr>
+<tr><td>Et les données de santé ?</td><td>Données publiques anonymisées (Presidio) ; en production : hébergement HDS, AIPD, contrôle humain.</td><td><a href="synthese.html">Synthèse</a></td></tr>
+<tr><td>Combien ça coûte ?</td><td>Moins de 0,60 $ de l'heure pour le GPU de démonstration ; l'API tourne sur CPU.</td><td><a href="architecture.html#cloud">Cloud</a></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- 07 PLAN B -->
+<section class="section" id="plan-b">
+<div class="container">
+<p class="section-number">07</p>
+<h2>Si quelque chose ne marche pas</h2>
+<table class="story-table params-table">
+<thead><tr><th>Problème</th><th>Réaction</th></tr></thead>
+<tbody>
+<tr><td>Aucun GPU disponible sur RunPod</td><td>Essayer une autre carte en Europe (A5000, L4, RTX 4000), sinon passer au plan B local.</td></tr>
+<tr><td>vLLM ne démarre pas</td><td>Lire les logs (token Hugging Face, mémoire GPU) ; si ça dure plus de 10 minutes, plan B local.</td></tr>
+<tr><td>L'API répond 503</td><td>Vérifier <code>VLLM_BASE_URL</code> et la clé dans <code>.env</code>, puis <code>docker compose up -d --force-recreate api</code>.</td></tr>
+<tr><td>Grafana vide</td><td>Attendre deux minutes après la rafale ; vérifier Prometheus › Targets ; recréer Prometheus si l'adresse du pod a changé.</td></tr>
+<tr><td>vLLM « DOWN » dans Prometheus</td><td>Vérifier <code>VLLM_METRICS_TARGET</code> ; si la cible répond 401, l'expliquer et montrer seulement l'API.</td></tr>
+<tr><td>Réseau coupé</td><td>Plan C : captures d'écran et page Résultats.</td></tr>
+</tbody>
+</table>
+<div class="code-panel" style="margin-top:2rem">
+<div class="code-panel-header"><span>Plan B · modèle sur la carte du poste</span><small>sans RunPod, GPU local requis</small></div>
+<pre style="white-space:pre-wrap;word-break:break-word"><code>docker compose --profile monitoring down
+$env:INFERENCE_BACKEND = "local"
+uv run uvicorn main:app --port 8000
+# Swagger : http://127.0.0.1:8000/docs (le chargement du modèle prend une à deux minutes)</code></pre>
+</div>
+</div>
+</section>
+
+<!-- 08 APRÈS -->
+<section class="section section-alt" id="apres">
+<div class="container">
+<p class="section-number">08</p>
+<h2>Après la démo</h2>
+<div class="reflection-grid">
+<div class="reflection-card"><h3>1 · Couper le GPU</h3><p>RunPod › Pods › <strong>Terminate</strong> (pas Stop) sur chaque pod, puis vérifier que la dépense horaire retombe presque à zéro.</p></div>
+<div class="reflection-card"><h3>2 · Arrêter le poste</h3><p><code>docker compose --profile monitoring down</code>, puis remettre <code>INFERENCE_BACKEND=mock</code> dans <code>.env</code>.</p></div>
+<div class="reflection-card"><h3>3 · Relever les chiffres</h3><p>GPU, région, version de vLLM, temps de démarrage, latence moyenne et p95, résultat du test gelé en mode vLLM, captures Swagger et Grafana.</p></div>
+<div class="reflection-card"><h3>4 · Compléter la doc</h3><p>Reporter ces chiffres dans <a href="architecture.html#mesures-cloud">Architecture</a>, <a href="resultats.html">Résultats</a> et le README, puis pousser.</p></div>
+</div>
+</div>
+</section>
+
+<!-- NAVIGATION -->
+<section class="section contact">
+<div class="container">
+<p class="eyebrow">PRÊT</p>
+<h2>Un cas, une priorité, une explication, et le service observé.</h2>
+<p>La démo montre la chaîne complète en fonctionnement, puis sa limite. C'est ce qui rend la recommandation crédible : un second avis pour l'IOA, jamais une décision autonome.</p>
+<div class="hero-actions">
+<a class="button primary" href="resultats.html">Résultats</a>
+<a class="button secondary" href="architecture.html#cloud">Architecture cloud</a>
+<a class="button secondary" href="synthese.html">Synthèse</a>
+</div>
+</div>
+</section>
+</main>
+<footer>
+<div class="container footer-content">
+<span>Medical Triage AI • Préparation de la démo</span>
+<span>AI Engineering • 2026</span>
+</div>
+</footer>
+<script src="js/main.js"></script>
+<script>
+document.querySelectorAll('.copy-btn').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var code = btn.closest('.code-panel').querySelector('code').innerText;
+    navigator.clipboard.writeText(code).then(function () {
+      btn.textContent = 'Copié';
+      setTimeout(function () { btn.textContent = 'Copier'; }, 1500);
+    });
+  });
+});
+</script>
+</body>
+</html>

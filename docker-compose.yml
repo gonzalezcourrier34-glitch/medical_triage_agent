@@ -121,16 +121,26 @@ services:
     container_name: medical-triage-prometheus
 
     volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.tpl.yml:ro
       - prometheus_data:/prometheus
 
     # Interface Prometheus locale.
     ports:
       - "127.0.0.1:9090:9090"
 
+    # Cible vLLM : locale par défaut, ou pod RunPod pour la démo cloud
+    # (VLLM_METRICS_SCHEME=https, VLLM_METRICS_TARGET=<pod-id>-8000.proxy.runpod.net).
+    environment:
+      VLLM_METRICS_SCHEME: ${VLLM_METRICS_SCHEME:-http}
+      VLLM_METRICS_TARGET: ${VLLM_METRICS_TARGET:-vllm:8000}
+
+    entrypoint: ["/bin/sh", "-c"]
     command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.path=/prometheus
+      - >-
+        sed -e "s|__VLLM_METRICS_SCHEME__|$$VLLM_METRICS_SCHEME|"
+        -e "s|__VLLM_METRICS_TARGET__|$$VLLM_METRICS_TARGET|"
+        /etc/prometheus/prometheus.tpl.yml > /tmp/prometheus.yml
+        && exec /bin/prometheus --config.file=/tmp/prometheus.yml --storage.tsdb.path=/prometheus
 
     security_opt:
       - no-new-privileges:true

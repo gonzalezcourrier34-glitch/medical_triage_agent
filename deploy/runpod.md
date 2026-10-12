@@ -17,7 +17,7 @@ Aucun secret dans ce fichier ni dans Git : tokens et clés vivent dans RunPod (S
    ```powershell
    -join ((48..57)+(65..90)+(97..122) | Get-Random -Count 40 | % {[char]$_})
    ```
-4. Image de l'API : CI au vert sur `main` → la CD publie `ghcr.io/gonzalezcourrier34-glitch/medical_triage_agent/api:sha-<commit>`.
+4. Image de l'API : CI au vert sur `master` → la CD publie `ghcr.io/gonzalezcourrier34-glitch/medical_triage_agent/api:sha-<commit>`.
    GitHub › Packages › `api` › Package settings › visibilité **Public**.
 5. Templates RunPod (My Templates › New Template, gratuit) :
 
@@ -50,6 +50,33 @@ Aucun secret dans ce fichier ni dans Git : tokens et clés vivent dans RunPod (S
 4. Déployer **triage-api** (CPU) avec l'URL du pod GPU. Vérifier `https://<pod-cpu>-8000.proxy.runpod.net/health`, puis `/docs` : un cas FR, un cas EN, captures d'écran.
 5. Relever : GPU, région, version vLLM, temps de démarrage, latence (moyenne, P50, P95).
 6. **Terminate** les deux pods (pas Stop). Vérifier que la dépense revient à ≈ 0,004 $/h.
+
+## C. Monitoring pendant la démo (sur le poste local)
+
+Prometheus et Grafana tournent sur le poste, avec une API locale branchée sur le pod vLLM :
+le tableau de bord suit le trafic réel de la démo sans rien installer sur RunPod.
+
+1. Dans `.env` (clé saisie localement, jamais partagée) :
+   ```
+   INFERENCE_BACKEND=vllm
+   VLLM_BASE_URL=https://<pod-gpu>-8000.proxy.runpod.net/v1
+   VLLM_API_KEY=...
+   VLLM_METRICS_SCHEME=https
+   VLLM_METRICS_TARGET=<pod-gpu>-8000.proxy.runpod.net
+   GRAFANA_ADMIN_PASSWORD=...
+   ```
+2. Docker Desktop démarré, puis :
+   ```powershell
+   docker compose --profile monitoring up -d api prometheus grafana
+   ```
+3. API : http://127.0.0.1:8000/docs · Grafana : http://127.0.0.1:3000 (dashboard « Operations Overview »)
+   · Prometheus : http://127.0.0.1:9090 › Status › Targets (API et vLLM « UP »).
+4. Générer du trafic :
+   ```powershell
+   uv run python benchmarks/demo_cas_inconnus.py --mode api --api-url http://127.0.0.1:8000
+   ```
+   Les courbes apparaissent après une à deux minutes (relevé toutes les 15 s, débits sur 5 min).
+5. Après la démo : `docker compose --profile monitoring down`, puis Terminate du pod.
 
 ## Limites connues
 

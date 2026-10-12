@@ -110,6 +110,7 @@ L'API démarre avec le moteur simulé : la documentation interactive est sur <ht
 ```bash
 docker compose up -d                          # API seule
 docker compose --profile monitoring up -d     # + Prometheus (9090) et Grafana (3000)
+# Modèle sur RunPod suivi en local : voir deploy/runpod.md, section C (VLLM_METRICS_*)
 docker compose --profile gpu up -d            # + vLLM (8001), GPU NVIDIA requis
 ```
 

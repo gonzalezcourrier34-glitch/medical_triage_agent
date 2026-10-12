@@ -58,7 +58,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(increase(http_requests_total{job=\"medical-triage-api\"}[$__range])) or vector(0)",
+          "expr": "sum(increase(triage_http_requests_total{job=\"medical-triage-api\"}[$__range])) or vector(0)",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -120,7 +120,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(http_requests_total{job=\"medical-triage-api\"}[5m])) or vector(0)",
+          "expr": "sum(rate(triage_http_requests_total{job=\"medical-triage-api\"}[5m])) or vector(0)",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -182,7 +182,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "1000 * sum(rate(http_request_duration_seconds_sum{job=\"medical-triage-api\"}[5m])) / sum(rate(http_request_duration_seconds_count{job=\"medical-triage-api\"}[5m]))",
+          "expr": "1000 * sum(rate(triage_http_request_duration_seconds_sum{job=\"medical-triage-api\"}[5m])) / sum(rate(triage_http_request_duration_seconds_count{job=\"medical-triage-api\"}[5m]))",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -244,7 +244,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "1000 * histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"medical-triage-api\"}[5m])))",
+          "expr": "1000 * histogram_quantile(0.95, sum by (le) (rate(triage_http_request_duration_seconds_bucket{job=\"medical-triage-api\"}[5m])))",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -319,7 +319,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "100 * sum(rate(http_requests_total{job=\"medical-triage-api\",status=\"5xx\"}[5m])) / sum(rate(http_requests_total{job=\"medical-triage-api\"}[5m]))",
+          "expr": "100 * sum(rate(triage_http_requests_total{job=\"medical-triage-api\",status=~\"5..\"}[5m])) / sum(rate(triage_http_requests_total{job=\"medical-triage-api\"}[5m]))",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -564,7 +564,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(http_requests_total{job=\"medical-triage-api\"}[$__rate_interval]))",
+          "expr": "sum(rate(triage_http_requests_total{job=\"medical-triage-api\"}[$__rate_interval]))",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -633,7 +633,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "1000 * sum(rate(http_request_duration_seconds_sum{job=\"medical-triage-api\"}[$__rate_interval])) / sum(rate(http_request_duration_seconds_count{job=\"medical-triage-api\"}[$__rate_interval]))",
+          "expr": "1000 * sum(rate(triage_http_request_duration_seconds_sum{job=\"medical-triage-api\"}[$__rate_interval])) / sum(rate(triage_http_request_duration_seconds_count{job=\"medical-triage-api\"}[$__rate_interval]))",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -643,7 +643,7 @@
         },
         {
           "refId": "B",
-          "expr": "1000 * histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"medical-triage-api\"}[$__rate_interval])))",
+          "expr": "1000 * histogram_quantile(0.95, sum by (le) (rate(triage_http_request_duration_seconds_bucket{job=\"medical-triage-api\"}[$__rate_interval])))",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"

@@ -14,6 +14,7 @@ Ouvrir `index.html` dans un navigateur : aucune dépendance externe, aucun CDN, 
 | `architecture.html` | Chaîne de données, entraînement, API, Docker, CI/CD, monitoring, sécurité, corrections et reste à faire |
 | `resultats.html` | Résultats finaux, essai du DPO réaligné, comparaison des explications, test sur dix cas inédits, format d'entrée, limites et conclusion |
 | `synthese.html` | Bilan, réponses à la mission, recommandation pour le CHSA, feuille de route, passage à l'échelle, cadre réglementaire, risques |
+| `demo.html` | Préparation de la démo : checklist, lancement du service et du monitoring, onglets à ouvrir, déroulé, cas à coller, questions probables, plan de secours |
 
 ## Modèle final documenté
 
