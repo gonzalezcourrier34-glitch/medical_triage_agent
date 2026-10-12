@@ -540,7 +540,7 @@ Le seul lien entre les deux est l'adapter exporté.
 <table class="story-table params-table">
 <thead><tr><th>Point</th><th>Constat de départ</th><th>Correction</th></tr></thead>
 <tbody>
-<tr><td>Modèle servi</td><td>L'API chargeait un adapter du 24 septembre, antérieur à mes runs documentés.</td><td>Le service charge le modèle fusionné final (<code>artifacts/deployment/qwen3-triage-20261009-154320</code>), construit avec le notebook 07 et vérifié.</td></tr>
+<tr><td>Modèle servi</td><td>L'API chargeait un adapter du 24 septembre, antérieur à mes runs documentés.</td><td>Le service charge le modèle fusionné final (<code>artifacts/deployment/qwen3-triage-20261009-154320-aligned</code>), construit avec le notebook 07 et vérifié.</td></tr>
 <tr><td>Prompt</td><td>L'API utilisait un ancien prompt, différent de celui de l'entraînement.</td><td>Prompt et format d'entrée centralisés dans <code>prompting.py</code>, identiques à l'entraînement et testés.</td></tr>
 <tr><td>Moteur local</td><td>Il renvoyait seulement la priorité, alors que la route attend aussi une explication.</td><td>Il renvoie la priorité (scoring conditionnel) et une explication générée, sans bloquer la boucle asynchrone.</td></tr>
 <tr><td>vLLM</td><td>Le service existait dans Compose mais l'API ne savait pas l'appeler.</td><td>Nouveau moteur <code>vllm</code> ; vLLM sert le modèle fusionné final.</td></tr>
