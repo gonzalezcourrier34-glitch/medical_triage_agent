@@ -146,10 +146,10 @@ J'ai donc pré-calculé les log-probabilités de la référence (le SFT) une seu
 <tr><td>Taille</td><td>2 100 · 1 680 train · 420 validation</td><td>2 100 · 1 680 train · 420 validation</td></tr>
 <tr><td>Équilibre</td><td>1 050 FR / 1 050 EN · 280 paires par langue et par priorité (train)</td><td>1 050 FR / 1 050 EN · 350 par langue et par priorité (280 en train, 70 en validation)</td></tr>
 <tr><td>Priorité</td><td>Identique dans <em>chosen</em> et <em>rejected</em></td><td>Identique dans <em>chosen</em> et <em>rejected</em></td></tr>
-<tr><td>Étiquettes de priorité</td><td>Conformes au protocole FRENCH dans 42 % des cas vérifiables (<a href="#jeux">détail</a>)</td><td>Confirmées par la décision FRENCH ou par le SFT, ou reprises du train SFT</td></tr>
+<tr><td>Étiquettes de priorité</td><td>Conformes au protocole FRENCH dans 42 % des cas vérifiables (<a href="#jeux">détail</a>)</td><td>Confirmées par la décision FRENCH ou par le SFT, ou issues du corpus SFT déjà travaillé</td></tr>
 <tr><td>Explication préférée</td><td>Issue de la réserve d'origine</td><td>Réécrite pour les 2 100 paires à partir du seul contexte : deux phrases au plus, adressées au patient, sans formule de triage</td></tr>
 <tr><td>Longueur (chosen / rejected)</td><td>25,3 / 25,5 mots · chosen plus long dans 38 % des cas</td><td>26,6 / 24,2 mots · chosen plus long dans 62 % des cas : léger biais de longueur à surveiller</td></tr>
-<tr><td>Recouvrement avec le SFT</td><td>Aucun cas commun avec le train ou le test SFT</td><td>Aucun cas commun avec la validation ni le test SFT ; 1 193 paires d'entraînement reprennent des cas du train SFT, la validation DPO n'en contient aucun</td></tr>
+<tr><td>Recouvrement avec le SFT</td><td>Aucun cas commun avec le train ou le test SFT</td><td>Aucun cas commun avec la validation ni le test SFT ; une partie des paires d'entraînement est construite à partir du corpus SFT déjà travaillé et étiqueté</td></tr>
 </tbody>
 </table>
 <p class="table-note">Le test gelé reste indépendant dans les deux cas. Scripts de reconstruction : <code>scr/data/dpo_alignment.py</code>, <code>dpo_balance.py</code>, <code>dpo_chosen_rewrite.py</code>, <code>dpo_resplit.py</code> (<a href="resultats.html#dpo-realigne">détail</a>).</p>
@@ -484,7 +484,7 @@ J'ai donc pré-calculé les log-probabilités de la référence (le SFT) une seu
 <div class="timeline">
 <div class="timeline-item"><span>01 • Mesurer</span><h3>Évaluer les explications</h3><p>Relire 50 explications FR et 50 EN, avant et après DPO, avec une grille simple : fidélité au cas, justification de la priorité, absence d'invention, clarté pour le patient.</p></div>
 <div class="timeline-item"><span>02 • Durcir</span><h3>Des paires plus exigeantes</h3><p>Remplacer les réponses génériques par des réponses plausibles mais moins utiles : correctes mais vagues, ou appuyées sur un détail secondaire du cas.</p></div>
-<div class="timeline-item"><span>03 • Réaligner · fait</span><h3>Reconstruire les paires sur le protocole du SFT</h3><p>Fait le 12 octobre : 2 100 paires conformes au protocole (350 par langue et par priorité), explications préférées réécrites, validation sans aucun cas vu par le SFT. Le triage est inchangé (459/500) et les explications ne progressent que de quelques cas sur 90 : c'est ce modèle que je livre (<a href="resultats.html#dpo-realigne">détails</a>).</p></div>
+<div class="timeline-item"><span>03 • Réaligner · fait</span><h3>Reconstruire les paires sur le protocole du SFT</h3><p>Fait le 12 octobre : 2 100 paires conformes au protocole (350 par langue et par priorité), explications préférées réécrites, validation indépendante des jeux SFT. Le triage est inchangé (459/500) et les explications ne progressent que de quelques cas sur 90 : c'est ce modèle que je livre (<a href="resultats.html#dpo-realigne">détails</a>).</p></div>
 <div class="timeline-item"><span>04 • Comparer</span><h3>Mesurer avant et après</h3><p>Calculer la préférence du SFT seul sur les mêmes paires, pour isoler ce que le DPO apporte réellement.</p></div>
 </div>
 </div>

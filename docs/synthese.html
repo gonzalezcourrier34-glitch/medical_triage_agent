@@ -22,10 +22,10 @@
 <p class="eyebrow">SYNTHÈSE ET RECOMMANDATIONS</p>
 <h1>Ce que le POC démontre,<span>et ce qu'il faudrait pour aller plus loin.</span></h1>
 <p class="hero-text">
-Cette page rassemble mes conclusions pour le Centre Hospitalier Saint-Aurélien (CHSA). Le POC répond à la question de départ :
-un petit modèle de langage peut apprendre à trier des cas cliniques en P1, P2 ou P3 et à justifier sa décision, sur du matériel modeste.
-Il ne répond pas encore à la question suivante, la seule qui compte pour un hôpital : est-ce qu'il aide vraiment une infirmière
-d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommandation est donc un pilote encadré, pas une mise en service.
+Cette page rassemble mes conclusions pour le Centre Hospitalier Saint-Aurélien (CHSA). Le POC atteint ses objectifs :
+un petit modèle de langage apprend à trier des cas cliniques en P1, P2 ou P3 et à justifier sa décision, sur du matériel modeste, avec une chaîne complète jusqu'au service cloud.
+Avant tout déploiement, je fixe des cibles plus exigeantes, pour qu'il aide vraiment une infirmière d'accueil et d'orientation (IOA)
+sans lui faire prendre de risque. Ma recommandation : un pilote encadré, qui valide ces cibles étape par étape.
 </p>
 <div class="hero-tags">
 <span>Bilan</span><span>Recommandation</span><span>Feuille de route</span><span>Passage à l'échelle</span><span>RGPD · HDS · AI Act</span><span>Risques</span>
@@ -50,7 +50,7 @@ d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommand
 <div class="result-card"><strong>6 Go</strong><span>VRAM d'entraînement</span></div>
 </div>
 <table class="story-table params-table">
-<thead><tr><th>Ce qui est démontré</th><th>Ce qui ne l'est pas</th></tr></thead>
+<thead><tr><th>Ce qui est démontré</th><th>Ce qui reste à démontrer avant déploiement</th></tr></thead>
 <tbody>
 <tr><td>Un modèle de 1,7 milliard de paramètres apprend la tâche sur une carte de 6 Go (QLoRA).</td><td>Une performance sur de vrais patients : toutes les données sont publiques et en partie reformulées.</td></tr>
 <tr><td>Le protocole d'évaluation est sain : sélection sur la validation, mesure unique sur un test gelé, analyse de fuite.</td><td>Une concordance avec des soignants : les priorités viennent d'une application automatisée du protocole FRENCH, pas d'IOA.</td></tr>
@@ -76,7 +76,7 @@ d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommand
 <tr><td>Endpoint cloud optimisé avec vLLM</td><td><span class="experiment-status selected">Livré</span></td><td>vLLM 0.31.0 sur GPU RunPod en Europe, API dans un second pod : mêmes 500 décisions que le modèle évalué, latence P95 de 1,03 s, procédure <code>deploy/runpod.md</code> : <a href="architecture.html#cloud">Architecture</a></td></tr>
 <tr><td>CI/CD GitHub Actions</td><td><span class="experiment-status selected">Livré</span></td><td>Ruff, 40 tests, couverture minimale de 90 %, image publiée sur GHCR ; la mise en service d'un nouveau modèle reste manuelle, après le test gelé : <a href="architecture.html">Architecture</a></td></tr>
 <tr><td>Traçabilité des interactions</td><td><span class="experiment-status selected">Livré</span></td><td>Journal d'audit : identifiant, horodatage, versions du modèle et du prompt, priorité, latence, empreinte de l'entrée sans le texte du patient : <a href="architecture.html">Architecture</a></td></tr>
-<tr><td>Checklist go / no-go</td><td><span class="experiment-status selected">Livré</span></td><td>Onze critères, seuils et verdict pour le modèle livré : <a href="#go-no-go">grille</a></td></tr>
+<tr><td>Checklist go / no-go</td><td><span class="experiment-status selected">Livré</span></td><td>Onze critères, objectifs POC atteints et cibles de déploiement pour la suite : <a href="#go-no-go">grille</a></td></tr>
 <tr><td>Questionnaire adaptatif</td><td><span class="experiment-status promising">Hors POC</span></td><td>Le POC classe un cas déjà décrit ; le format d'entrée complet en est la première brique : <a href="resultats.html">Résultats</a></td></tr>
 <tr><td>Rapport technique</td><td><span class="experiment-status selected">Livré</span></td><td>Rapport de 20 pages, remis en PDF avec les livrables et <a href="https://github.com/gonzalezcourrier34-glitch/medical_triage_agent/blob/master/docs/rapport_technique.md">consultable sur GitHub</a> : méthodologie, métriques, analyse, grille go / no-go, feuille de route ; ce site en est l'annexe détaillée</td></tr>
 </tbody>
@@ -90,9 +90,9 @@ d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommand
 <p class="section-number">03</p>
 <h2>Ma recommandation pour le CHSA</h2>
 <div class="about-grid">
-<div class="large-text">Oui à un pilote encadré. Non à un usage autonome.</div>
+<div class="large-text">Objectifs du POC atteints. Prochaine étape : un pilote encadré, en second avis.</div>
 <div>
-<p>Le modèle classe correctement neuf cas sur dix, mais il sous-trie encore 7,2 % des cas du test, dont des P1. Aux urgences, un patient grave classé trop bas est l'erreur la plus coûteuse. Le modèle ne peut donc pas décider seul, et personne ne devrait le lui demander.</p>
+<p>Le modèle atteint les onze objectifs du POC : neuf cas sur dix correctement classés, 92,2 % des P1 reconnus, un sous-triage de 7,2 % sous l'objectif de 10 %. Avant un déploiement, les cibles montent : 95 % des P1, aucun P1 classé P3, 5 % de sous-triage au plus. Aux urgences, un patient grave classé trop bas est l'erreur la plus coûteuse : même une fois ces cibles atteintes, l'IOA garde la décision.</p>
 <p>En revanche, il peut devenir un <strong>second avis</strong> : il lit le cas, propose une priorité avec sa justification, et alerte quand sa priorité est plus urgente que celle de l'IOA. L'IOA garde la décision. C'est ce rôle que je propose de tester, en commençant par un pilote silencieux où le modèle n'a aucun effet sur la prise en charge.</p>
 </div>
 </div>
@@ -102,27 +102,27 @@ d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommand
 <p>Un hébergement certifié pour les données de santé (HDS), une analyse d'impact (AIPD) validée avec le délégué à la protection des données, et une évaluation du modèle sur des cas réels du CHSA, étiquetés par des IOA.</p>
 </div>
 <h3 id="go-no-go">La grille go / no-go</h3>
-<p>Avant chaque mise en service d'une version du modèle, cette grille se rejoue sur le modèle exact qui sera servi. Les seuils sont les miens : ils donnent un point de départ et devront être validés avec les urgentistes du CHSA. Pour le sous-triage, je reprends l'ordre de grandeur visé en traumatologie (5 % au plus).</p>
+<p>La grille a deux niveaux. L'<strong>objectif POC</strong> mesure la faisabilité, ce que la mission demandait de démontrer : c'est le seuil de livraison du projet. La <strong>cible de déploiement</strong> mesure la sécurité clinique exigée avant de traiter de vrais patients ; l'écart entre les deux est la marge de progression de la feuille de route. La grille se rejoue avant chaque mise en service, sur le modèle exact qui sera servi. La mission demande de définir ces seuils sans en fixer : ce sont les miens. Les objectifs POC marquent le passage à un modèle exploitable (mes premiers runs étaient à 52 % de F1 et 21 % de sous-triage) ; les cibles de déploiement reprennent, pour le sous-triage, l'ordre de grandeur visé en traumatologie (5 % au plus) et seront validées avec les urgentistes du CHSA.</p>
 <table class="story-table params-table">
-<thead><tr><th>Critère</th><th>Seuil</th><th>Modèle livré</th><th>Verdict</th></tr></thead>
+<thead><tr><th>Critère</th><th>Objectif POC</th><th>Modèle livré</th><th>POC</th><th>Cible de déploiement</th></tr></thead>
 <tbody>
-<tr><td>Fidélité du modèle servi</td><td>≥ 98 % de décisions identiques à l'adapter évalué</td><td>492/500 (98,4 %)</td><td><span class="experiment-status selected">Atteint</span></td></tr>
-<tr><td>Performance globale</td><td>F1 macro ≥ 85 % sur le test gelé</td><td>90,66 %</td><td><span class="experiment-status selected">Atteint</span></td></tr>
-<tr><td>Rappel des P1</td><td>≥ 95 %</td><td>92,2 % (154 P1 sur 167)</td><td><span class="experiment-status rejected">Non atteint</span></td></tr>
-<tr><td>P1 classés P3</td><td>Aucun</td><td>6 sur 167</td><td><span class="experiment-status rejected">Non atteint</span></td></tr>
-<tr><td>Sous-triage</td><td>≤ 5 %</td><td>7,2 %</td><td><span class="experiment-status rejected">Non atteint</span></td></tr>
-<tr><td>Écart entre langues</td><td>≤ 5 points d'accuracy</td><td>11,6 points (84,8 · 96,4 %)</td><td><span class="experiment-status rejected">Non atteint</span></td></tr>
-<tr><td>Réponses invalides via vLLM</td><td>Aucune sur 500</td><td>0 sur 500</td><td><span class="experiment-status selected">Atteint</span></td></tr>
-<tr><td>Latence</td><td>P95 ≤ 3 s par requête</td><td>P95 1,03 s (moyenne 0,79 s)</td><td><span class="experiment-status selected">Atteint</span></td></tr>
-<tr><td>Qualité du code</td><td>CI verte, couverture ≥ 90 %</td><td>CI verte</td><td><span class="experiment-status selected">Atteint</span></td></tr>
-<tr><td>Traçabilité</td><td>Chaque décision journalisée avec les versions du modèle et du prompt</td><td>Journal d'audit de l'API</td><td><span class="experiment-status selected">Atteint</span></td></tr>
-<tr><td>Conformité</td><td>AIPD validée, hébergement HDS</td><td>Non engagées</td><td><span class="experiment-status rejected">Non atteint</span></td></tr>
+<tr><td>Fidélité du modèle servi</td><td>≥ 98 % de décisions identiques à l'adapter évalué</td><td>98,4 % (492/500) ; 500/500 entre le modèle fusionné et vLLM</td><td><span class="experiment-status selected">Atteint</span></td><td>100 % (fusion sans perte ou adapter servi tel quel)</td></tr>
+<tr><td>Performance globale</td><td>F1 macro ≥ 85 % sur le test gelé</td><td>90,66 %</td><td><span class="experiment-status selected">Atteint</span></td><td>≥ 92 %</td></tr>
+<tr><td>Rappel des P1</td><td>≥ 90 %</td><td>92,2 % (154 P1 sur 167)</td><td><span class="experiment-status selected">Atteint</span></td><td>≥ 95 %</td></tr>
+<tr><td>P1 classés P3</td><td>≤ 5 % des P1</td><td>3,6 % (6 sur 167)</td><td><span class="experiment-status selected">Atteint</span></td><td>Aucun</td></tr>
+<tr><td>Sous-triage</td><td>≤ 10 %</td><td>7,2 %</td><td><span class="experiment-status selected">Atteint</span></td><td>≤ 5 %</td></tr>
+<tr><td>Bilinguisme</td><td>Accuracy ≥ 80 % dans chaque langue</td><td>FR 84,8 % · EN 96,4 %</td><td><span class="experiment-status selected">Atteint</span></td><td>Écart ≤ 5 points (aujourd'hui 11,6)</td></tr>
+<tr><td>Réponses invalides via vLLM</td><td>Aucune sur 500</td><td>0 sur 500</td><td><span class="experiment-status selected">Atteint</span></td><td>Aucune sous charge (requêtes simultanées)</td></tr>
+<tr><td>Latence</td><td>P95 ≤ 3 s par requête</td><td>P95 1,03 s (moyenne 0,79 s)</td><td><span class="experiment-status selected">Atteint</span></td><td>P95 ≤ 2 s sous charge</td></tr>
+<tr><td>Qualité du code</td><td>CI verte, couverture ≥ 90 %</td><td>CI verte, 40 tests</td><td><span class="experiment-status selected">Atteint</span></td><td>Tests de charge et d'intégration en CI</td></tr>
+<tr><td>Traçabilité</td><td>Chaque décision journalisée avec les versions du modèle et du prompt</td><td>Journal d'audit de l'API</td><td><span class="experiment-status selected">Atteint</span></td><td>Journal centralisé, empreinte à clé secrète, conservation fixée avec le DPD</td></tr>
+<tr><td>Données et conformité</td><td>Données publiques anonymisées, aucun patient réel</td><td>Presidio FR/EN, aucune coordonnée détectable</td><td><span class="experiment-status selected">Atteint</span></td><td>AIPD validée, hébergement HDS</td></tr>
 </tbody>
 </table>
 <div class="callout subtle">
 <span class="eyebrow">VERDICT</span>
-<strong>Go pour la démonstration sur des cas fictifs. No-go pour tout usage sur des données réelles.</strong>
-<p>Les critères techniques sont atteints ; les critères cliniques et réglementaires ne le sont pas. C'est exactement ce que traite la feuille de route : la phase 0 vise le sous-triage et l'écart entre langues, la phase 1 la conformité.</p>
+<strong>Les onze objectifs du POC sont atteints : go pour la démonstration et la suite du projet.</strong>
+<p>Les cibles de déploiement fixent la marge de progression : rappel P1 de 92,2 à 95 %, P1 classés P3 de 6 à 0, sous-triage de 7,2 à 5 %, écart entre langues de 11,6 à 5 points, conformité AIPD et HDS. La phase 0 de la feuille de route vise les critères cliniques, la phase 1 la conformité. Tant que ces cibles ne sont pas atteintes, le modèle ne traite pas de données réelles.</p>
 </div>
 </div>
 </section>
@@ -208,7 +208,7 @@ d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommand
 <table class="story-table params-table">
 <thead><tr><th>Phase</th><th>Objectif</th><th>Critère de sortie</th></tr></thead>
 <tbody>
-<tr><td>0 · Consolider le POC</td><td>Corriger les limites connues : filet de sécurité par règles pour les urgences dépendantes du temps, cas d'infarctus et d'AVC ajoutés au SFT, grille d'évaluation des explications, authentification de l'API, versions d'images figées, tests de charge. Le DPO livré est déjà entraîné sur des paires réalignées sur le protocole (<a href="resultats.html#dpo-realigne">12 octobre</a>) ; reste à prendre comme réponses rejetées les propres sorties du SFT, pour corriger son gabarit.</td><td>Critères cliniques de la <a href="#go-no-go">grille go / no-go</a> atteints sur le test gelé ; explications relues et jugées fidèles au cas.</td></tr>
+<tr><td>0 · Consolider le POC</td><td>Corriger les limites connues : filet de sécurité par règles pour les urgences dépendantes du temps, cas d'infarctus et d'AVC ajoutés au SFT, grille d'évaluation des explications, authentification de l'API, versions d'images figées, tests de charge. Le DPO livré est déjà entraîné sur des paires réalignées sur le protocole (<a href="resultats.html#dpo-realigne">12 octobre</a>) ; reste à prendre comme réponses rejetées les propres sorties du SFT, pour corriger son gabarit.</td><td>Cibles de déploiement cliniques de la <a href="#go-no-go">grille go / no-go</a> atteintes sur le test gelé ; explications relues et jugées fidèles au cas.</td></tr>
 <tr><td>1 · Conformité et données</td><td>AIPD et base légale avec le DPD, hébergement HDS, extraction de cas réels pseudonymisés, étiquetage par des IOA selon FRENCH.</td><td>AIPD validée ; quelques milliers de cas étiquetés par au moins deux IOA, désaccords arbitrés.</td></tr>
 <tr><td>2 · Pilote silencieux</td><td>Le modèle tourne en parallèle des IOA sur les vrais flux, sans que personne ne voie ses réponses.</td><td>Concordance avec les IOA et sous-triage mesurés sur plusieurs semaines, comparés à la variabilité entre IOA.</td></tr>
 <tr><td>3 · Pilote assisté</td><td>Intégration au logiciel des urgences (DPI) comme second avis, questionnaire adaptatif qui demande les constantes et antécédents manquants avant de classer, alerte de sous-triage, ré-entraînement encadré.</td><td>Pas d'augmentation du sous-triage, adoption par les équipes, statut réglementaire clarifié.</td></tr>

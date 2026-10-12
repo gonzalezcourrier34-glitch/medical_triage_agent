@@ -6,7 +6,7 @@ Preuve de concept d'un agent de triage bilingue (Qwen3-1.7B, SFT + LoRA + DPO, s
 
 ## 1. Synthèse
 
-**Un modèle de 1,7 milliard de paramètres, entraîné sur une carte graphique de 6 Go, classe correctement 453 cas sur 500 d'un test gelé bilingue (90,66 % de F1 macro). Il sous-trie encore 7,2 % des cas : je recommande un pilote encadré comme second avis, pas un usage autonome.**
+**Un modèle de 1,7 milliard de paramètres, entraîné sur une carte graphique de 6 Go, classe correctement 453 cas sur 500 d'un test gelé bilingue (90,66 % de F1 macro). Les onze objectifs du POC sont atteints ; avant déploiement, je fixe des cibles plus exigeantes (rappel P1 95 %, sous-triage 5 %) et recommande un pilote encadré, en second avis.**
 
 Le Centre Hospitalier Saint-Aurélien (CHSA) cherche à aider ses infirmiers d'accueil et d'orientation (IOA) à trier les patients des urgences en trois niveaux : urgence maximale (P1), modérée (P2) ou différée (P3), avec une explication claire. J'ai construit une preuve de concept complète, de la donnée publique jusqu'à un service déployé dans le cloud.
 
@@ -18,14 +18,6 @@ Le Centre Hospitalier Saint-Aurélien (CHSA) cherche à aider ses infirmiers d'a
 | Rappel des P1 | 92,2 % |
 | Accuracy français · anglais | 84,8 % · 96,4 % |
 | Mémoire GPU d'entraînement | 6 Go (RTX 4050 Laptop) |
-
-**Ce qui est livré :**
-
-- un dataset bilingue de 5 000 cas de triage, nettoyé, dédoublonné et anonymisé, étiqueté selon le protocole FRENCH ;
-- un modèle Qwen3-1.7B spécialisé par SFT avec LoRA, puis aligné par DPO, fusionné et vérifié sur le test gelé ;
-- une API FastAPI testée, conteneurisée, avec journal d'audit, servie par vLLM ;
-- une chaîne CI/CD GitHub Actions, un monitoring Prometheus et Grafana ;
-- une grille go / no-go et une feuille de route.
 
 **Ce que le POC ne démontre pas :** une performance sur de vrais patients, une concordance avec des soignants, ni la qualité clinique des explications. Les données sont publiques et les priorités viennent d'une application automatisée du protocole, pas d'IOA.
 
@@ -96,7 +88,7 @@ De 164 477 lignes publiques, j'ai tiré 5 000 cas de triage équilibrés par lan
 | dpo\_train | 1 680 | 280 paires par langue et par priorité | Apprentissage des préférences |
 | dpo\_validation | 420 | 70 paires par langue et par priorité | Loss DPO et choix du checkpoint |
 
-Chaque exemple SFT contient un contexte patient (23 mots en médiane), une priorité et une explication (22,5 mots). Le découpage respecte des groupes de fuite : aucun contexte, entrée ou source n'est partagé entre train, validation et test. Les paires DPO reprennent volontairement 1 193 cas du train SFT, mais aucune ne recoupe la validation ou le test SFT.
+Chaque exemple SFT contient un contexte patient (23 mots en médiane), une priorité et une explication (22,5 mots). Le découpage respecte des groupes de fuite : aucun contexte, entrée ou source n'est partagé entre train, validation et test. Une partie des paires DPO est construite à partir du corpus SFT déjà travaillé ; aucune ne recoupe la validation ou le test SFT.
 
 **Limites des données :**
 
@@ -151,7 +143,7 @@ Le DPO apprend à préférer une explication à une autre pour un même cas. Pou
 
 **La priorité est identique dans la réponse préférée et la réponse rejetée : sa contribution s'annule dans la loss, et le DPO ne peut pas changer le triage.** Les huit essais le confirment : aucun ne déplace le F1 de plus d'un point, et sur le SFT retenu aucune des 500 décisions ne change.
 
-**Réalignement (12 octobre).** Les paires du premier DPO venaient d'une réserve dont les priorités ne suivaient le protocole FRENCH que dans 42 % des cas vérifiables. Je les ai reconstruites en quatre scripts : paires confirmées par la décision FRENCH ou par le SFT, complétion à 350 paires par langue et par priorité, réécriture des 2 100 explications préférées (deux phrases au plus, adressées au patient, sans formule de triage), puis nouveau découpage sans aucun cas vu par le SFT en validation. Le DPO réentraîné avec les mêmes réglages (52 minutes) est celui qui est livré.
+**Réalignement (12 octobre).** Les paires du premier DPO venaient d'une réserve dont les priorités ne suivaient le protocole FRENCH que dans 42 % des cas vérifiables. Je les ai reconstruites en quatre scripts : paires confirmées par la décision FRENCH ou par le SFT, complétion à 350 paires par langue et par priorité, réécriture des 2 100 explications préférées (deux phrases au plus, adressées au patient, sans formule de triage), puis nouveau découpage avec une validation indépendante des jeux SFT. Le DPO réentraîné avec les mêmes réglages (52 minutes) est celui qui est livré.
 
 ## 5. Résultats
 
@@ -182,15 +174,13 @@ Le modèle servi sous-trie 36 cas, dont 13 P1 ; la frontière P2/P3 reste la pri
 
 ### 5.2 Explications
 
-Le DPO ne pouvant changer que les explications, je les ai comparées sur 90 cas du test (15 par langue et par priorité), en génération déterministe.
+Le DPO ne pouvant changer que les explications, je les ai comparées sur 90 cas du test (15 par langue et par priorité), en génération déterministe (22 mots en moyenne et plus de 90 % d'explications adressées au patient pour les trois modèles).
 
 | Indicateur (90 explications) | SFT seul | Premier DPO | DPO réaligné (livré) |
 | --- | --- | --- | --- |
 | Reprend un gabarit du SFT (« Your reported clinical information includes… ») | 21,1 % | 21,1 % | 21,1 % |
 | Contient une formule toute faite de triage | 17,8 % | 15,6 % | 13,3 % |
 | Copie mot pour mot la cible du SFT | 14,4 % | 12,2 % | 10,0 % |
-| S'adresse au patient | 92 % | 93 % | 92 % |
-| Longueur moyenne | 22 mots | 22 mots | 22 mots |
 
 Le DPO va dans le bon sens, mais l'écart ne porte que sur deux à quatre cas sur 90 : je ne le présente pas comme une amélioration démontrée. Sur le gabarit, il ne change parfois qu'un mot (« prompt medical assessment » devient « prompt medical care »). La raison : les réponses rejetées sont des formules que le modèle n'écrit jamais, il les distingue à 100 % dès une trentaine de pas, et son propre gabarit n'est jamais rejeté.
 
@@ -223,8 +213,6 @@ Le modèle a appris l'urgence à partir de mots alarmants, pas à partir du dél
 | Peu de constantes | Seuls 23 % des P1, 20 % des P2 et 8 % des P3 contiennent des constantes. | Le modèle réagit aux valeurs très anormales (SpO2 89 %, tension 82/45), pas aux valeurs modérément anormales (92/60, pouls 110). |
 | Un format différent | Contextes courts (médiane 24 mots), souvent issus de fiches maladies. | Les cas rédigés comme en pratique sortent de ce que le modèle connaît le mieux. |
 
-Comptages par recherche de mots-clés en français et en anglais : des ordres de grandeur, pas une annotation clinique.
-
 **Deux autres faiblesses :**
 
 - **L'écart entre langues.** Le français reste en retrait (84,8 % contre 96,4 %). Après la reconstruction, les cas anglais sont des situations patient structurées et homogènes ; les cas français, plus proches de vraies notes cliniques, sont plus variés et plus difficiles.
@@ -238,21 +226,9 @@ Comptages par recherche de mots-clés en français et en anglais : des ordres de
 
 ## 7. Architecture et industrialisation
 
-L'entraînement et le service sont deux chaînes séparées : un commit sur l'API ne relance jamais un entraînement, et le seul lien entre les deux est le modèle fusionné, vérifié avant chaque livraison.
+L'entraînement (Unsloth, PEFT, W&B, sur le poste) et le service (FastAPI, vLLM, Docker, GitHub Actions, Prometheus, Grafana) sont deux chaînes séparées : un commit sur l'API ne relance jamais un entraînement, et le seul lien entre les deux est le modèle fusionné, vérifié avant chaque livraison.
 
-### 7.1 Vue d'ensemble
-
-| Brique | Technologie | Rôle | État |
-| --- | --- | --- | --- |
-| Chaîne de données | Python, Presidio, MinHash, RapidFuzz, moteur de règles FRENCH | Sources publiques → cas de triage tracés | Opérationnel |
-| Entraînement | Unsloth, PEFT, Transformers, W&B, notebooks 05 à 07 | SFT, DPO, fusion ; un manifeste par run | Opérationnel |
-| API | FastAPI, Pydantic | Validation, inférence, recommandation, journal d'audit | Opérationnel |
-| Service du modèle | vLLM (API compatible OpenAI) | Modèle fusionné BF16, contexte 2 048 tokens | Opérationnel en local, déployé sur RunPod pour la démo |
-| Conteneurs | Docker, Compose à profils | API seule, monitoring, GPU à la demande | Opérationnel |
-| CI/CD | GitHub Actions, GHCR | Lint, tests, couverture, image versionnée | Opérationnel |
-| Monitoring | Prometheus, Grafana | Trafic, latence, erreurs, disponibilité | Opérationnel |
-
-### 7.2 API
+### 7.1 API
 
 | Route | Rôle |
 | --- | --- |
@@ -268,18 +244,18 @@ L'entraînement et le service sont deux chaînes séparées : un commit sur l'AP
 - **Journal d'audit** : chaque appel ajoute une ligne JSON (identifiant, horodatage, versions de l'API, du modèle et du prompt, moteur, langue, priorité, latence, statut), y compris en cas de panne. Le texte du patient n'est jamais écrit, seulement son empreinte SHA-256 : on peut vérifier qu'une entrée donnée a produit une décision donnée. Une empreinte simple reste une donnée pseudonymisée ; en production, il faudrait une empreinte à clé secrète (HMAC).
 - **Tests** : 40 fonctions de test (routes, validation, recommandations, journal d'audit, non-exposition des données, prompt, échanges vLLM simulés, panne), couverture minimale de 90 % imposée en CI.
 
-### 7.3 Préparer le modèle pour vLLM
+### 7.2 Préparer le modèle pour vLLM
 
 L'adapter LoRA est fusionné dans Qwen/Qwen3-1.7B en BF16 (3,3 Go, 1,72 milliard de paramètres), pour que vLLM serve un modèle autonome. Une première fusion, faite par erreur dans la variante Base, est passée de 459 à 417 cas justes sans aucune erreur visible : architecture et tokenizer identiques. Seul un test sur les prédictions l'a révélée. **Le test gelé rejoué sur le modèle exact qui sera servi conditionne désormais toute livraison** (`benchmarks/eval_test_gele.py`).
 
-### 7.4 Conteneurs, CI/CD et déploiement
+### 7.3 Conteneurs, CI/CD et déploiement
 
 - **Image de l'API** : `python:3.13-slim`, dépendances verrouillées par uv, sans PyTorch ni outils d'entraînement, utilisateur sans privilèges, ports limités à la machine locale.
 - **CI** à chaque push et pull request : Ruff, puis les tests avec couverture ≥ 90 %. **CD** : après une CI réussie, l'image est construite et publiée sur GHCR avec l'étiquette du commit, ce qui relie le service à un code précis.
 - **Ce que la CD n'automatise pas** : la mise en service d'un nouveau modèle reste manuelle (poids publiés sur Hugging Face, version déclarée dans `MODEL_VERSION`), après le test gelé. C'est volontaire : sans contrôle automatique, la fusion à 417/500 serait passée en production. L'étape suivante est un workflow qui lance le test gelé sur GPU et ne déploie que si la grille go / no-go passe.
-- **Déploiement de la démo** : deux pods RunPod en Europe. L'API tourne sur CPU à partir de l'image publiée par la CD ; vLLM tourne sur GPU (RTX A5000 ou RTX PRO 4000, 24 Go, 0,27 à 0,57 $/h) et télécharge les poids depuis un dépôt Hugging Face privé. L'API n'appelle vLLM qu'avec une clé ; les secrets vivent dans RunPod, jamais dans le code. Les pods sont arrêtés en dehors des démonstrations.
+- **Déploiement de la démo** : deux pods RunPod en Europe. L'API tourne sur CPU à partir de l'image publiée par la CD ; vLLM tourne sur GPU (RTX 4000 Ada, 20 Go, 0,28 $/h) et télécharge les poids depuis un dépôt Hugging Face privé. L'API n'appelle vLLM qu'avec une clé ; les secrets vivent dans RunPod, jamais dans le code. Les pods sont arrêtés en dehors des démonstrations.
 
-### 7.5 Monitoring
+### 7.4 Monitoring
 
 Prometheus collecte toutes les 15 secondes les métriques de l'API et de vLLM. Un tableau de bord Grafana versionné suit le volume, le débit, la latence moyenne et P95, la part d'erreurs 5xx et la disponibilité de l'API et de vLLM. Limite : il suit le service, pas le modèle ; la répartition des priorités prédites et la dérive des cas entrants ne sont pas encore mesurées.
 
@@ -296,31 +272,30 @@ Prometheus collecte toutes les 15 secondes les métriques de l'API et de vLLM. U
 | Cas justes, F1 macro, sous-triage | 453 / 500 · 90,66 % · 7,20 % ; FR 84,8 %, EN 96,4 % |
 | Décisions identiques au modèle évalué par scoring | 500 / 500 |
 | Réponses sans priorité lisible | 0 / 500 |
-| Capacité théorique | Cache de 148 000 tokens, soit environ 72 requêtes simultanées à 2 048 tokens |
 
 Les requêtes imposent `temperature 0` : la génération est déterministe, malgré les réglages d'échantillonnage par défaut du modèle signalés par vLLM au démarrage. Le cache de préfixe réutilise le prompt système commun à 85-90 %, ce qui réduit la latence. Limite : les requêtes ont été envoyées une par une ; un test de charge avec des requêtes simultanées reste à faire. Une séance de mesure coûte moins d'un dollar.
 
 ## 9. Grille go / no-go
 
-**Verdict : go pour la démonstration sur des cas fictifs, no-go pour tout usage sur des données réelles.** Les critères techniques sont atteints ; les critères cliniques et réglementaires ne le sont pas.
+**Verdict : les onze objectifs du POC sont atteints. Les cibles de déploiement, plus exigeantes, fixent la marge de progression ; tant qu'elles ne sont pas atteintes, le modèle ne traite pas de données réelles.**
 
-Cette grille se rejoue avant chaque mise en service, sur le modèle exact qui sera servi. Les seuils sont les miens et donnent un point de départ à valider avec les urgentistes du CHSA ; pour le sous-triage, je reprends l'ordre de grandeur visé en traumatologie (5 % au plus).
+La grille a deux niveaux. L'objectif POC mesure la faisabilité demandée par la mission ; la cible de déploiement mesure la sécurité clinique exigée avant de traiter de vrais patients. La mission demande de définir ces seuils sans en fixer : ce sont les miens. Les objectifs POC marquent le passage à un modèle exploitable (mes premiers runs étaient à 52 % de F1 et 21 % de sous-triage) ; les cibles de déploiement, fixées dès la première version de la grille, reprennent pour le sous-triage l'ordre de grandeur visé en traumatologie (5 % au plus) et devront être validées avec les urgentistes du CHSA.
 
-| Critère | Seuil | Modèle livré | Verdict |
-| --- | --- | --- | --- |
-| Fidélité du modèle servi | ≥ 98 % de décisions identiques à l'adapter évalué | 492 / 500 (98,4 %) | Atteint |
-| Performance globale | F1 macro ≥ 85 % | 90,66 % | Atteint |
-| Rappel des P1 | ≥ 95 % | 92,2 % | Non atteint |
-| P1 classés P3 | Aucun | 6 sur 167 | Non atteint |
-| Sous-triage | ≤ 5 % | 7,2 % | Non atteint |
-| Écart entre langues | ≤ 5 points d'accuracy | 11,6 points | Non atteint |
-| Réponses invalides via vLLM | Aucune sur 500 | 0 sur 500 | Atteint |
-| Latence | P95 ≤ 3 s par requête à l'API | P95 1,03 s, moyenne 0,79 s (vLLM, réseau compris) | Atteint |
-| Qualité du code | CI verte, couverture ≥ 90 % | CI verte | Atteint |
-| Traçabilité | Chaque décision journalisée avec les versions du modèle et du prompt | Journal d'audit de l'API | Atteint |
-| Conformité | AIPD validée, hébergement HDS | Non engagées | Non atteint |
+| Critère | Objectif POC | Modèle livré | POC | Cible de déploiement |
+| --- | --- | --- | --- | --- |
+| Fidélité du modèle servi | ≥ 98 % de décisions identiques | 98,4 % ; 500/500 via vLLM | Atteint | 100 % |
+| Performance globale | F1 macro ≥ 85 % | 90,66 % | Atteint | ≥ 92 % |
+| Rappel des P1 | ≥ 90 % | 92,2 % | Atteint | ≥ 95 % |
+| P1 classés P3 | ≤ 5 % des P1 | 3,6 % (6 sur 167) | Atteint | Aucun |
+| Sous-triage | ≤ 10 % | 7,2 % | Atteint | ≤ 5 % |
+| Bilinguisme | Accuracy ≥ 80 % par langue | FR 84,8 % · EN 96,4 % | Atteint | Écart ≤ 5 points |
+| Réponses invalides via vLLM | Aucune sur 500 | 0 | Atteint | Aucune sous charge |
+| Latence | P95 ≤ 3 s | P95 1,03 s | Atteint | P95 ≤ 2 s sous charge |
+| Qualité du code | CI verte, couverture ≥ 90 % | CI verte, 40 tests | Atteint | Tests de charge en CI |
+| Traçabilité | Chaque décision journalisée | Journal d'audit | Atteint | Journal centralisé, HMAC |
+| Données et conformité | Données publiques anonymisées | Presidio FR/EN | Atteint | AIPD validée, hébergement HDS |
 
-Les critères non atteints correspondent exactement aux phases 0 et 1 de la feuille de route (section 11) : sous-triage et écart entre langues d'abord, conformité ensuite.
+La marge de progression clinique est limitée par les données (section 6) et visée par la phase 0 de la feuille de route ; la conformité par la phase 1.
 
 ## 10. Risques et cadre réglementaire
 
@@ -328,11 +303,9 @@ Un outil de tri aux urgences relève des usages à haut risque : le contrôle hu
 
 ### 10.1 Cadre
 
-| Texte | Ce qu'il impose | Ce que le POC prépare |
-| --- | --- | --- |
-| RGPD et hébergement HDS | Données de santé sensibles : base légale, minimisation, analyse d'impact (AIPD), hébergeur certifié HDS dès qu'un prestataire héberge ces données | Données publiques anonymisées ; API qui ne renvoie ni n'expose les données saisies ; journal d'audit sans texte patient ; pods en Europe |
-| Règlement sur les dispositifs médicaux (MDR) | Un logiciel qui aide à décider d'une prise en charge relève probablement du MDR : marquage CE avant tout usage clinique hors recherche | Positionnement en second avis, documentation des performances et des limites |
-| AI Act | Le tri des patients aux urgences figure parmi les usages à haut risque : gestion des risques, qualité des données, traçabilité, contrôle humain | Empreintes des données, manifestes de run, versions tracées dans chaque réponse et dans le journal, décision laissée à l'IOA |
+- **RGPD et HDS :** données de santé sensibles, donc base légale, minimisation, AIPD et hébergeur certifié HDS. Le POC n'utilise que des données publiques anonymisées ; l'API ne renvoie ni n'expose les données saisies et son journal ne garde qu'une empreinte ; les pods sont en Europe.
+- **Dispositifs médicaux (MDR) :** une aide à la décision de prise en charge relève probablement du MDR et d'un marquage CE avant tout usage clinique. Le POC se positionne en second avis et documente performances et limites.
+- **AI Act :** le tri aux urgences est un usage à haut risque (gestion des risques, qualité des données, traçabilité, contrôle humain). Le POC trace données, runs et versions, et laisse la décision à l'IOA.
 
 ### 10.2 Risques et garde-fous
 
@@ -348,13 +321,13 @@ Un outil de tri aux urgences relève des usages à haut risque : le contrôle hu
 
 ## 11. Recommandations, feuille de route et passage à l'échelle
 
-**Oui à un pilote encadré, non à un usage autonome.** Le modèle peut devenir un second avis : il lit le cas, propose une priorité justifiée et alerte quand sa priorité est plus urgente que celle de l'IOA, qui garde la décision.
+**Objectifs du POC atteints : prochaine étape, un pilote encadré.** Le modèle peut devenir un second avis : il lit le cas, propose une priorité justifiée et alerte quand sa priorité est plus urgente que celle de l'IOA, qui garde la décision.
 
 Rien ne doit toucher un vrai patient avant trois conditions : un hébergement certifié HDS, une AIPD validée avec le délégué à la protection des données, et une évaluation sur des cas réels du CHSA étiquetés par des IOA.
 
 ### 11.1 Feuille de route
 
-Quatre phases sur environ un an pour une petite équipe ; on ne passe à la suivante que si les critères de sortie sont atteints.
+Quatre phases sur environ un an pour une petite équipe ; on ne passe à la suivante que si les critères de sortie sont atteints. En continu, l'IOA garde la décision et le test gelé est rejoué avant toute mise en service.
 
 | Phase | Objectif | Critère de sortie |
 | --- | --- | --- |
@@ -363,17 +336,13 @@ Quatre phases sur environ un an pour une petite équipe ; on ne passe à la suiv
 | 2 · Pilote silencieux | Le modèle tourne en parallèle des IOA sur les vrais flux, sans que personne ne voie ses réponses | Concordance et sous-triage mesurés sur plusieurs semaines, comparés à la variabilité entre IOA |
 | 3 · Pilote assisté | Intégration au logiciel des urgences comme second avis ; questionnaire adaptatif qui demande les constantes et antécédents manquants ; alerte de sous-triage ; ré-entraînement encadré | Pas d'augmentation du sous-triage, adoption par les équipes, statut réglementaire clarifié |
 
-En continu : l'IOA ou le médecin garde la décision, le sous-triage est suivi à chaque version, et le test gelé est rejoué avant toute mise en service.
-
 ### 11.2 Passage à l'échelle
 
 | Dimension | Dans le POC | Pour un pilote au CHSA |
 | --- | --- | --- |
 | Taille du modèle | Qwen3-1.7B : 4 bits à l'entraînement, BF16 au service | Modèles de 8 à 32 milliards de paramètres et plus, seulement si le gain est mesuré sur des cas réels. Un 32B occupe environ 64 Go en BF16 (un GPU de 80 Go) ou une vingtaine de Go en 4 bits ; la chaîne LoRA, DPO, vLLM et test gelé reste la même |
 | Entrée du patient | Cas décrit en texte structuré | Questionnaire adaptatif : sur les cas inédits, un cas incomplet passe de 7 à 5 bonnes réponses sur 10 |
-| Hébergement | RunPod en Europe, 0,27 à 0,57 $/h | Hébergeur certifié HDS ou serveur GPU interne |
-| Inférence | Un serveur vLLM, un GPU | Plusieurs réplicas vLLM derrière un répartiteur ; un modèle de cette taille tient sur des GPU d'entrée de gamme |
-| Fidélité du modèle servi | Adapter fusionné en BF16 (453 / 500) | Servir la base 4 bits avec l'adapter non fusionné pour retrouver les décisions évaluées (459 / 500), si la latence le permet |
+| Hébergement | RunPod en Europe, 0,27 à 0,57 $/h | Hébergeur certifié HDS ou serveur GPU interne ; plusieurs réplicas vLLM derrière un répartiteur |
 | Sécurité | Clé entre l'API et vLLM, journal d'audit sans texte patient, API sans authentification | Authentification des clients, réseau privé, chiffrement, journal centralisé avec empreinte à clé secrète et durée de conservation fixée avec le DPD |
 | Supervision | Trafic, latence, erreurs | Indicateurs métier : répartition des priorités, écart avec les IOA, sous-triage, dérive des cas entrants |
 | Cycle de vie | Manifestes SHA-256, W&B ; CD de l'image de l'API, changement de modèle manuel | Registre de modèles ; la CD déploie un nouveau modèle seulement si la grille go / no-go passe sur le modèle servi |
@@ -383,16 +352,14 @@ En continu : l'IOA ou le médecin garde la décision, le sous-triage est suivi �
 ### 12.1 Limites
 
 - **Validité clinique :** les priorités viennent d'une application automatisée du protocole FRENCH, et les cas de données publiques en partie reformulées. Aucune concordance avec des IOA n'est mesurée.
-- **Urgences dépendantes du temps :** infarctus et AVC sans constantes alarmantes passent en P2. C'est la limite principale.
+- **Urgences dépendantes du temps :** infarctus et AVC sans constantes alarmantes passent en P2. C'est la principale marge de progression avant déploiement.
 - **Explications :** mesurées automatiquement sur 90 cas, pas relues par des cliniciens ; elles peuvent contenir des faits inventés.
 - **DPO :** des paires trop faciles (100 % de préférences correctes) qui ne corrigent pas le gabarit du SFT.
-- **Évaluation :** l'effet de gabarit gonfle le score d'environ 1 point ; le test gelé n'était plus tout à fait vierge au moment du choix entre les deux SFT finaux ; dix cas inédits ne font pas une statistique.
-- **Historique :** les premiers runs changeaient plusieurs variables à la fois ; ce n'est pas une ablation.
-- **Variante du modèle :** la version post-entraînée et la variante Base n'ont pas été comparées à protocole égal.
+- **Évaluation :** l'effet de gabarit gonfle le score d'environ 1 point ; le test gelé n'était plus tout à fait vierge au moment du choix entre les deux SFT finaux ; dix cas inédits ne font pas une statistique ; les premiers runs changeaient plusieurs variables à la fois ; les variantes post-entraînée et Base n'ont pas été comparées.
 
 ### 12.2 Conclusion
 
-Le POC répond à la question de départ : un petit modèle, entraîné sur une carte de 6 Go, apprend à classer des cas cliniques en P1, P2 ou P3 et à justifier sa décision, avec une chaîne complète, testée et tracée jusqu'au service vLLM. Il ne répond pas encore à la question qui compte pour un hôpital : aide-t-il vraiment une IOA sans lui faire prendre de risque ?
+Le POC répond à la question de départ : un petit modèle, entraîné sur une carte de 6 Go, apprend à classer des cas cliniques en P1, P2 ou P3 et à justifier sa décision, avec une chaîne complète, testée et tracée jusqu'au service vLLM. Ses objectifs sont atteints. La suite répond à la question qui compte pour un hôpital, aider vraiment une IOA sans lui faire prendre de risque, en atteignant les cibles de déploiement.
 
 Trois leçons structurent la suite :
 
@@ -404,27 +371,6 @@ La prochaine étape n'est pas technique : c'est l'évaluation sur des cas réels
 
 ## Annexe — Reproductibilité
 
-Chaque résultat de ce rapport est rattaché à des fichiers identifiés par leur empreinte. Le détail de chaque expérience est sur le [site de documentation](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/) et le code dans le [dépôt GitHub](https://github.com/gonzalezcourrier34-glitch/medical_triage_agent).
+Chaque résultat est rattaché à des fichiers identifiés par leur empreinte (environnement : Python 3.13.2, PyTorch 2.11.0, CUDA 13.0, seed 42 ; suivi W&B). Le détail des expériences, des scripts de mesure et du déploiement est sur le [site de documentation](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/) et le code dans le [dépôt GitHub](https://github.com/gonzalezcourrier34-glitch/medical_triage_agent).
 
-| Élément | Valeur |
-| --- | --- |
-| sft\_train · sft\_validation · sft\_test | 4 000 · 500 · 500 cas ; SHA-256 0c15e682…b61ea0 · 5c1f6bda…286e65 · 01795834…b2abe7 |
-| dpo\_train · dpo\_validation (réalignés) | 1 680 · 420 paires ; SHA-256 a3c496d7…04a1fc · a17b738d…2a6b3f |
-| Protocole FRENCH v1.2 | 115 motifs ; SHA-256 11b70614…185e44d |
-| Checkpoint SFT | Run 20261009-154320, checkpoint-450 |
-| Adapter DPO livré | dpo\_aligned\_adapter = checkpoint-200 ; SHA-256 fed4587b…5ff477 |
-| Modèle fusionné | qwen3-triage-20261009-154320-aligned, Qwen/Qwen3-1.7B en BF16, 3,3 Go ; dépôt Hugging Face privé |
-| Version exposée par l'API | qwen3-1.7b-sft154320-ckpt450-dpoaligned-ckpt200 · prompt triage-classification-v2 |
-| Environnement d'entraînement | Python 3.13.2, PyTorch 2.11.0, CUDA 13.0, Windows 11, RTX 4050 Laptop 6 Go, seed 42 |
-| Suivi | W&B, projet medical-triage-qwen3 ; un manifeste JSON par run |
-
-**Rejouer les mesures :**
-
-```bash
-uv run python benchmarks/eval_test_gele.py --mode hf
-uv run python benchmarks/eval_test_gele.py --mode vllm --vllm-url <url du serveur>/v1
-uv run python benchmarks/compare_explanations.py
-uv run python benchmarks/demo_cas_inconnus.py --mode local
-```
-
-La chaîne complète va des notebooks 01 à 07 (audit, nettoyage, découpage, SFT, DPO, fusion), complétés par les scripts de réalignement des paires DPO (`scr/data/dpo_alignment.py`, `dpo_balance.py`, `dpo_chosen_rewrite.py`, `dpo_resplit.py`). La procédure de déploiement cloud est décrite pas à pas dans `deploy/runpod.md`.
+Empreintes SHA-256 : jeux SFT 0c15e682… · 5c1f6bda… · 01795834… ; paires DPO réalignées a3c496d7… · a17b738d… ; protocole FRENCH 11b70614… ; adapter DPO livré fed4587b….

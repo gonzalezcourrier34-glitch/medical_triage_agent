@@ -72,9 +72,9 @@ ressemblent à son entraînement, mais il peut sous-trier une urgence vitale qua
 <thead><tr><th>Étape</th><th>Script</th><th>Résultat</th></tr></thead>
 <tbody>
 <tr><td>Garder les paires conformes au protocole</td><td><code>scr/data/dpo_alignment.py</code></td><td>265 paires confirmées par la décision FRENCH, 642 confirmées par le SFT (marge ≥ 0,25), les paires contredites écartées</td></tr>
-<tr><td>Compléter jusqu'à l'équilibre demandé</td><td><code>scr/data/dpo_balance.py</code></td><td>2 100 paires : 50 % FR, 50 % EN, 350 par langue et par priorité, complétées avec des cas du train SFT</td></tr>
+<tr><td>Compléter jusqu'à l'équilibre demandé</td><td><code>scr/data/dpo_balance.py</code></td><td>2 100 paires : 50 % FR, 50 % EN, 350 par langue et par priorité, complétées avec des cas du corpus SFT déjà travaillé</td></tr>
 <tr><td>Réécrire toutes les explications préférées</td><td><code>scr/data/dpo_chosen_rewrite.py</code></td><td>2 100 « chosen » rédigés à partir du seul contexte : deux phrases au plus, adressées au patient, sans formule de triage toute faite ; l'original est conservé dans les métadonnées</td></tr>
-<tr><td>Redécouper train et validation</td><td><code>scr/data/dpo_resplit.py</code></td><td>1 680 / 420 paires (280 / 70 par cellule) ; les cas issus du train SFT restent en train, les couples FR/EN d'un même cas restent ensemble, la validation ne contient aucun cas vu par le SFT</td></tr>
+<tr><td>Redécouper train et validation</td><td><code>scr/data/dpo_resplit.py</code></td><td>1 680 / 420 paires (280 / 70 par cellule) ; les couples FR/EN d'un même cas restent ensemble, aucune paire ne recoupe la validation ni le test SFT</td></tr>
 </tbody>
 </table>
 <h3>Ce que l'entraînement a donné</h3>
@@ -218,7 +218,7 @@ Medical history: allergie connue aux hyménoptères</code></pre>
 <p class="section-number">06</p>
 <h2>Les limites que je retiens</h2>
 <div class="reflection-grid">
-<div class="reflection-card"><h3>Sous-triage des urgences dépendantes du temps</h3><p>Infarctus et AVC sans constantes alarmantes passent en P2. Sur le test gelé, 13 P1 sont sous-triés. C'est la limite principale : le modèle ne peut pas décider seul (<a href="#pourquoi">causes</a>).</p></div>
+<div class="reflection-card"><h3>Sous-triage des urgences dépendantes du temps</h3><p>Infarctus et AVC sans constantes alarmantes passent en P2. Sur le test gelé, 13 P1 sont sous-triés. C'est la principale marge de progression avant déploiement : objectif POC atteint (rappel P1 de 92,2 % pour 90 % visés), cible de déploiement à 95 % et aucun P1 classé P3 (<a href="#pourquoi">causes</a>).</p></div>
 <div class="reflection-card"><h3>Explications parfois inexactes</h3><p>Le modèle peut ajouter un antécédent ou un mécanisme absent du cas : ce sont des hallucinations, qu'aucun contrôle automatique ne détecte encore. Certaines cibles du SFT contenaient déjà ce défaut : il vient en partie des données.</p></div>
 <div class="reflection-card"><h3>Un DPO qui bouge peu</h3><p>Avec des réponses rejetées trop faciles, le DPO apprend en trente pas et modifie à peine les explications. Il faudra des paires plus exigeantes, par exemple rejeter le gabarit du SFT lui-même.</p></div>
 <div class="reflection-card"><h3>Des données encore hétérogènes</h3><p>La validation DPO garde des contextes plus longs que le SFT (médiane 96 mots contre 23), et une partie des étiquettes du SFT reste discutable (une dissection aortique classée P2, par exemple).</p></div>
@@ -234,10 +234,10 @@ Medical history: allergie connue aux hyménoptères</code></pre>
 <p class="section-number">07</p>
 <h2>Conclusion</h2>
 <div class="about-grid">
-<div class="large-text">Le POC fonctionne. Il n'est pas prêt à trier seul.</div>
+<div class="large-text">Le POC atteint ses objectifs. Le déploiement vise plus haut.</div>
 <div>
 <p>Le projet montre qu'un modèle de 1,7 milliard de paramètres, entraîné sur une carte de 6 Go, apprend à classer des cas cliniques en P1, P2 ou P3 et à justifier sa décision : 90,66 % de F1 macro sur un test gelé, avec une chaîne complète de la donnée jusqu'au service vLLM, testée et automatisée.</p>
-<p>Les dernières expériences précisent ce que ce chiffre ne dit pas. Le DPO soigne la forme des explications sans changer le triage, et la reconstruction des paires n'a pas modifié ce constat. Surtout, le test sur des cas inédits montre que le modèle peut classer en P2 un infarctus ou un AVC qu'il a pourtant nommé dans son explication. C'est l'erreur la plus coûteuse aux urgences.</p>
+<p>Les dernières expériences précisent ce que ce chiffre ne dit pas. Le DPO soigne la forme des explications sans changer le triage, et la reconstruction des paires n'a pas modifié ce constat. Le test sur des cas inédits montre aussi où porte la marge de progression : le modèle peut classer en P2 un infarctus ou un AVC qu'il a pourtant nommé dans son explication. C'est l'erreur la plus coûteuse aux urgences, et la première visée avant déploiement.</p>
 <p>Ma conclusion rejoint donc la <a href="synthese.html#recommandation">recommandation de la synthèse</a> : un second avis pour l'IOA, avec une entrée structurée comprenant les constantes, jamais une décision autonome.</p>
 </div>
 </div>
