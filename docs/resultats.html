@@ -23,7 +23,7 @@
 <h1>Ce que mesure le modèle livré,<span>et ce que révèlent des cas qu'il n'a jamais vus.</span></h1>
 <p class="hero-text">
 Cette page rassemble les résultats finaux du projet et les trois expériences menées en dernier : un DPO entraîné sur des paires
-réalignées sur le protocole FRENCH, une comparaison chiffrée des explications générées, et un test sur dix cas patients
+réalignées sur le protocole FRENCH, devenu le modèle livré, une comparaison chiffrée des explications générées, et un test sur dix cas patients
 que j'ai écrits moi-même pour la démonstration. Ce dernier test a changé ma lecture du modèle : il trie bien les cas qui
 ressemblent à son entraînement, mais il peut sous-trier une urgence vitale quand les constantes ne sont pas alarmantes.
 </p>
@@ -52,12 +52,12 @@ ressemblent à son entraînement, mais il peut sous-trier une urgence vitale qua
 <table class="story-table params-table">
 <thead><tr><th>Modèle</th><th>Cas justes</th><th>F1 macro</th><th>Sous-triage</th><th>FR · EN</th><th>Statut</th></tr></thead>
 <tbody>
-<tr><td>SFT checkpoint-450 + DPO livré (adapter, base 4 bits)</td><td>459/500</td><td>91,86 %</td><td>5,8 %</td><td>87,6 · 96,0 %</td><td><span class="experiment-status promising">Référence d'évaluation</span></td></tr>
-<tr><td><strong>Modèle livré : adapter fusionné dans Qwen3-1.7B (BF16), servi par vLLM</strong></td><td><strong>453/500</strong></td><td><strong>90,66 %</strong></td><td><strong>7,20 %</strong></td><td><strong>84,8 · 96,4 %</strong></td><td><span class="experiment-status selected">Livré</span></td></tr>
-<tr><td>SFT checkpoint-450 + DPO réaligné (adapter, base 4 bits)</td><td>459/500</td><td>91,86 %</td><td>5,8 %</td><td>87,6 · 96,0 %</td><td><span class="experiment-status rejected">Non retenu</span></td></tr>
+<tr><td>SFT checkpoint-450 + DPO réaligné checkpoint-200 (adapter, base 4 bits)</td><td>459/500</td><td>91,86 %</td><td>5,8 %</td><td>87,6 · 96,0 %</td><td><span class="experiment-status promising">Référence d'évaluation</span></td></tr>
+<tr><td><strong>Modèle livré : DPO réaligné fusionné dans Qwen3-1.7B (BF16), servi par vLLM</strong></td><td><strong>453/500</strong></td><td><strong>90,66 %</strong></td><td><strong>7,20 %</strong></td><td><strong>84,8 · 96,4 %</strong></td><td><span class="experiment-status selected">Livré</span></td></tr>
+<tr><td>Premier DPO (checkpoint-150), fusionné de la même façon</td><td>453/500</td><td>90,66 %</td><td>7,20 %</td><td>84,8 · 96,4 %</td><td><span class="experiment-status rejected">Remplacé</span></td></tr>
 </tbody>
 </table>
-<p class="table-note">Le passage de l'adapter 4 bits au modèle fusionné BF16 change 8 décisions sur 500 (test de McNemar, p = 0,070 : écart non significatif). Le modèle servi sous-trie 36 cas, dont 13 P1. Détails : <a href="architecture.html#verif-fusion">vérification de la fusion</a>.</p>
+<p class="table-note">Le passage de l'adapter 4 bits au modèle fusionné BF16 change 8 décisions sur 500 (test de McNemar, p = 0,070 : écart non significatif). Le modèle servi sous-trie 36 cas, dont 13 P1. Les deux modèles fusionnés, premier DPO et DPO réaligné, ont des poids différents mais prennent exactement les mêmes 500 décisions : le DPO ne touche pas au triage. Détails : <a href="architecture.html#verif-fusion">vérification de la fusion</a>.</p>
 </div>
 </section>
 
@@ -65,8 +65,8 @@ ressemblent à son entraînement, mais il peut sous-trier une urgence vitale qua
 <section class="section section-alt" id="dpo-realigne">
 <div class="container">
 <p class="section-number">02</p>
-<h2>L'essai du DPO réaligné</h2>
-<p class="section-intro">Les paires du DPO livré venaient d'une ancienne réserve dont les priorités ne suivaient le protocole FRENCH que dans 42 % des cas vérifiables (<a href="dpo.html#jeux">analyse détaillée</a>). J'ai reconstruit le jeu de paires pour qu'il suive le même protocole que le SFT, puis relancé le DPO avec exactement les mêmes réglages.</p>
+<h2>Le DPO réaligné, modèle livré</h2>
+<p class="section-intro">Les paires du premier DPO venaient d'une ancienne réserve dont les priorités ne suivaient le protocole FRENCH que dans 42 % des cas vérifiables (<a href="dpo.html#jeux">analyse détaillée</a>). J'ai reconstruit le jeu de paires pour qu'il suive le même protocole que le SFT, puis relancé le DPO avec exactement les mêmes réglages.</p>
 <h3>Ce que j'ai changé dans les données</h3>
 <table class="story-table params-table">
 <thead><tr><th>Étape</th><th>Script</th><th>Résultat</th></tr></thead>
@@ -92,7 +92,7 @@ ressemblent à son entraînement, mais il peut sous-trier une urgence vitale qua
 <h3>Les explications, mesurées</h3>
 <p>Comme le DPO ne peut changer que les explications, je les ai comparées sur 90 cas du test gelé (15 par langue et par priorité), en génération déterministe, pour les trois modèles : <code>benchmarks/compare_explanations.py</code>.</p>
 <table class="story-table params-table">
-<thead><tr><th>Indicateur (sur 90 explications)</th><th>SFT seul</th><th>DPO livré</th><th>DPO réaligné</th></tr></thead>
+<thead><tr><th>Indicateur (sur 90 explications)</th><th>SFT seul</th><th>Premier DPO</th><th>DPO réaligné (livré)</th></tr></thead>
 <tbody>
 <tr><td>Reprend un gabarit du SFT (« Your reported clinical information includes… »)</td><td>21,1 %</td><td>21,1 %</td><td>21,1 %</td></tr>
 <tr><td>Contient une formule toute faite de triage</td><td>17,8 %</td><td>15,6 %</td><td>13,3 %</td></tr>
@@ -105,8 +105,8 @@ ressemblent à son entraînement, mais il peut sous-trier une urgence vitale qua
 <p class="table-note">Résultats : <code>metrics/20261009-154320/explanations_compare/</code>. Base Qwen/Qwen3-1.7B en BF16 avec chaque adapter, génération gloutonne.</p>
 <div class="callout subtle">
 <span class="eyebrow">MA DÉCISION</span>
-<strong>Je garde le modèle livré.</strong>
-<p>Le DPO réaligné va dans le bon sens (moins de formules toutes faites, moins de copies), mais l'écart porte sur deux à quatre cas sur 90 : ce n'est pas une différence que je peux défendre. Les deux DPO restent très proches du SFT, parce qu'un bêta de 0,1 et un taux d'apprentissage de 5e-6 sur 210 pas ne déplacent le modèle que de quelques mots. Le gabarit du SFT, présent dans 81 des 500 cibles du test, n'est corrigé par aucun des deux : aucune réponse rejetée ne lui ressemblait. Le travail sur les données reste acquis : les paires suivent désormais le même protocole que le SFT, et c'est sur cette base qu'un prochain DPO devra être construit.</p>
+<strong>Je livre le DPO réaligné.</strong>
+<p>À triage identique (mêmes 500 décisions une fois fusionné), je préfère le modèle entraîné sur des paires conformes au protocole, et il va dans le bon sens sur les explications : moins de formules toutes faites, moins de copies. L'écart ne porte toutefois que sur deux à quatre cas sur 90 : je ne le présente pas comme une amélioration démontrée. Le premier DPO reste disponible pour revenir en arrière. Sur le gabarit, le DPO ne change parfois qu'un mot : « These findings warrant prompt medical <em>assessment</em> » devient « … prompt medical <em>care</em> ». Les deux DPO restent très proches du SFT, parce qu'un bêta de 0,1 et un taux d'apprentissage de 5e-6 sur 210 pas ne déplacent le modèle que de quelques mots. Le gabarit du SFT, présent dans 81 des 500 cibles du test, n'est corrigé par aucun des deux : aucune réponse rejetée ne lui ressemblait. La correction est connue : prendre comme réponses rejetées les propres sorties du SFT (son gabarit, ses formules), pour que le DPO s'éloigne de ce que le modèle écrit vraiment.</p>
 </div>
 </div>
 </section>
@@ -120,12 +120,12 @@ ressemblent à son entraînement, mais il peut sous-trier une urgence vitale qua
 <table class="story-table params-table">
 <thead><tr><th>Forme</th><th>Contenu</th><th>Priorités justes</th><th>Sous-triages</th><th>Latence médiane</th></tr></thead>
 <tbody>
-<tr><td><strong>Complète</strong></td><td>En-tête, âge, symptômes, signes cliniques, constantes, antécédents</td><td><strong>7/10</strong></td><td>2</td><td>2,0 s</td></tr>
-<tr><td>Minimale</td><td>En-tête, âge, symptômes</td><td>5/10</td><td>4</td><td>1,5 s</td></tr>
-<tr><td>Libre</td><td>Une phrase rédigée, sans rubriques</td><td>6/10</td><td>4</td><td>1,7 s</td></tr>
+<tr><td><strong>Complète</strong></td><td>En-tête, âge, symptômes, signes cliniques, constantes, antécédents</td><td><strong>7/10</strong></td><td>2</td><td>3,3 s</td></tr>
+<tr><td>Minimale</td><td>En-tête, âge, symptômes</td><td>5/10</td><td>4</td><td>3,8 s</td></tr>
+<tr><td>Libre</td><td>Une phrase rédigée, sans rubriques</td><td>6/10</td><td>4</td><td>4,5 s</td></tr>
 </tbody>
 </table>
-<p class="table-note">Mode local : modèle fusionné BF16, Transformers, RTX 4050 6 Go. La latence du service cloud (vLLM) sera mesurée sur RunPod.</p>
+<p class="table-note">Mode local : modèle livré (DPO réaligné) fusionné en BF16, Transformers, RTX 4050 6 Go. Rejoué avec le premier DPO, le test donne les mêmes 30 décisions. La latence locale varie avec la charge du portable (de 1,5 à 4,5 s selon les essais) : seule la mesure du service vLLM sur RunPod compte pour le déploiement.</p>
 <table class="story-table params-table">
 <thead><tr><th>Cas</th><th>Attendu</th><th>Complète</th><th>Minimale</th><th>Libre</th></tr></thead>
 <tbody>
@@ -144,8 +144,10 @@ ressemblent à son entraînement, mais il peut sous-trier une urgence vitale qua
 <div class="reflection-grid">
 <div class="reflection-card"><h3>Des urgences vitales sous-triées</h3><p>L'infarctus et l'AVC sont classés P2 sous toutes les formes, alors même que l'explication écrit « suggests a heart attack » ou « suggests a stroke ». Le modèle reconnaît la maladie mais ne la relie pas toujours à l'urgence : ces deux urgences dépendent du temps, pas des constantes.</p></div>
 <div class="reflection-card"><h3>Les constantes font la différence</h3><p>L'anaphylaxie et le purpura fébrile ne sont classés P1 que lorsque la tension basse, la saturation ou la raideur de nuque figurent dans l'entrée. Sans elles, ils tombent en P2.</p></div>
-<div class="reflection-card"><h3>Des détails inventés</h3><p>Pour la douleur abdominale d'un homme, une explication cite « a pelvic inflammatory disease », une autre « a history of diverticulitis ». Une chute de trottinette devient « frappé par la trottinette ». La priorité est juste, mais l'explication ajoute des faits absents du cas.</p></div>
+<div class="reflection-card"><h3>Des détails inventés</h3><p>Pour la douleur abdominale d'un homme, une explication cite « a pelvic inflammatory disease », une maladie gynécologique. Une chute de trottinette devient « frappé par la trottinette », et une lombalgie « se confirme par un scanner programmé » qui n'existe pas. La priorité est juste, mais l'explication ajoute des faits absents du cas.</p></div>
 <div class="reflection-card"><h3>Le bas de l'échelle est fiable</h3><p>Les P2 et P3 sont reconnus dans 16 réponses sur 18, toutes formes confondues. Les deux erreurs sont des surtriages (l'entorse classée P2), l'erreur la moins grave aux urgences.</p></div>
+<div class="reflection-card"><h3>Une explication qui suit la priorité</h3><p>L'explication justifie la priorité choisie, elle ne la contrôle pas : pour l'infarctus classé P2, elle écrit « prompt » et non « immediate ». Nommer « heart attack » ou « stroke » avec une priorité P2 reste une contradiction qu'une règle simple peut repérer.</p></div>
+<div class="reflection-card"><h3>Un français moins soigné</h3><p>Les cinq fautes relevées sont en français (« en raison de des », « un somnolence », « a tombé »), comme les deux reprises du gabarit du SFT, dont l'anaphylaxie : « … en raison de : gêne respiratoire, voix rauque ; heart_rate: 128, systolic_bp: 82… ». Le DPO n'a pas fait disparaître ce gabarit.</p></div>
 </div>
 </div>
 </section>
@@ -202,6 +204,11 @@ Medical history: allergie connue aux hyménoptères</code></pre>
 <tr><td><code>Clinical signs:</code> · <code>Medical history:</code></td><td>Utile</td><td>Précise le risque (raideur de nuque, terrain allergique, anticoagulant…).</td></tr>
 </tbody>
 </table>
+<div class="callout subtle">
+<span class="eyebrow">ET LE QUESTIONNAIRE ADAPTATIF ?</span>
+<strong>La mission prévoit un agent qui collecte les symptômes par un questionnaire adaptatif. Le POC ne le fait pas : il classe un cas déjà décrit.</strong>
+<p>Ce test en montre pourtant l'intérêt : avec la forme complète, le modèle trouve 7 cas sur 10 ; avec la forme minimale, 5 sur 10. Un questionnaire qui demande les constantes, la durée et les antécédents manquants avant de classer rapprocherait chaque cas de la forme complète. Le format ci-dessus en est la première brique ; le questionnaire lui-même est dans la <a href="synthese.html#feuille-de-route">feuille de route</a>.</p>
+</div>
 </div>
 </section>
 
@@ -212,7 +219,7 @@ Medical history: allergie connue aux hyménoptères</code></pre>
 <h2>Les limites que je retiens</h2>
 <div class="reflection-grid">
 <div class="reflection-card"><h3>Sous-triage des urgences dépendantes du temps</h3><p>Infarctus et AVC sans constantes alarmantes passent en P2. Sur le test gelé, 13 P1 sont sous-triés. C'est la limite principale : le modèle ne peut pas décider seul (<a href="#pourquoi">causes</a>).</p></div>
-<div class="reflection-card"><h3>Explications parfois inexactes</h3><p>Le modèle peut ajouter un antécédent ou un mécanisme absent du cas. Certaines cibles du SFT contenaient déjà ce défaut : il vient en partie des données.</p></div>
+<div class="reflection-card"><h3>Explications parfois inexactes</h3><p>Le modèle peut ajouter un antécédent ou un mécanisme absent du cas : ce sont des hallucinations, qu'aucun contrôle automatique ne détecte encore. Certaines cibles du SFT contenaient déjà ce défaut : il vient en partie des données.</p></div>
 <div class="reflection-card"><h3>Un DPO qui bouge peu</h3><p>Avec des réponses rejetées trop faciles, le DPO apprend en trente pas et modifie à peine les explications. Il faudra des paires plus exigeantes, par exemple rejeter le gabarit du SFT lui-même.</p></div>
 <div class="reflection-card"><h3>Des données encore hétérogènes</h3><p>La validation DPO garde des contextes plus longs que le SFT (médiane 96 mots contre 23), et une partie des étiquettes du SFT reste discutable (une dissection aortique classée P2, par exemple).</p></div>
 <div class="reflection-card"><h3>Une évaluation limitée</h3><p>Dix cas inédits ne font pas une statistique, et les priorités attendues sont les miennes, pas celles d'IOA. Ce test sert d'alerte, pas de mesure.</p></div>
@@ -247,7 +254,7 @@ Medical history: allergie connue aux hyménoptères</code></pre>
 <div class="container">
 <p class="eyebrow">EN RÉSUMÉ</p>
 <h2>Un modèle utile comme second avis, à condition de lui donner les constantes.</h2>
-<p>Le modèle livré reste celui du SFT checkpoint-450 avec le premier DPO : le DPO réaligné ne l'améliore pas de façon mesurable. Le test sur cas inédits fixe le format d'entrée de la démonstration et la limite principale à présenter : le sous-triage des urgences vitales dépendantes du temps.</p>
+<p>Le modèle livré est le SFT checkpoint-450 avec le DPO réaligné : même triage que le premier DPO, des données d'alignement conformes au protocole, des explications à peine différentes. Le test sur cas inédits fixe le format d'entrée de la démonstration et la limite principale à présenter : le sous-triage des urgences vitales dépendantes du temps.</p>
 <div class="hero-actions">
 <a class="button primary" href="synthese.html">Synthèse et recommandations</a>
 <a class="button secondary" href="dpo.html">Le DPO en détail</a>

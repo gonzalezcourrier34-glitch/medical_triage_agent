@@ -19,10 +19,10 @@ Ouvrir `index.html` dans un navigateur : aucune dépendance externe, aucun CDN, 
 ## Modèle final documenté
 
 - SFT : run `20261009-154320`, `checkpoint-450` (sélection sur le F1 macro de validation, 89,51 %)
-- DPO : adapter `dpo_adapter`, identique à `dpo_checkpoints/checkpoint-150` (plus basse loss de validation DPO)
+- DPO : DPO réaligné, adapter `dpo_aligned_adapter`, identique à `dpo_aligned_checkpoints/checkpoint-200` (plus basse loss de validation DPO) ; le premier DPO (`dpo_adapter_livre`, checkpoint-150) prend les mêmes décisions et sert de retour arrière
 - Test gelé (500 cas) : F1 macro 91,86 %, accuracy 91,80 %, sous-triage 5,80 % ; 90,83 % de F1 sans les cas trop proches du train
 - Modèle fusionné livré, même test : F1 macro 90,66 %, accuracy 90,60 %, sous-triage 7,20 % ; 492 décisions sur 500 identiques à l'adapter (McNemar p = 0,070), contrôle par `benchmarks/eval_test_gele.py`
-- Poids finaux livrés : modèle fusionné `artifacts/deployment/qwen3-triage-20261009-154320` (Qwen3-1.7B + LoRA SFT/DPO, BF16, 3,3 Go), produit par `notebooks/07_fusion_lora.ipynb` et servi par vLLM. Ce dossier est exclu de Git (`artifacts/`) : il est transmis séparément.
+- Poids finaux livrés : modèle fusionné `artifacts/deployment/qwen3-triage-20261009-154320-aligned` (Qwen3-1.7B + LoRA SFT/DPO, BF16, 3,3 Go), produit par `notebooks/07_fusion_lora.ipynb` et servi par vLLM. Ce dossier est exclu de Git (`artifacts/`) : il est transmis séparément.
 
 ## Provenance des chiffres
 

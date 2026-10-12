@@ -71,10 +71,13 @@ d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommand
 <thead><tr><th>Livrable</th><th>État</th><th>Où le trouver</th></tr></thead>
 <tbody>
 <tr><td>Dataset nettoyé, anonymisé, bilingue</td><td><span class="experiment-status selected">Livré</span></td><td>5 000 cas FR/EN, Presidio, déduplication, empreintes SHA-256 : <a href="data.html">Données</a></td></tr>
-<tr><td>Qwen3-1.7B fine-tuné (SFT + LoRA) et aligné (DPO)</td><td><span class="experiment-status selected">Livré</span></td><td>Six runs SFT, sept essais DPO, choix argumenté : <a href="experiments.html">SFT</a> et <a href="dpo.html">DPO</a></td></tr>
+<tr><td>Qwen3-1.7B fine-tuné (SFT + LoRA) et aligné (DPO)</td><td><span class="experiment-status selected">Livré</span></td><td>Six runs SFT, sept essais DPO puis le DPO réaligné, livré, choix argumenté, version post-entraînée au lieu de la Base (<a href="experiments.html#base">pourquoi</a>) : <a href="experiments.html">SFT</a>, <a href="dpo.html">DPO</a> et <a href="resultats.html">Résultats</a></td></tr>
 <tr><td>Poids finaux</td><td><span class="experiment-status selected">Livré</span></td><td>Modèle fusionné BF16 (3,3 Go), vérifié sur le test gelé, dépôt Hugging Face privé : <a href="architecture.html#verif-fusion">Architecture</a></td></tr>
 <tr><td>Endpoint cloud optimisé avec vLLM</td><td><span class="experiment-status selected">Prêt</span></td><td>vLLM sur GPU RunPod en Europe, API dans un second pod, procédure <code>deploy/runpod.md</code> ; latence à mesurer sur le service en ligne : <a href="architecture.html#cloud">Architecture</a></td></tr>
-<tr><td>CI/CD GitHub Actions</td><td><span class="experiment-status selected">Livré</span></td><td>Ruff, 34 tests, couverture minimale de 90 %, image publiée sur GHCR : <a href="architecture.html">Architecture</a></td></tr>
+<tr><td>CI/CD GitHub Actions</td><td><span class="experiment-status selected">Livré</span></td><td>Ruff, 40 tests, couverture minimale de 90 %, image publiée sur GHCR ; la mise en service d'un nouveau modèle reste manuelle, après le test gelé : <a href="architecture.html">Architecture</a></td></tr>
+<tr><td>Traçabilité des interactions</td><td><span class="experiment-status selected">Livré</span></td><td>Journal d'audit : identifiant, horodatage, versions du modèle et du prompt, priorité, latence, empreinte de l'entrée sans le texte du patient : <a href="architecture.html">Architecture</a></td></tr>
+<tr><td>Checklist go / no-go</td><td><span class="experiment-status selected">Livré</span></td><td>Onze critères, seuils et verdict pour le modèle livré : <a href="#go-no-go">grille</a></td></tr>
+<tr><td>Questionnaire adaptatif</td><td><span class="experiment-status promising">Hors POC</span></td><td>Le POC classe un cas déjà décrit ; le format d'entrée complet en est la première brique : <a href="resultats.html">Résultats</a></td></tr>
 <tr><td>Rapport technique</td><td><span class="experiment-status selected">Livré</span></td><td>Ce site : méthodologie, métriques, analyses, limites et cette synthèse</td></tr>
 </tbody>
 </table>
@@ -97,6 +100,29 @@ d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommand
 <span class="eyebrow">CONDITION DE DÉPART</span>
 <strong>Rien ne doit toucher un vrai patient avant que trois conditions soient réunies.</strong>
 <p>Un hébergement certifié pour les données de santé (HDS), une analyse d'impact (AIPD) validée avec le délégué à la protection des données, et une évaluation du modèle sur des cas réels du CHSA, étiquetés par des IOA.</p>
+</div>
+<h3 id="go-no-go">La grille go / no-go</h3>
+<p>Avant chaque mise en service d'une version du modèle, cette grille se rejoue sur le modèle exact qui sera servi. Les seuils sont les miens : ils donnent un point de départ et devront être validés avec les urgentistes du CHSA. Pour le sous-triage, je reprends l'ordre de grandeur visé en traumatologie (5 % au plus).</p>
+<table class="story-table params-table">
+<thead><tr><th>Critère</th><th>Seuil</th><th>Modèle livré</th><th>Verdict</th></tr></thead>
+<tbody>
+<tr><td>Fidélité du modèle servi</td><td>≥ 98 % de décisions identiques à l'adapter évalué</td><td>492/500 (98,4 %)</td><td><span class="experiment-status selected">Atteint</span></td></tr>
+<tr><td>Performance globale</td><td>F1 macro ≥ 85 % sur le test gelé</td><td>90,66 %</td><td><span class="experiment-status selected">Atteint</span></td></tr>
+<tr><td>Rappel des P1</td><td>≥ 95 %</td><td>92,2 % (154 P1 sur 167)</td><td><span class="experiment-status rejected">Non atteint</span></td></tr>
+<tr><td>P1 classés P3</td><td>Aucun</td><td>6 sur 167</td><td><span class="experiment-status rejected">Non atteint</span></td></tr>
+<tr><td>Sous-triage</td><td>≤ 5 %</td><td>7,2 %</td><td><span class="experiment-status rejected">Non atteint</span></td></tr>
+<tr><td>Écart entre langues</td><td>≤ 5 points d'accuracy</td><td>11,6 points (84,8 · 96,4 %)</td><td><span class="experiment-status rejected">Non atteint</span></td></tr>
+<tr><td>Réponses invalides via vLLM</td><td>Aucune sur 500</td><td>À mesurer sur RunPod</td><td><span class="experiment-status promising">À mesurer</span></td></tr>
+<tr><td>Latence</td><td>P95 ≤ 3 s par requête à l'API</td><td>À mesurer sur RunPod</td><td><span class="experiment-status promising">À mesurer</span></td></tr>
+<tr><td>Qualité du code</td><td>CI verte, couverture ≥ 90 %</td><td>CI verte</td><td><span class="experiment-status selected">Atteint</span></td></tr>
+<tr><td>Traçabilité</td><td>Chaque décision journalisée avec les versions du modèle et du prompt</td><td>Journal d'audit de l'API</td><td><span class="experiment-status selected">Atteint</span></td></tr>
+<tr><td>Conformité</td><td>AIPD validée, hébergement HDS</td><td>Non engagées</td><td><span class="experiment-status rejected">Non atteint</span></td></tr>
+</tbody>
+</table>
+<div class="callout subtle">
+<span class="eyebrow">VERDICT</span>
+<strong>Go pour la démonstration sur des cas fictifs. No-go pour tout usage sur des données réelles.</strong>
+<p>Les critères techniques sont atteints ; les critères cliniques et réglementaires ne le sont pas. C'est exactement ce que traite la feuille de route : la phase 0 vise le sous-triage et l'écart entre langues, la phase 1 la conformité.</p>
 </div>
 </div>
 </section>
@@ -122,7 +148,7 @@ d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommand
 <text x="58" y="188" fill="#98a8ad" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">0 à 1 mois</text>
 <line x1="58" y1="204" x2="250" y2="204" stroke="#25333c"/>
 <circle cx="64" cy="230" r="3.5" fill="#2f9e8a"/>
-<text x="76" y="234" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Réaligner le DPO</text>
+<text x="76" y="234" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Filet de sécurité P1</text>
 <circle cx="64" cy="260" r="3.5" fill="#2f9e8a"/>
 <text x="76" y="264" fill="#edf4f4" font-size="12.5" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal">Évaluer les explications</text>
 <circle cx="64" cy="290" r="3.5" fill="#2f9e8a"/>
@@ -182,10 +208,10 @@ d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommand
 <table class="story-table params-table">
 <thead><tr><th>Phase</th><th>Objectif</th><th>Critère de sortie</th></tr></thead>
 <tbody>
-<tr><td>0 · Consolider le POC</td><td>Corriger les limites connues : paires DPO reconstruites sur le corpus du SFT, grille d'évaluation des explications, authentification de l'API, versions d'images figées, tests de charge.</td><td>Sous-triage au plus égal à celui du modèle actuel sur le test gelé ; explications relues et jugées fidèles au cas.</td></tr>
+<tr><td>0 · Consolider le POC</td><td>Corriger les limites connues : filet de sécurité par règles pour les urgences dépendantes du temps, cas d'infarctus et d'AVC ajoutés au SFT, grille d'évaluation des explications, authentification de l'API, versions d'images figées, tests de charge. Le DPO livré est déjà entraîné sur des paires réalignées sur le protocole (<a href="resultats.html#dpo-realigne">12 octobre</a>) ; reste à prendre comme réponses rejetées les propres sorties du SFT, pour corriger son gabarit.</td><td>Critères cliniques de la <a href="#go-no-go">grille go / no-go</a> atteints sur le test gelé ; explications relues et jugées fidèles au cas.</td></tr>
 <tr><td>1 · Conformité et données</td><td>AIPD et base légale avec le DPD, hébergement HDS, extraction de cas réels pseudonymisés, étiquetage par des IOA selon FRENCH.</td><td>AIPD validée ; quelques milliers de cas étiquetés par au moins deux IOA, désaccords arbitrés.</td></tr>
 <tr><td>2 · Pilote silencieux</td><td>Le modèle tourne en parallèle des IOA sur les vrais flux, sans que personne ne voie ses réponses.</td><td>Concordance avec les IOA et sous-triage mesurés sur plusieurs semaines, comparés à la variabilité entre IOA.</td></tr>
-<tr><td>3 · Pilote assisté</td><td>Intégration au logiciel des urgences (DPI) comme second avis, alerte de sous-triage, ré-entraînement encadré.</td><td>Pas d'augmentation du sous-triage, adoption par les équipes, statut réglementaire clarifié.</td></tr>
+<tr><td>3 · Pilote assisté</td><td>Intégration au logiciel des urgences (DPI) comme second avis, questionnaire adaptatif qui demande les constantes et antécédents manquants avant de classer, alerte de sous-triage, ré-entraînement encadré.</td><td>Pas d'augmentation du sous-triage, adoption par les équipes, statut réglementaire clarifié.</td></tr>
 </tbody>
 </table>
 </div>
@@ -200,12 +226,14 @@ d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommand
 <table class="story-table params-table">
 <thead><tr><th>Dimension</th><th>Dans le POC</th><th>Pour un pilote au CHSA</th></tr></thead>
 <tbody>
+<tr><td>Taille du modèle</td><td>Qwen3-1.7B : 4 bits à l'entraînement, BF16 au service</td><td>Modèles de 8 à 32 milliards de paramètres et plus, comme l'envisage la mission, seulement si le gain est mesuré sur des cas réels étiquetés. Un 32B occupe environ 64 Go en BF16 (un GPU de 80 Go) ou une vingtaine de Go en 4 bits ; la chaîne (LoRA, DPO, vLLM, test gelé) reste la même, seuls le matériel et la durée des runs changent.</td></tr>
+<tr><td>Entrée du patient</td><td>Cas décrit en texte structuré</td><td>Questionnaire adaptatif ; sur les cas inédits, un cas incomplet passe de 7 à 5 bonnes réponses sur 10</td></tr>
 <tr><td>Hébergement</td><td>RunPod en Europe (0,27 à 0,57 $/h selon le GPU)</td><td>Hébergeur certifié HDS (OVHcloud, Scaleway ou les régions françaises des grands clouds, par exemple), ou serveur GPU interne</td></tr>
 <tr><td>Inférence</td><td>Un serveur vLLM, un GPU, modèle BF16 de 3,3 Go</td><td>Plusieurs réplicas vLLM derrière un répartiteur ; un modèle de cette taille tient sur des GPU d'entrée de gamme</td></tr>
 <tr><td>Fidélité du modèle servi</td><td>Adapter fusionné en BF16 (453/500)</td><td>Servir la base 4 bits avec l'adapter non fusionné pour retrouver exactement les décisions évaluées (459/500), si le coût en latence est acceptable</td></tr>
-<tr><td>Sécurité</td><td>Clé entre l'API et vLLM, API sans authentification</td><td>Authentification des clients (OAuth2 ou certificats), réseau privé entre API et modèle, chiffrement, journalisation sans contenu médical</td></tr>
+<tr><td>Sécurité</td><td>Clé entre l'API et vLLM, journal d'audit sans texte patient, API sans authentification</td><td>Authentification des clients (OAuth2 ou certificats), réseau privé entre API et modèle, chiffrement, journal d'audit centralisé avec empreinte à clé secrète et durée de conservation fixée avec le DPD</td></tr>
 <tr><td>Supervision</td><td>Prometheus et Grafana : trafic, latence, erreurs</td><td>Ajouter des indicateurs métier : répartition des priorités, écart avec les IOA, sous-triage, dérive des cas entrants</td></tr>
-<tr><td>Cycle de vie</td><td>Notebooks, manifestes SHA-256, W&amp;B, CD vers GHCR</td><td>Registre de modèles, ré-entraînement planifié, test gelé et seuil de sous-triage comme barrière avant toute mise en service</td></tr>
+<tr><td>Cycle de vie</td><td>Notebooks, manifestes SHA-256, W&amp;B ; la CD publie l'image de l'API, le changement de modèle reste manuel</td><td>Registre de modèles, ré-entraînement planifié ; la CD déploie une nouvelle version du modèle seulement si la grille go / no-go passe sur le modèle servi</td></tr>
 </tbody>
 </table>
 </div>
@@ -221,7 +249,7 @@ d'accueil et d'orientation (IOA) sans lui faire prendre de risque ? Ma recommand
 <div class="reflection-card"><h3>RGPD et HDS</h3><p>Des données de santé sont des données sensibles : base légale, minimisation, AIPD et hébergement certifié HDS dès qu'un prestataire héberge ces données pour le compte du CHSA.</p></div>
 <div class="reflection-card"><h3>Dispositif médical</h3><p>Un logiciel qui aide à décider d'une prise en charge relève probablement du règlement européen sur les dispositifs médicaux (MDR), ce qui implique un marquage CE avant tout usage clinique hors recherche.</p></div>
 <div class="reflection-card"><h3>AI Act</h3><p>Les systèmes de tri des patients aux urgences figurent parmi les usages à haut risque du règlement européen sur l'IA : gestion des risques, qualité des données, traçabilité et contrôle humain obligatoires.</p></div>
-<div class="reflection-card"><h3>Ce que le POC prépare déjà</h3><p>Traçabilité des données et des runs, contrôle humain par conception, API qui ne conserve ni n'expose les données saisies, documentation des limites.</p></div>
+<div class="reflection-card"><h3>Ce que le POC prépare déjà</h3><p>Traçabilité des données et des runs, contrôle humain par conception, journal d'audit de chaque décision sans le texte du patient, API qui ne renvoie ni n'expose les données saisies, documentation des limites.</p></div>
 </div>
 </div>
 </section>

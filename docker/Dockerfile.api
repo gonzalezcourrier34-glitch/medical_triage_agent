@@ -23,7 +23,8 @@ COPY --from=ghcr.io/astral-sh/uv:0.9.18 /uv /uvx /bin/
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH" \
-    INFERENCE_BACKEND=mock
+    INFERENCE_BACKEND=mock \
+    AUDIT_LOG_PATH=/app/logs/audit.jsonl
 
 # ------------------------------------------------------------
 # 3. Installation des dépendances
@@ -51,7 +52,9 @@ COPY src/ ./src/
 # ------------------------------------------------------------
 
 # Création d'un utilisateur sans privilèges administrateur.
+# Dossier du journal d'audit (monté en volume par Docker Compose).
 RUN useradd --create-home --uid 10001 appuser \
+    && mkdir -p /app/logs \
     && chown -R appuser:appuser /app
 
 USER appuser

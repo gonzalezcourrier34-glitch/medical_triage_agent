@@ -37,7 +37,13 @@ services:
       VLLM_BASE_URL: ${VLLM_BASE_URL:-http://vllm:8000/v1}
       VLLM_API_KEY: ${VLLM_API_KEY:-}
       VLLM_MODEL: triage-qwen3
-      MODEL_VERSION: ${MODEL_VERSION:-qwen3-1.7b-sft154320-ckpt450-dpo-ckpt150}
+      MODEL_VERSION: ${MODEL_VERSION:-qwen3-1.7b-sft154320-ckpt450-dpoaligned-ckpt200}
+      # Journal d'audit : une ligne JSON par décision, sans texte patient.
+      AUDIT_LOG_PATH: /app/logs/audit.jsonl
+
+    # Journal d'audit conservé hors du conteneur.
+    volumes:
+      - audit_logs:/app/logs
 
     # Réduit les privilèges du conteneur.
     security_opt:
@@ -81,7 +87,7 @@ services:
     # Modèle fusionné (Qwen3 + LoRA SFT checkpoint-450 + DPO checkpoint-150, BF16).
     # Produit par notebooks/07_fusion_lora.ipynb.
     volumes:
-      - ./artifacts/deployment/qwen3-triage-20261009-154320:/models/triage-qwen3:ro
+      - ./artifacts/deployment/qwen3-triage-20261009-154320-aligned:/models/triage-qwen3:ro
 
     # Même template de conversation qu'à l'entraînement, contexte limité à 2 048 tokens.
     command:
@@ -183,5 +189,6 @@ services:
 # ------------------------------------------------------------
 
 volumes:
+  audit_logs:
   prometheus_data:
   grafana_data:

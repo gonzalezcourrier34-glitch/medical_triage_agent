@@ -10,7 +10,7 @@ import re
 from src.api.schemas import TriageRequest
 
 # Modèle final : SFT run 20261009-154320 (checkpoint-450) + adapter DPO (checkpoint-150).
-MODEL_VERSION = os.getenv("MODEL_VERSION", "qwen3-1.7b-sft154320-ckpt450-dpo-ckpt150")
+MODEL_VERSION = os.getenv("MODEL_VERSION", "qwen3-1.7b-sft154320-ckpt450-dpoaligned-ckpt200")
 
 # Longueur maximale utilisée à l'entraînement.
 MAX_LENGTH = 2_048

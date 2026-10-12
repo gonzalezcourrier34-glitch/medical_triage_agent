@@ -11,7 +11,7 @@ Aucun secret dans ce fichier ni dans Git : tokens et clés vivent dans RunPod (S
 
 ## A. Préparation (gratuite, aucun pod allumé)
 
-1. Poids : dépôt Hugging Face privé `SteGONZALEZ/qwen3-triage-chsa` (modèle fusionné validé au test gelé, 453/500).
+1. Poids : dépôt Hugging Face privé `SteGONZALEZ/qwen3-triage-chsa` (SFT checkpoint-450 + DPO réaligné checkpoint-200, fusionné et validé au test gelé, 453/500 ; l'ancienne version reste dans l'historique du dépôt).
 2. Token Hugging Face **Read** `runpod-read` → RunPod › Settings › Secrets, nom `HF_TOKEN`.
 3. Clé vLLM (40 caractères, sans accent) → RunPod › Secrets, nom `VLLM_API_KEY`, et dans `.env` local (`VLLM_API_KEY=...`).
    ```powershell

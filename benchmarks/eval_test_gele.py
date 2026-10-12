@@ -44,7 +44,7 @@ SPLITS = {
     "dpo_train": ROOT / "data/raw/datasets/splits/dpo_train.jsonl",
 }
 BASE_MODEL = "Qwen/Qwen3-1.7B"  # base réelle de unsloth/Qwen3-1.7B-unsloth-bnb-4bit
-MODEL_PATH = ROOT / "artifacts/deployment/qwen3-triage-20261009-154320"
+MODEL_PATH = ROOT / "artifacts/deployment/qwen3-triage-20261009-154320-aligned"
 REFERENCE = RUN_DIR / "dpo_predictions.jsonl"
 LABELS = (1, 2, 3)
 MAX_LENGTH = 2_048

@@ -121,7 +121,7 @@ uv run python benchmarks/demo_cas_inconnus.py --mode api --api-url http://127.0.
 <tr><td>5</td><td>Grafana</td><td><code>http://127.0.0.1:3000</code></td><td>Dashboard « Operations Overview » : trafic, latence moyenne et p95, erreurs, disponibilité</td></tr>
 <tr><td>6</td><td>Prometheus</td><td><code>http://127.0.0.1:9090/targets</code></td><td>API et vLLM « UP » (en secours, si Grafana tarde)</td></tr>
 <tr><td>7</td><td>RunPod · pod GPU</td><td>console RunPod › Pods › Logs</td><td>Le modèle servi par vLLM, les requêtes qui arrivent (sans afficher les variables)</td></tr>
-<tr><td>8</td><td>GitHub · Actions</td><td><code>github.com/gonzalezcourrier34-glitch/medical_triage_agent/actions</code></td><td>CI (ruff, 34 tests, couverture) et CD (image GHCR)</td></tr>
+<tr><td>8</td><td>GitHub · Actions</td><td><code>github.com/gonzalezcourrier34-glitch/medical_triage_agent/actions</code></td><td>CI (ruff, 40 tests, couverture) et CD (image GHCR)</td></tr>
 <tr><td>9</td><td>Terminal PowerShell</td><td>racine du projet</td><td>La rafale de cas inédits en direct, si le temps le permet</td></tr>
 <tr><td>10</td><td>Site · Démo</td><td><code>…/demo.html#cas</code></td><td>Cette page, pour copier les cas</td></tr>
 </tbody>
@@ -138,8 +138,8 @@ uv run python benchmarks/demo_cas_inconnus.py --mode api --api-url http://127.0.
 <div class="timeline-item"><span>0:00 • Contexte</span><h3>Le besoin du CHSA</h3><p>Onglet 1. Trier les patients en P1, P2, P3 avec une justification, sur du matériel modeste. Un petit modèle (Qwen3-1.7B) entraîné sur une carte de 6 Go.</p></div>
 <div class="timeline-item"><span>1:30 • Méthode</span><h3>Données, SFT, DPO</h3><p>Onglet 2. 5 000 cas FR/EN nettoyés et anonymisés, SFT puis DPO, choix sur la validation, mesure unique sur un test gelé : 90,66 % de F1, 7,2 % de sous-triage.</p></div>
 <div class="timeline-item"><span>3:00 • Architecture</span><h3>Du modèle au service</h3><p>Onglet 3. Modèle fusionné et vérifié, servi par vLLM sur un GPU RunPod ; API FastAPI ; Docker ; CI/CD.</p></div>
-<div class="timeline-item"><span>4:00 • Démo</span><h3>Trois cas en direct</h3><p>Onglet 4. Anaphylaxie (P1), poussée de BPCO (P2), mal de gorge en anglais (P3). Lire la priorité, l'explication, la recommandation et la latence renvoyées.</p></div>
-<div class="timeline-item"><span>6:00 • Monitoring</span><h3>Le service observé</h3><p>Onglet 5. Les requêtes qui viennent d'arriver, la latence moyenne et p95, aucune erreur, API et vLLM disponibles. Aucune donnée patient dans les métriques.</p></div>
+<div class="timeline-item"><span>4:00 • Démo</span><h3>Trois cas en direct</h3><p>Onglet 4. Purpura fébrile (P1), poussée de BPCO (P2), mal de gorge en anglais (P3). Lire la priorité, l'explication, la recommandation et la latence renvoyées.</p></div>
+<div class="timeline-item"><span>6:00 • Monitoring</span><h3>Le service observé</h3><p>Onglet 5. Les requêtes qui viennent d'arriver, la latence moyenne et p95, aucune erreur, API et vLLM disponibles. Aucune donnée patient dans les métriques. Puis le journal d'audit dans le terminal : <code>docker compose exec api tail -n 3 /app/logs/audit.jsonl</code>, une ligne par décision, avec le même <code>request_id</code> que la réponse et une empreinte à la place du texte.</p></div>
 <div class="timeline-item"><span>7:00 • Limite</span><h3>Le cas qui échoue</h3><p>Onglet 4 puis 2. Douleur thoracique : le modèle écrit « suggests a heart attack » mais répond P2. Expliquer pourquoi (mots-clés, urgences dépendantes du temps trop rares).</p></div>
 <div class="timeline-item"><span>8:30 • Conclusion</span><h3>Second avis, pas décision</h3><p>Le POC est faisable et industrialisable ; il ne doit pas trier seul. Proposition : second avis pour l'IOA, filet de sécurité par règles, évaluation sur cas réels.</p></div>
 </div>
@@ -153,21 +153,21 @@ uv run python benchmarks/demo_cas_inconnus.py --mode api --api-url http://127.0.
 <h2>Les cas à coller dans <code>POST /triage</code></h2>
 <p class="section-intro">Format complet, le seul qui retrouve les P1 quand les constantes sont anormales (<a href="resultats.html#format">pourquoi</a>). Copier un bloc entier dans le corps de la requête de Swagger. Les résultats attendus viennent du test en local ; vLLM peut différer légèrement.</p>
 <div class="code-panel" style="margin-bottom:1.5rem">
-<div class="code-panel-header"><span>Anaphylaxie après piqûre de guêpe</span><small>attendu : P1 · FR · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
-<pre style="white-space:pre-wrap;word-break:break-word"><code>{
-  &quot;language&quot;: &quot;fr&quot;,
-  &quot;question&quot;: &quot;Informations patient:\nAge: 31\n\nReported symptoms: gonflement des lèvres et de la langue, sifflements respiratoires, urticaire diffuse 15 minutes après une piqûre de guêpe\nClinical signs: gêne respiratoire, voix rauque\nVital signs: heart_rate: 128, systolic_bp: 82, diastolic_bp: 45, spo2: 89\nMedical history: allergie connue aux hyménoptères&quot;
-}</code></pre>
-</div>
-<p class="table-note" style="margin:-0.8rem 0 2rem">P1 en local. Montre que les constantes font basculer en P1.</p>
-<div class="code-panel" style="margin-bottom:1.5rem">
 <div class="code-panel-header"><span>Fièvre et purpura extensif</span><small>attendu : P1 · FR · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
 <pre style="white-space:pre-wrap;word-break:break-word"><code>{
   &quot;language&quot;: &quot;fr&quot;,
   &quot;question&quot;: &quot;Informations patient:\nAge: 19\n\nReported symptoms: fièvre à 39,8 °C, maux de tête, taches violacées qui s&#x27;étendent sur les jambes, somnolence depuis ce matin\nClinical signs: purpura extensif, raideur de nuque\nVital signs: temperature: 39.8, heart_rate: 132, systolic_bp: 86, diastolic_bp: 50\nMedical history: aucun&quot;
 }</code></pre>
 </div>
-<p class="table-note" style="margin:-0.8rem 0 2rem">P1 en local, explication spécifique au cas.</p>
+<p class="table-note" style="margin:-0.8rem 0 2rem">Cas P1 de la démo. P1 en local, explication propre et propre au patient : fièvre, taches violacées, somnolence, raideur de nuque.</p>
+<div class="code-panel" style="margin-bottom:1.5rem">
+<div class="code-panel-header"><span>Anaphylaxie après piqûre de guêpe</span><small>attendu : P1 · FR · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
+<pre style="white-space:pre-wrap;word-break:break-word"><code>{
+  &quot;language&quot;: &quot;fr&quot;,
+  &quot;question&quot;: &quot;Informations patient:\nAge: 31\n\nReported symptoms: gonflement des lèvres et de la langue, sifflements respiratoires, urticaire diffuse 15 minutes après une piqûre de guêpe\nClinical signs: gêne respiratoire, voix rauque\nVital signs: heart_rate: 128, systolic_bp: 82, diastolic_bp: 45, spo2: 89\nMedical history: allergie connue aux hyménoptères&quot;
+}</code></pre>
+</div>
+<p class="table-note" style="margin:-0.8rem 0 2rem">Cas de réserve. P1 en local, mais l'explication reprend le gabarit du SFT et recopie les constantes brutes (« heart_rate: 128, systolic_bp: 82… ») : à ne montrer que pour illustrer la limite des explications.</p>
 <div class="code-panel" style="margin-bottom:1.5rem">
 <div class="code-panel-header"><span>Poussée de BPCO</span><small>attendu : P2 · FR · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
 <pre style="white-space:pre-wrap;word-break:break-word"><code>{
@@ -224,6 +224,10 @@ uv run python benchmarks/demo_cas_inconnus.py --mode api --api-url http://127.0.
 <tr><td>Pourquoi rate-t-il l'infarctus ?</td><td>Il a appris l'urgence à partir de mots alarmants ; infarctus et AVC sont rares dans le train et sans mot de gravité.</td><td><a href="resultats.html#pourquoi">Causes</a></td></tr>
 <tr><td>Que se passe-t-il si vLLM tombe ?</td><td>L'API renvoie une erreur 503 explicite, la disponibilité passe au rouge dans Grafana ; aucune priorité n'est inventée.</td><td><a href="architecture.html">Architecture</a></td></tr>
 <tr><td>Et les données de santé ?</td><td>Données publiques anonymisées (Presidio) ; en production : hébergement HDS, AIPD, contrôle humain.</td><td><a href="synthese.html">Synthèse</a></td></tr>
+<tr><td>Pourquoi pas Qwen3-1.7B-Base, comme prévu ?</td><td>La version post-entraînée connaît déjà le format de conversation de l'API et de vLLM ; avec 4 000 exemples, l'entraînement sert au triage, pas au format. Pas de comparaison à protocole égal : c'est une limite assumée.</td><td><a href="experiments.html#base">SFT</a></td></tr>
+<tr><td>Peut-on auditer une décision ?</td><td>Oui : chaque appel laisse une ligne avec identifiant, horodatage, versions du modèle et du prompt, priorité et latence. Le texte du patient n'y est pas, seulement son empreinte.</td><td><a href="architecture.html">Architecture</a></td></tr>
+<tr><td>Est-il prêt pour la production ?</td><td>Non. La grille go / no-go donne go pour la démo, no-go pour des données réelles : rappel P1, sous-triage, écart FR/EN et conformité ne sont pas au niveau.</td><td><a href="synthese.html#go-no-go">Go / no-go</a></td></tr>
+<tr><td>Où est le questionnaire adaptatif ?</td><td>Hors du POC : le modèle classe un cas déjà décrit. Le test des cas inédits montre qu'un cas complet donne de meilleures réponses, d'où le questionnaire en feuille de route.</td><td><a href="resultats.html">Résultats</a></td></tr>
 <tr><td>Combien ça coûte ?</td><td>Moins de 0,60 $ de l'heure pour le GPU de démonstration ; l'API tourne sur CPU.</td><td><a href="architecture.html#cloud">Cloud</a></td></tr>
 </tbody>
 </table>

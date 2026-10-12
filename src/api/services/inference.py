@@ -26,7 +26,9 @@ from src.api.services.prompting import (
 
 # Base réelle de l'entraînement : unsloth/Qwen3-1.7B-unsloth-bnb-4bit = Qwen/Qwen3-1.7B.
 BASE_MODEL = os.getenv("BASE_MODEL", "Qwen/Qwen3-1.7B")
-MODEL_PATH = Path(os.getenv("MODEL_PATH", "artifacts/deployment/qwen3-triage-20261009-154320"))
+MODEL_PATH = Path(
+    os.getenv("MODEL_PATH", "artifacts/deployment/qwen3-triage-20261009-154320-aligned")
+)
 
 # Fins de réponse apprises : <|im_end|> puis <|endoftext|>.
 STOP_TOKENS = ("<|im_end|>", "<|endoftext|>")

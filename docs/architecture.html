@@ -126,11 +126,11 @@ Le seul lien entre les deux est l'adapter exporté.
 <tbody>
 <tr><td>Chaîne de données</td><td><span class="experiment-status selected">Opérationnel</span></td><td>Modules <code>scr/data</code> et <code>scr/triage</code>, notebooks d'audit, de nettoyage et de découpage.</td></tr>
 <tr><td>Entraînement SFT / DPO</td><td><span class="experiment-status selected">Opérationnel</span></td><td>Notebooks 05 et 06, manifestes par run, suivi W&amp;B, adapters sauvegardés.</td></tr>
-<tr><td>API FastAPI</td><td><span class="experiment-status selected">Opérationnel</span></td><td>Routes, validation, recommandations, métriques. 34 fonctions de test.</td></tr>
+<tr><td>API FastAPI</td><td><span class="experiment-status selected">Opérationnel</span></td><td>Routes, validation, recommandations, métriques, journal d'audit. 40 fonctions de test.</td></tr>
 <tr><td>Inférence réelle dans l'API</td><td><span class="experiment-status selected">Opérationnel</span></td><td>Moteurs <code>local</code> (GPU) et <code>vllm</code> branchés sur le modèle final, avec le prompt exact de l'entraînement.</td></tr>
 <tr><td>Serveur vLLM</td><td><span class="experiment-status selected">Prêt</span></td><td>Modèle fusionné validé au test gelé (453/500, 492 décisions identiques à la référence), publié sur Hugging Face (dépôt privé), servi par vLLM en local (profil <code>gpu</code>) et sur RunPod (<a href="#cloud">déploiement de la démo</a>). Restent les <a href="#mesures-cloud">mesures en ligne</a>.</td></tr>
 <tr><td>Docker et monitoring</td><td><span class="experiment-status selected">Opérationnel</span></td><td>Dockerfile, Compose à profils, Prometheus, dashboard Grafana provisionné.</td></tr>
-<tr><td>CI/CD</td><td><span class="experiment-status selected">Opérationnel</span></td><td>CI à chaque push et pull request sur <code>master</code> : Ruff, 34 tests, couverture minimale de 90 %. CD : image de l'API publiée sur GHCR après chaque CI réussie ; déploiement SSH vers un serveur pilote activable par <code>DEPLOY_ENABLED</code>.</td></tr>
+<tr><td>CI/CD</td><td><span class="experiment-status selected">Opérationnel</span></td><td>CI à chaque push et pull request sur <code>master</code> : Ruff, 40 tests, couverture minimale de 90 %. CD : image de l'API publiée sur GHCR après chaque CI réussie ; déploiement SSH vers un serveur pilote activable par <code>DEPLOY_ENABLED</code>.</td></tr>
 </tbody>
 </table>
 </div>
@@ -238,7 +238,7 @@ Le seul lien entre les deux est l'adapter exporté.
 <table class="story-table params-table">
 <thead><tr><th>Route</th><th>Rôle</th><th>Réponse</th></tr></thead>
 <tbody>
-<tr><td><code>POST /triage</code></td><td>Classer un cas et le justifier</td><td>priority, explanation, recommendation, request_id, timestamp, model_version, latency_ms</td></tr>
+<tr><td><code>POST /triage</code></td><td>Classer un cas et le justifier</td><td>priority, explanation, recommendation, request_id, timestamp, model_version, latency_ms ; une ligne au journal d'audit</td></tr>
 <tr><td><code>GET /health</code></td><td>Savoir si le modèle est chargé</td><td><code>ok</code> ou <code>degraded</code>, model_ready</td></tr>
 <tr><td><code>GET /version</code></td><td>Tracer les versions en service</td><td>api_version 0.1.0, model_version, prompt_version</td></tr>
 <tr><td><code>GET /metrics</code></td><td>Exposer les métriques HTTP à Prometheus</td><td>Format texte Prometheus</td></tr>
@@ -248,7 +248,8 @@ Le seul lien entre les deux est l'adapter exporté.
 <div class="experiment-analysis">
 <div><span>MOTEUR « MOCK »</span><p>Il renvoie une réponse fixe (P2 et une explication simulée) sans GPU. C'est lui qu'utilisent la CI, le conteneur par défaut et les tests : je peux vérifier tout le contrat de l'API sans charger le modèle.</p></div>
 <div><span>MOTEURS « LOCAL » ET « VLLM »</span><p>Les deux utilisent le module <code>prompting.py</code>, qui reprend à l'identique le prompt système et le format d'entrée de l'entraînement (vérifié caractère par caractère). Le moteur local charge le modèle fusionné (ou, au choix, la base Qwen3 avec l'adapter final), choisit la priorité par scoring conditionnel comme lors de l'évaluation, puis génère l'explication. Le moteur vLLM interroge le serveur compatible OpenAI et lit la réponse « PRIORITY / EXPLANATION ».</p></div>
-<div><span>TESTS</span><p>34 fonctions de test, dont plusieurs paramétrées : routes et versions, recommandations FR/EN, langue ou question invalide, champ inconnu refusé, données patient jamais renvoyées ni exposées dans <code>/metrics</code>, prompt identique à l'entraînement, choix du moteur, échanges avec vLLM simulés (clé d'API, erreurs, réponse illisible) et moteur en panne (503 sans détail technique). Le moteur GPU local, qui exige PyTorch, est exclu de la couverture : il est validé par le test gelé. Seuil de couverture imposé en CI : 90 %.</p></div>
+<div><span>JOURNAL D'AUDIT</span><p>Chaque appel à <code>/triage</code> ajoute une ligne JSON à <code>logs/audit.jsonl</code> : le <code>request_id</code> renvoyé au client, l'horodatage, les versions de l'API, du modèle et du prompt, le moteur, la langue, la priorité, la latence et le statut, y compris quand le moteur est en panne. Le texte du patient n'est jamais écrit : seule son empreinte SHA-256 est gardée, ce qui permet de vérifier qu'une entrée donnée a produit une décision donnée. Une empreinte simple reste une donnée pseudonymisée : en production, il faudrait une empreinte à clé secrète (HMAC). Sous Docker, le journal vit dans le volume <code>audit_logs</code>, qui survit au redémarrage du conteneur ; une erreur d'écriture est signalée mais ne bloque jamais la réponse.</p></div>
+<div><span>TESTS</span><p>40 fonctions de test, dont plusieurs paramétrées : routes et versions, journal d'audit (une ligne par décision, texte patient absent, panne tracée), recommandations FR/EN, langue ou question invalide, champ inconnu refusé, données patient jamais renvoyées ni exposées dans <code>/metrics</code>, prompt identique à l'entraînement, choix du moteur, échanges avec vLLM simulés (clé d'API, erreurs, réponse illisible) et moteur en panne (503 sans détail technique). Le moteur GPU local, qui exige PyTorch, est exclu de la couverture : il est validé par le test gelé. Seuil de couverture imposé en CI : 90 %.</p></div>
 <div><span>VALIDATION</span><p>Pydantic n'accepte que <code>fr</code> ou <code>en</code>, exige une question non vide et refuse tout champ inattendu (<code>extra="forbid"</code>) : une requête mal formée reçoit une erreur 422 avant d'atteindre le modèle.</p></div>
 </div>
 </div>
@@ -316,7 +317,7 @@ Le seul lien entre les deux est l'adapter exporté.
 <div class="about-grid">
 <div class="large-text">Un seul modèle autonome plutôt qu'une base et un adapter.</div>
 <div>
-<p>Pour le service, j'ai fusionné l'adapter LoRA final (SFT checkpoint-450 + DPO checkpoint-150) dans les poids de <code>Qwen/Qwen3-1.7B</code> avec le notebook <code>07_fusion_lora.ipynb</code>. La base est rechargée en BF16 sur CPU, l'adapter est appliqué puis fusionné (<code>merge_and_unload</code>), et le modèle est exporté au format Safetensors avec son tokenizer dans <code>artifacts/deployment/qwen3-triage-20261009-154320</code>.</p>
+<p>Pour le service, j'ai fusionné l'adapter LoRA final (SFT checkpoint-450 + DPO réaligné checkpoint-200) dans les poids de <code>Qwen/Qwen3-1.7B</code> avec le notebook <code>07_fusion_lora.ipynb</code>. La base est rechargée en BF16 sur CPU, l'adapter est appliqué puis fusionné (<code>merge_and_unload</code>), et le modèle est exporté au format Safetensors avec son tokenizer dans <code>artifacts/deployment/qwen3-triage-20261009-154320-aligned</code>. La première fusion, faite avec le premier DPO, reste dans <code>qwen3-triage-20261009-154320</code> pour revenir en arrière ; les deux prennent les mêmes 500 décisions au test gelé.</p>
 <p>J'ai choisi la fusion parce que vLLM sert alors un modèle autonome : pas de couche LoRA à appliquer à chaque requête, pas de base à télécharger au démarrage, et une commande de lancement plus simple. C'est aussi ce dossier qui constitue les poids finaux livrés.</p>
 </div>
 </div>
@@ -403,6 +404,11 @@ Le seul lien entre les deux est l'adapter exporté.
 <text x="58.0" y="398.0" fill="#edf4f4" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="700" >Démo : l'image publiée est lancée sur RunPod. Déploiement SSH activable par DEPLOY_ENABLED et ses secrets.</text>
 <text x="58.0" y="420.0" fill="#98a8ad" font-size="13" font-family="Inter, 'Segoe UI', Arial, sans-serif" text-anchor="start" font-weight="normal" >Le docker-compose lit désormais API_IMAGE : le déploiement récupère bien l'image publiée sur GHCR.</text>
 </svg><figcaption>Chaque image est étiquetée avec le commit qui l'a produite (sha-…), ce qui permet de savoir exactement quel code tourne.</figcaption></figure>
+<div class="callout subtle">
+<span class="eyebrow">CE QUE LA CD N'AUTOMATISE PAS</span>
+<strong>La mise en service d'une nouvelle version du modèle reste manuelle.</strong>
+<p>La mission demande un pipeline qui automatise les tests et le déploiement des nouvelles versions du modèle. Ma CD publie l'image de l'API ; le modèle, lui, change à la main (poids sur Hugging Face, nom dans <code>MODEL_VERSION</code>), après le test gelé rejoué sur le modèle fusionné. C'est volontaire : sans vérification automatique, déployer un modèle automatiquement reviendrait à mettre en service une version non contrôlée, et l'erreur de fusion (417/500) serait passée en production. L'étape suivante est un workflow déclenché par une nouvelle version du modèle, qui lance <code>eval_test_gele.py</code> sur un GPU et ne déploie que si la <a href="synthese.html#go-no-go">grille go / no-go</a> passe.</p>
+</div>
 <h3 id="cloud">Le déploiement de la démo sur RunPod</h3>
 <div class="about-grid">
 <div class="large-text">Deux pods, une image publiée par la CD, des poids sur Hugging Face.</div>
@@ -518,7 +524,7 @@ Le seul lien entre les deux est l'adapter exporté.
 <h2>Sécurité et confidentialité</h2>
 <div class="reflection-grid">
 <div class="reflection-card"><h3>Données d'entraînement</h3><p>Détection et masquage des informations personnelles avec Presidio avant l'entraînement, et revue des cas où un nom de personne est détecté.</p></div>
-<div class="reflection-card"><h3>Entrées de l'API</h3><p>Schéma strict : langue contrôlée, question obligatoire, champs inconnus refusés. Les données du patient ne sont ni renvoyées ni écrites dans les métriques.</p></div>
+<div class="reflection-card"><h3>Entrées de l'API</h3><p>Schéma strict : langue contrôlée, question obligatoire, champs inconnus refusés. Les données du patient ne sont ni renvoyées ni écrites dans les métriques ; le journal d'audit ne garde que leur empreinte.</p></div>
 <div class="reflection-card"><h3>Conteneurs</h3><p>Utilisateur sans privilèges, option <code>no-new-privileges</code>, ports limités à la machine locale, CI en lecture seule sur le dépôt.</p></div>
 <div class="reflection-card"><h3>Secrets</h3><p>Clé W&amp;B, mot de passe Grafana et accès au serveur pilote restent hors du code : fichier <code>.env</code> non versionné en local, secrets GitHub pour le déploiement SSH, secrets RunPod (<code>HF_TOKEN</code>, <code>VLLM_API_KEY</code>) pour la démo. Le serveur vLLM exposé exige une clé.</p></div>
 </div>
@@ -543,6 +549,7 @@ Le seul lien entre les deux est l'adapter exporté.
 <tr><td>Fin de génération</td><td>Le modèle fusionné ne déclarait que <code>&lt;|endoftext|&gt;</code> comme fin, alors qu'il termine ses réponses par <code>&lt;|im_end|&gt;</code>.</td><td>Les deux marqueurs sont déclarés dans le modèle, le notebook 07, le moteur local et les requêtes vLLM.</td></tr>
 <tr><td>Contexte Docker</td><td>Sans <code>.dockerignore</code>, un build local enverrait à Docker tout le projet (plus de 50 Go de données et de modèles).</td><td>Un <code>.dockerignore</code> ne laisse passer que les fichiers copiés par le Dockerfile.</td></tr>
 <tr><td>Base de la fusion</td><td>Le notebook 07 fusionnait l'adapter dans <code>Qwen3-1.7B-Base</code>, alors qu'il a été entraîné sur <code>Qwen3-1.7B</code> : 417/500 au test gelé au lieu de 459/500.</td><td>Fusion dans <code>Qwen/Qwen3-1.7B</code> ; le test gelé rejoué par <code>benchmarks/eval_test_gele.py</code> conditionne la livraison (<a href="#verif-fusion">détail</a>).</td></tr>
+<tr><td>Traçabilité</td><td>L'API renvoyait un <code>request_id</code> mais ne conservait aucune trace des décisions : impossible de rejouer un audit.</td><td>Journal d'audit JSONL, une ligne par décision, sans texte patient, testé.</td></tr>
 <tr><td>Longueur maximale</td><td>Le moteur local tronquait le prompt à 1 024 tokens, contre 2 048 à l'entraînement.</td><td>Aligné sur 2 048 tokens.</td></tr>
 </tbody>
 </table>

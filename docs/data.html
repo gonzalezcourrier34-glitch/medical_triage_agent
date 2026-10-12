@@ -280,7 +280,7 @@ comment j'ai protégé les données personnelles, comment j'ai attribué les pri
 <div class="reflection-grid">
 <div class="reflection-card"><span class="eyebrow">FORMAT</span><h3>Un cas, une priorité, une explication</h3><p>Chaque exemple contient un contexte patient (23 mots en médiane), une priorité P1/P2/P3 et une explication (22,5 mots en médiane), avec ses métadonnées de provenance.</p></div>
 <div class="reflection-card"><span class="eyebrow">SPLITS</span><h3>Groupes de fuite</h3><p>Le découpage respecte des groupes de fuite : les exemples issus d'une même source restent dans le même split. Aucun contexte, aucune entrée ni aucune source n'est partagé entre train, validation et test.</p></div>
-<div class="reflection-card"><span class="eyebrow">DPO</span><h3>2 100 paires bilingues</h3><p>1 680 paires d'entraînement et 420 de validation, 1 050 FR / 1 050 EN, priorité identique dans chaque paire, aucun cas commun avec le SFT. Détails sur la page DPO.</p></div>
+<div class="reflection-card"><span class="eyebrow">DPO</span><h3>2 100 paires bilingues</h3><p>1 680 paires d'entraînement et 420 de validation, 350 par langue et par priorité, priorité identique dans chaque paire et conforme au protocole FRENCH. La validation DPO ne contient aucun cas vu par le SFT ; aucune paire ne recoupe le test. Détails sur la page DPO.</p></div>
 <div class="reflection-card"><span class="eyebrow">LIMITE CONNUE</span><h3>Effet de gabarit</h3><p>679 cas « patient fictif » viennent de mêmes modèles de phrase. Des cas presque identiques se retrouvent entre train et test et gonflent le score d'environ 1 point. <a class="project-link" href="experiments.html#fuite">Voir l'analyse →</a></p></div>
 </div>
 </div>
@@ -298,8 +298,10 @@ comment j'ai protégé les données personnelles, comment j'ai attribué les pri
 <tr><td><code>sft_train.jsonl</code></td><td>4 000</td><td><code>0c15e682…b61ea0</code></td></tr>
 <tr><td><code>sft_validation.jsonl</code></td><td>500</td><td><code>5c1f6bda…286e65</code></td></tr>
 <tr><td><code>sft_test.jsonl</code></td><td>500</td><td><code>01795834…b2abe7</code></td></tr>
-<tr><td><code>dpo_train.jsonl</code></td><td>1 680</td><td><code>7f00557c…c3baf1</code></td></tr>
-<tr><td><code>dpo_validation.jsonl</code></td><td>420</td><td><code>8f9e5f94…b186ce</code></td></tr>
+<tr><td><code>dpo_train.jsonl</code> (DPO livré, réaligné)</td><td>1 680</td><td><code>a3c496d7…04a1fc</code></td></tr>
+<tr><td><code>dpo_validation.jsonl</code> (DPO livré, réaligné)</td><td>420</td><td><code>a17b738d…2a6b3f</code></td></tr>
+<tr><td><code>old_dpo_train_garde.jsonl</code> (premier DPO)</td><td>1 680</td><td><code>7f00557c…c3baf1</code></td></tr>
+<tr><td><code>old_dpo_validation_garde.jsonl</code> (premier DPO)</td><td>420</td><td><code>8f9e5f94…b186ce</code></td></tr>
 <tr><td>Protocole FRENCH</td><td>115 motifs</td><td><code>11b70614…185e44d</code></td></tr>
 </tbody>
 </table>

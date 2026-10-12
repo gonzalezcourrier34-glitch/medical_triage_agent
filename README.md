@@ -56,7 +56,7 @@ des données publiques anonymisées et un protocole d'évaluation qui sépare st
 | Données | 4 sources publiques FR/EN, audit, détection de données personnelles (Presidio), déduplication, étiquetage selon le protocole **FRENCH v1.2** |
 | Dataset | 5 000 cas équilibrés (50 % FR / 50 % EN, un tiers par priorité) : 4 000 train · 500 validation · 500 test gelé |
 | SFT | `unsloth/Qwen3-1.7B-unsloth-bnb-4bit`, LoRA r=16 / α=32 sur 7 projections, loss pondérée sur la priorité |
-| DPO | 2 100 paires centrées sur l'explication (la priorité est identique dans les deux réponses), β = 0,1 |
+| DPO | 2 100 paires réalignées sur le protocole FRENCH, explications préférées réécrites, centrées sur l'explication (la priorité est identique dans les deux réponses), β = 0,1 ; checkpoint-200 livré |
 | Service | LoRA fusionné dans Qwen3-1.7B (BF16), servi par vLLM derrière une API FastAPI |
 
 ## Résultats
@@ -65,12 +65,13 @@ Test gelé de **500 cas** (250 FR, 250 EN), jamais utilisé pour choisir un mod�
 
 | Modèle | Cas justes | F1 macro | Sous-triage | Accuracy FR · EN |
 |---|---:|---:|---:|---:|
-| Adapter SFT + DPO (évaluation de référence, base 4 bits) | 459 / 500 | 91,86 % | 5,80 % | 87,6 % · 96,0 % |
+| Adapter SFT + DPO réaligné (évaluation de référence, base 4 bits) | 459 / 500 | 91,86 % | 5,80 % | 87,6 % · 96,0 % |
 | **Modèle fusionné livré** (BF16, servi par vLLM) | **453 / 500** | **90,66 %** | **7,20 %** | 84,8 % · 96,4 % |
 
 - La fusion garde **492 décisions sur 500** identiques à la référence (McNemar exact, p = 0,070) ; les écarts concernent des cas limites.
 - Sans les cas du test trop proches d'un cas d'entraînement, le F1 macro de référence est de 90,83 % : pas de fuite massive, un effet de gabarit d'environ 1 point.
-- Le DPO ne change aucune décision de triage : il agit sur la formulation des explications.
+- Le DPO ne change aucune décision de triage : il agit sur la formulation des explications, et son effet mesuré est faible.
+  Le premier DPO (checkpoint-150) et le DPO réaligné livré prennent les mêmes 500 décisions une fois fusionnés.
 - La latence du service en ligne (vLLM sur GPU RunPod) est mesurée après déploiement avec `benchmarks/eval_test_gele.py --mode vllm`.
 
 Le détail des runs, des erreurs et des décisions est dans la [page Expériences](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/experiments.html).
@@ -114,7 +115,7 @@ docker compose --profile monitoring up -d     # + Prometheus (9090) et Grafana (
 docker compose --profile gpu up -d            # + vLLM (8001), GPU NVIDIA requis
 ```
 
-Le profil `gpu` attend le modèle fusionné dans `artifacts/deployment/qwen3-triage-20261009-154320/`
+Le profil `gpu` attend le modèle fusionné dans `artifacts/deployment/qwen3-triage-20261009-154320-aligned/`
 (voir [Reproduire le modèle](#reproduire-le-modèle)). Tous les ports sont liés à `127.0.0.1`.
 
 ## Utiliser l'API
@@ -142,7 +143,7 @@ Réponse (forme) :
 {
   "request_id": "uuid",
   "timestamp": "2026-10-11T15:00:00Z",
-  "model_version": "qwen3-1.7b-sft154320-ckpt450-dpo-ckpt150",
+  "model_version": "qwen3-1.7b-sft154320-ckpt450-dpoaligned-ckpt200",
   "priority": "P1",
   "explanation": "…",
   "recommendation": "Prise en charge immédiate par une équipe médicale.",
@@ -152,6 +153,15 @@ Réponse (forme) :
 ```
 
 Si le moteur d'inférence est injoignable, `/triage` renvoie `503` sans détail technique.
+
+**Journal d'audit.** Chaque appel à `/triage` ajoute une ligne JSON à `logs/audit.jsonl`
+(volume `audit_logs` sous Docker) : `request_id`, horodatage, versions de l'API, du modèle et du prompt,
+moteur, langue, priorité, latence et statut, y compris en cas de panne du moteur.
+Le texte du patient n'est jamais écrit : seule son empreinte SHA-256 est conservée.
+
+```bash
+docker compose exec api tail -n 3 /app/logs/audit.jsonl
+```
 
 ## Configuration
 
@@ -164,7 +174,9 @@ Variables lues par l'API et Docker Compose (modèle : [`.env.example`](.env.exam
 | `VLLM_API_KEY` | vide | Clé du serveur vLLM, obligatoire dès qu'il est exposé |
 | `VLLM_MODEL` | `triage-qwen3` | Nom du modèle servi par vLLM |
 | `MODEL_PATH` | modèle fusionné | Moteur `local` : modèle fusionné ou adapter LoRA |
-| `MODEL_VERSION` | `qwen3-1.7b-sft154320-ckpt450-dpo-ckpt150` | Version renvoyée par l'API |
+| `MODEL_VERSION` | `qwen3-1.7b-sft154320-ckpt450-dpoaligned-ckpt200` | Version renvoyée par l'API |
+| `AUDIT_LOG_ENABLED` | `true` | Active le journal d'audit |
+| `AUDIT_LOG_PATH` | `logs/audit.jsonl` | Fichier du journal (`/app/logs/audit.jsonl` dans le conteneur) |
 | `GRAFANA_ADMIN_PASSWORD` | aucun | Obligatoire pour le profil `monitoring` |
 
 ## Reproduire le modèle
@@ -180,10 +192,12 @@ uv sync --group data --group training
 | Audit des sources | `01_audit_raw_data.ipynb` | rapports d'audit |
 | Nettoyage, anonymisation | `02_cleaning_pipeline.ipynb` | corpus nettoyé |
 | Découpage SFT | `03_decoupage_datasets_sft.ipynb` | `sft_train` / `sft_validation` / `sft_test` |
-| Découpage DPO | `04_decoupage_datasets_dpo.ipynb` | `dpo_train` / `dpo_validation` |
+| Découpage DPO (premier DPO) | `04_decoupage_datasets_dpo.ipynb` | paires d'origine, conservées sous `old_dpo_*_garde.jsonl` |
+| Réalignement DPO | `scr/data/dpo_alignment.py` → `dpo_balance.py` → `dpo_chosen_rewrite.py` → `dpo_resplit.py` | `dpo.jsonl`, `dpo_train` / `dpo_validation` |
 | SFT | `05_finetuning_sft.ipynb` | adapter SFT, métriques, manifeste |
 | DPO | `06_finetuning_dpo.ipynb` | adapter DPO, métriques, manifeste |
-| Fusion pour vLLM | `07_fusion_lora.ipynb` | modèle fusionné BF16 |
+| Fusion pour vLLM | `07_fusion_lora.ipynb` | modèle fusionné BF16 (`qwen3-triage-20261009-154320-aligned`) |
+| Contrôle de la fusion | `benchmarks/eval_test_gele.py --mode hf` | test gelé rejoué sur le modèle fusionné |
 
 Les splits sont identifiés par leur empreinte SHA-256 et chaque run écrit un manifeste
 (configuration, environnement, données) ; le suivi d'expériences utilise Weights & Biases.
@@ -226,7 +240,7 @@ uv run ruff format --check main.py src tests
 uv run pytest tests -q --cov=src --cov=main
 ```
 
-- **Tests** : 34 fonctions de test, dont la validation des entrées, la non-exposition des données saisies,
+- **Tests** : 40 fonctions de test, dont la validation des entrées, la non-exposition des données saisies, le journal d'audit,
   le prompt identique à l'entraînement, le choix du moteur et les échanges avec vLLM simulés.
   La CI exige au moins 90 % de couverture ; le moteur GPU local, exclu de ce calcul, est validé par le test gelé.
 - **CI** (`ci.yml`) : Ruff puis pytest à chaque push et pull request sur `master`.
@@ -239,7 +253,7 @@ uv run pytest tests -q --cov=src --cov=main
 
 - Sources publiques uniquement ; détection des données personnelles avec Presidio (FR/EN), puis revue des cas signalés.
   Le corpus final ne contient ni e-mail, ni téléphone, ni numéro de sécurité sociale, ni URL.
-- L'API ne journalise pas le contenu des requêtes, ne le renvoie pas et ne l'expose pas dans les métriques.
+- L'API ne journalise pas le contenu des requêtes (le journal d'audit n'en garde qu'une empreinte), ne le renvoie pas et ne l'expose pas dans les métriques.
 - Un usage réel exigerait un hébergement certifié HDS, une analyse d'impact (AIPD) et une authentification des clients :
   la démo RunPod n'est pas conçue pour des données de santé réelles.
 
