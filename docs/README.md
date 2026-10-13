@@ -1,6 +1,6 @@
 # Medical Triage AI | Documentation technique et expérimentale
 
-Site HTML statique qui documente le POC de triage médical bilingue (Qwen3-1.7B, QLoRA, SFT, DPO, API FastAPI).
+Site HTML statique qui documente le POC de triage médical bilingue (Qwen3-1.7B-Base, QLoRA, SFT, DPO, API FastAPI).
 Ouvrir `index.html` dans un navigateur : aucune dépendance externe, aucun CDN, aucun JavaScript tiers.
 
 ## Pages
@@ -11,19 +11,21 @@ Ouvrir `index.html` dans un navigateur : aucune dépendance externe, aucun CDN, 
 | `data.html` | Sources, audits, confidentialité (Presidio, RGPD), attribution des priorités FRENCH, sélection, dataset final, empreintes |
 | `experiments.html` | Six runs SFT historiques, reconstruction des données, choix du modèle final, test gelé, analyse de fuite, reproductibilité |
 | `dpo.html` | Mécanisme du DPO sous 6 Go, paires de préférences, sept essais, saturation des préférences, choix final |
+| `base.html` | Comparaison instruct / Base : diagnostic du jeton de fin, meilleurs runs SFT et DPO, modèles servis, cas inédits, choix de la Base |
 | `architecture.html` | Chaîne de données, entraînement, API, Docker, CI/CD, monitoring, sécurité, corrections et reste à faire |
 | `resultats.html` | Résultats finaux, essai du DPO réaligné, comparaison des explications, test sur dix cas inédits, format d'entrée, limites et conclusion |
 | `synthese.html` | Bilan, réponses à la mission, recommandation pour le CHSA, feuille de route, passage à l'échelle, cadre réglementaire, risques |
-| `rapport_technique.md` | Rapport technique de 20 pages (le PDF est remis à part avec les livrables) : synthèse, données, méthodologie, résultats, mesures cloud, go / no-go, risques, feuille de route |
+| `rapport_technique.md` | Version texte du rapport technique (le PDF mis en page, 17 pages est remis à part avec les livrables) : synthèse, données, méthodologie, résultats, mesures cloud, go / no-go, risques, feuille de route |
 | `demo.html` | Préparation de la démo : checklist, lancement du service et du monitoring, onglets à ouvrir, déroulé, cas à coller, questions probables, plan de secours |
 
 ## Modèle final documenté
 
-- SFT : run `20261009-154320`, `checkpoint-450` (sélection sur le F1 macro de validation, 89,51 %)
-- DPO : DPO réaligné, adapter `dpo_aligned_adapter`, identique à `dpo_aligned_checkpoints/checkpoint-200` (plus basse loss de validation DPO) ; le premier DPO (`dpo_adapter_livre`, checkpoint-150) prend les mêmes décisions et sert de retour arrière
-- Test gelé (500 cas) : F1 macro 91,86 %, accuracy 91,80 %, sous-triage 5,80 % ; 90,83 % de F1 sans les cas trop proches du train
-- Modèle fusionné livré, même test : F1 macro 90,66 %, accuracy 90,60 %, sous-triage 7,20 % ; 492 décisions sur 500 identiques à l'adapter (McNemar p = 0,070), contrôle par `benchmarks/eval_test_gele.py`
-- Poids finaux livrés : modèle fusionné `artifacts/deployment/qwen3-triage-20261009-154320-aligned` (Qwen3-1.7B + LoRA SFT/DPO, BF16, 3,3 Go), produit par `notebooks/07_fusion_lora.ipynb` et servi par vLLM. Ce dossier est exclu de Git (`artifacts/`) : il est transmis séparément.
+- Base : `Qwen/Qwen3-1.7B-Base` (le pipeline a d'abord été mené sur la version instruct, voir `base.html`)
+- SFT : run `20261012-162715`, `checkpoint-550` (F1 macro de validation 90,93 %), lignes des jetons spéciaux entraînées
+- DPO : `dpo-ckpt550-20261012-195026`, `checkpoint-150`, choisi sur la génération (`benchmarks/compare_checkpoints.py`)
+- Modèle fusionné livré, test gelé de 500 cas : 453/500, F1 macro 90,62 %, sous-triage 5,40 %, rappel P1 93,41 % ; 492 décisions identiques à l'adapter, 500/500 via vLLM
+- Poids : `artifacts/deployment/qwen3-triage-20261012-162715-base-dpo150` (BF16, 3,3 Go), produit par `notebooks/07_fusion_lora.ipynb`, publié sur le dépôt Hugging Face privé `SteGONZALEZ/qwen3-triage-chsa` et servi par vLLM. Le dossier `artifacts/` est exclu de Git.
+- Version précédente (instruct) : run `20261009-154320`, SFT `checkpoint-450` + DPO réaligné `checkpoint-200`, 453/500, sous-triage 7,20 %.
 
 ## Provenance des chiffres
 

@@ -4,7 +4,7 @@
 
 **Un petit modèle de langage spécialisé pour classer un patient en P1, P2 ou P3 et justifier sa décision, en français et en anglais.**
 
-Qwen3-1.7B · QLoRA · SFT + DPO · vLLM · FastAPI · Docker · GitHub Actions
+Qwen3-1.7B-Base · QLoRA · SFT + DPO · vLLM · FastAPI · Docker · GitHub Actions
 
 [![CI](https://github.com/gonzalezcourrier34-glitch/medical_triage_agent/actions/workflows/ci.yml/badge.svg)](https://github.com/gonzalezcourrier34-glitch/medical_triage_agent/actions/workflows/ci.yml)
 [![CD](https://github.com/gonzalezcourrier34-glitch/medical_triage_agent/actions/workflows/cd.yml/badge.svg)](https://github.com/gonzalezcourrier34-glitch/medical_triage_agent/actions/workflows/cd.yml)
@@ -48,34 +48,35 @@ Qwen3-1.7B · QLoRA · SFT + DPO · vLLM · FastAPI · Docker · GitHub Actions
 - une **explication** courte, fondée uniquement sur les éléments du cas ;
 - une **recommandation** standardisée, ajoutée de façon déterministe par l'API.
 
-Contraintes du projet : un modèle imposé (Qwen3-1.7B), un entraînement sur une seule RTX 4050 Laptop (6 Go de VRAM),
+Contraintes du projet : un modèle imposé (Qwen3-1.7B-Base), un entraînement sur une seule RTX 4050 Laptop (6 Go de VRAM),
 des données publiques anonymisées et un protocole d'évaluation qui sépare strictement sélection et mesure.
 
 | Étape | Choix |
 |---|---|
 | Données | 4 sources publiques FR/EN, audit, détection de données personnelles (Presidio), déduplication, étiquetage selon le protocole **FRENCH v1.2** |
 | Dataset | 5 000 cas équilibrés (50 % FR / 50 % EN, un tiers par priorité) : 4 000 train · 500 validation · 500 test gelé |
-| SFT | `unsloth/Qwen3-1.7B-unsloth-bnb-4bit`, LoRA r=16 / α=32 sur 7 projections, loss pondérée sur la priorité |
-| DPO | 2 100 paires réalignées sur le protocole FRENCH, explications préférées réécrites, centrées sur l'explication (la priorité est identique dans les deux réponses), β = 0,1 ; checkpoint-200 livré |
-| Service | LoRA fusionné dans Qwen3-1.7B (BF16), servi par vLLM derrière une API FastAPI |
+| SFT | `Qwen/Qwen3-1.7B-Base` en 4 bits, LoRA r=16 / α=32 sur 7 projections + lignes des 3 jetons du chat entraînées, loss pondérée × 5 sur la priorité et la fin de réponse ; checkpoint-550 |
+| DPO | 2 100 paires réalignées sur le protocole FRENCH, explications préférées réécrites, centrées sur l'explication (la priorité est identique dans les deux réponses), β = 0,1 ; checkpoint-150 livré, choisi sur la qualité des réponses générées |
+| Service | LoRA fusionné dans Qwen3-1.7B-Base (BF16), servi par vLLM derrière une API FastAPI |
 
 ## Résultats
 
 Test gelé de **500 cas** (250 FR, 250 EN), jamais utilisé pour choisir un modèle :
 
-| Modèle | Cas justes | F1 macro | Sous-triage | Accuracy FR · EN |
+| Modèle (fusionné en BF16, servi par vLLM) | Cas justes | F1 macro | Sous-triage | Accuracy FR · EN |
 |---|---:|---:|---:|---:|
-| Adapter SFT + DPO réaligné (évaluation de référence, base 4 bits) | 459 / 500 | 91,86 % | 5,80 % | 87,6 % · 96,0 % |
-| **Modèle fusionné livré** (BF16, servi par vLLM) | **453 / 500** | **90,66 %** | **7,20 %** | 84,8 % · 96,4 % |
+| Première version : Qwen3-1.7B (instruct) | 453 / 500 | 90,66 % | 7,20 % | 84,8 % · 96,4 % |
+| **Modèle livré : Qwen3-1.7B-Base** (SFT ckpt-550 + DPO ckpt-150) | **453 / 500** | **90,62 %** | **5,40 %** | 84,8 % · 96,4 % |
 
-- La fusion garde **492 décisions sur 500** identiques à la référence (McNemar exact, p = 0,070) ; les écarts concernent des cas limites.
-- Sans les cas du test trop proches d'un cas d'entraînement, le F1 macro de référence est de 90,83 % : pas de fuite massive, un effet de gabarit d'environ 1 point.
-- Le DPO ne change aucune décision de triage : il agit sur la formulation des explications, et son effet mesuré est faible.
-  Le premier DPO (checkpoint-150) et le DPO réaligné livré prennent les mêmes 500 décisions une fois fusionnés.
-- Service en ligne (vLLM 0.31.0 sur RTX 4000 Ada, RunPod Europe, 12 octobre) : mêmes 500 décisions que le modèle évalué,
-  0 réponse invalide, latence moyenne 792 ms, P50 801 ms, P95 1 028 ms (`benchmarks/eval_test_gele.py --mode vllm`).
+- Même niveau global (McNemar p = 1,0), mais la Base sous-trie 27 cas au lieu de 36 et reconnaît 93,4 % des P1 (contre 92,2 %).
+- Le premier SFT sur la Base ne terminait aucune réponse : les jetons `<|im_start|>` et `<|im_end|>` n'y ont jamais été entraînés (norme 0,375 contre 1,6) et LoRA ne modifie pas les lignes de jetons. Correction : fin de réponse `<|im_end|>` + `<|endoftext|>`, lignes des jetons spéciaux entraînées (PEFT `trainable_token_indices`).
+- La fusion garde 492 décisions sur 500 identiques à l'adapter ; le DPO ne change aucune décision de triage et agit faiblement sur les explications.
+- Sans les cas du test trop proches d'un cas d'entraînement, le F1 baisse d'environ 1 point (effet de gabarit, pas de fuite massive).
+- Service en ligne (vLLM 0.31.0 sur NVIDIA L4, RunPod Europe, 13 octobre) : 500 décisions sur 500 identiques au modèle évalué,
+  0 réponse invalide, latence moyenne 816 ms, P50 815 ms, P95 1 126 ms (`benchmarks/eval_test_gele.py --mode vllm`).
+- Dix cas inédits en forme complète : 9 / 10, aucun sous-triage ; les explications inventent encore des faits dans 5 réponses sur 30.
 
-Le détail des runs, des erreurs et des décisions est dans la [page Expériences](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/experiments.html).
+Le détail des runs, des erreurs et des décisions est dans la [page Expériences](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/experiments.html) et la comparaison des deux modèles dans la [page Base / Instruct](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/base.html).
 
 ## Architecture
 

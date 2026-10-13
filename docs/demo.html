@@ -47,7 +47,7 @@ le trafic qui apparaît dans Grafana, puis la limite connue du modèle. Compter 
 <tbody>
 <tr><td>CI et CD au vert sur <code>master</code></td><td>GitHub › Actions</td><td>Les deux workflows sont verts ; l'étiquette de l'image est <code>api:sha-&lt;SHA complet du commit&gt;</code> (<code>git rev-parse HEAD</code>)</td></tr>
 <tr><td>Image de l'API publique</td><td>GitHub › Packages › <code>api</code></td><td>Visibilité « Public »</td></tr>
-<tr><td>Poids du modèle</td><td>Hugging Face › <code>SteGONZALEZ/qwen3-triage-chsa</code></td><td>Dernier commit « DPO realigne checkpoint-200 » ; <code>merge_metadata.json</code> cite <code>dpo_aligned_adapter</code></td></tr>
+<tr><td>Poids du modèle</td><td>Hugging Face › <code>SteGONZALEZ/qwen3-triage-chsa</code></td><td>Dernier commit « Qwen3-1.7B-Base : SFT ckpt-550 + DPO ckpt-150 » ; <code>merge_metadata.json</code> cite <code>dpo-ckpt550-20261012-195026</code> et <code>checkpoint-150</code></td></tr>
 <tr><td>Secrets RunPod</td><td>RunPod › Settings › Secrets</td><td><code>HF_TOKEN</code> (jeton Hugging Face en lecture) et <code>VLLM_API_KEY</code> présents</td></tr>
 <tr><td>Templates RunPod</td><td>RunPod › Templates</td><td><code>triage-vllm</code> et <code>triage-api</code> présents ; <code>triage-api</code> pointe vers l'image du dernier commit (tableau ci-dessous)</td></tr>
 <tr><td>Pas de volume réseau</td><td>RunPod › Storage</td><td>Aucun volume inutile (facturé même pod arrêté)</td></tr>
@@ -164,11 +164,11 @@ docker compose exec api tail -n 3 /app/logs/audit.jsonl</code></pre>
 <h2>Le déroulé, en dix minutes</h2>
 <div class="timeline">
 <div class="timeline-item"><span>0:00 • Contexte</span><h3>Le besoin du CHSA</h3><p>Onglet 1. Trier les patients en P1, P2, P3 avec une justification, sur du matériel modeste. Un petit modèle (Qwen3-1.7B) entraîné sur une carte de 6 Go.</p></div>
-<div class="timeline-item"><span>1:30 • Méthode</span><h3>Données, SFT, DPO</h3><p>Onglet 2. 5 000 cas FR/EN nettoyés et anonymisés, SFT puis DPO, choix sur la validation, mesure unique sur un test gelé : 90,66 % de F1, 7,2 % de sous-triage.</p></div>
+<div class="timeline-item"><span>1:30 • Méthode</span><h3>Données, SFT, DPO</h3><p>Onglet 2. 5 000 cas FR/EN nettoyés et anonymisés, SFT puis DPO, choix sur la validation, mesure unique sur un test gelé : 90,62 % de F1, 5,4 % de sous-triage. Puis l'onglet Base / Instruct : pourquoi la Base ne s'arrêtait pas, et la correction.</p></div>
 <div class="timeline-item"><span>3:00 • Architecture</span><h3>Du modèle au service</h3><p>Onglet 3. Modèle fusionné et vérifié, servi par vLLM sur un GPU RunPod ; API FastAPI ; Docker ; CI/CD.</p></div>
-<div class="timeline-item"><span>4:00 • Démo</span><h3>Trois cas en direct</h3><p>Onglet 4. Purpura fébrile (P1), poussée de BPCO (P2), mal de gorge en anglais (P3). Lire la priorité, l'explication, la recommandation et la latence renvoyées.</p></div>
+<div class="timeline-item"><span>4:00 • Démo</span><h3>Trois cas en direct</h3><p>Onglet 4. AVC en anglais (P1), poussée de BPCO (P2), lombalgie (P3), en forme complète. Lire la priorité, l'explication, la recommandation et la latence renvoyées.</p></div>
 <div class="timeline-item"><span>6:00 • Monitoring</span><h3>Le service observé</h3><p>Onglet 5. Les requêtes qui viennent d'arriver, la latence moyenne et p95, aucune erreur, API et vLLM disponibles. Aucune donnée patient dans les métriques. Puis le journal d'audit dans le terminal : <code>docker compose exec api tail -n 3 /app/logs/audit.jsonl</code>, une ligne par décision, avec le même <code>request_id</code> que la réponse et une empreinte à la place du texte.</p></div>
-<div class="timeline-item"><span>7:00 • Limite</span><h3>Le cas qui échoue</h3><p>Onglet 4 puis 2. Douleur thoracique : le modèle écrit « suggests a heart attack » mais répond P2. Expliquer pourquoi (mots-clés, urgences dépendantes du temps trop rares).</p></div>
+<div class="timeline-item"><span>7:00 • Limite</span><h3>Le cas qui échoue</h3><p>Onglet 4. La douleur thoracique en forme complète passe en P1 ; la même sans constantes repasse en P2 alors que l'explication écrit « suggests a heart attack ». Puis le purpura : priorité juste, mais l'explication invente « paludisme et tétanos ». Expliquer pourquoi (mots-clés, peu de constantes à l'entraînement) et ce qui est prévu.</p></div>
 <div class="timeline-item"><span>8:30 • Conclusion</span><h3>Second avis, pas décision</h3><p>Le POC est faisable et industrialisable ; il ne doit pas trier seul. Proposition : second avis pour l'IOA, filet de sécurité par règles, évaluation sur cas réels.</p></div>
 </div>
 </div>
@@ -181,13 +181,13 @@ docker compose exec api tail -n 3 /app/logs/audit.jsonl</code></pre>
 <h2>Les cas à coller dans <code>POST /triage</code></h2>
 <p class="section-intro">Format complet, le seul qui retrouve les P1 quand les constantes sont anormales (<a href="resultats.html#format">pourquoi</a>). Copier un bloc entier dans le corps de la requête de Swagger. Les résultats attendus viennent du test en local ; vLLM peut différer légèrement.</p>
 <div class="code-panel" style="margin-bottom:1.5rem">
-<div class="code-panel-header"><span>Fièvre et purpura extensif</span><small>attendu : P1 · FR · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
+<div class="code-panel-header"><span>Stroke symptoms for one hour</span><small>attendu : P1 · EN · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
 <pre style="white-space:pre-wrap;word-break:break-word"><code>{
-  &quot;language&quot;: &quot;fr&quot;,
-  &quot;question&quot;: &quot;Informations patient:\nAge: 19\n\nReported symptoms: fièvre à 39,8 °C, maux de tête, taches violacées qui s&#x27;étendent sur les jambes, somnolence depuis ce matin\nClinical signs: purpura extensif, raideur de nuque\nVital signs: temperature: 39.8, heart_rate: 132, systolic_bp: 86, diastolic_bp: 50\nMedical history: aucun&quot;
+  &quot;language&quot;: &quot;en&quot;,
+  &quot;question&quot;: &quot;Patient information:\nAge: 74\n\nReported symptoms: sudden weakness of the right arm and slurred speech for one hour\nClinical signs: right facial droop\nVital signs: systolic_bp: 178, diastolic_bp: 96, heart_rate: 88\nMedical history: atrial fibrillation, hypertension&quot;
 }</code></pre>
 </div>
-<p class="table-note" style="margin:-0.8rem 0 2rem">Cas P1 de la démo. P1 en local, explication propre et propre au patient : fièvre, taches violacées, somnolence, raideur de nuque.</p>
+<p class="table-note" style="margin:-0.8rem 0 2rem">Cas P1 de la démo. P1 sous les trois formes avec le modèle Base, explication propre : « … is a classic symptom of a stroke. You need immediate assessment to decide on treatment. »</p>
 <div class="code-panel" style="margin-bottom:1.5rem">
 <div class="code-panel-header"><span>Anaphylaxie après piqûre de guêpe</span><small>attendu : P1 · FR · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
 <pre style="white-space:pre-wrap;word-break:break-word"><code>{
@@ -195,7 +195,7 @@ docker compose exec api tail -n 3 /app/logs/audit.jsonl</code></pre>
   &quot;question&quot;: &quot;Informations patient:\nAge: 31\n\nReported symptoms: gonflement des lèvres et de la langue, sifflements respiratoires, urticaire diffuse 15 minutes après une piqûre de guêpe\nClinical signs: gêne respiratoire, voix rauque\nVital signs: heart_rate: 128, systolic_bp: 82, diastolic_bp: 45, spo2: 89\nMedical history: allergie connue aux hyménoptères&quot;
 }</code></pre>
 </div>
-<p class="table-note" style="margin:-0.8rem 0 2rem">Cas de réserve. P1 en local, mais l'explication reprend le gabarit du SFT et recopie les constantes brutes (« heart_rate: 128, systolic_bp: 82… ») : à ne montrer que pour illustrer la limite des explications.</p>
+<p class="table-note" style="margin:-0.8rem 0 2rem">Cas de réserve. P1 avec la Base en forme complète, mais l'explication propose une « intubation immédiate », un geste que le cas ne justifie pas : à ne montrer que pour illustrer la limite des explications.</p>
 <div class="code-panel" style="margin-bottom:1.5rem">
 <div class="code-panel-header"><span>Poussée de BPCO</span><small>attendu : P2 · FR · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
 <pre style="white-space:pre-wrap;word-break:break-word"><code>{
@@ -211,7 +211,7 @@ docker compose exec api tail -n 3 /app/logs/audit.jsonl</code></pre>
   &quot;question&quot;: &quot;Patient information:\nAge: 42\n\nReported symptoms: right lower abdominal pain for 18 hours, nausea, loss of appetite\nClinical signs: tenderness in the right lower quadrant\nVital signs: temperature: 38.1, heart_rate: 98, systolic_bp: 128, diastolic_bp: 78\nMedical history: none&quot;
 }</code></pre>
 </div>
-<p class="table-note" style="margin:-0.8rem 0 2rem">P2. Bon exemple en anglais.</p>
+<p class="table-note" style="margin:-0.8rem 0 2rem">P2 sous les trois formes. Avec la Base, l'explication complète évoque une « pelvic inflammatory infection » chez un homme : préférer la BPCO pour la démo.</p>
 <div class="code-panel" style="margin-bottom:1.5rem">
 <div class="code-panel-header"><span>Sore throat</span><small>attendu : P3 · EN · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
 <pre style="white-space:pre-wrap;word-break:break-word"><code>{
@@ -219,7 +219,7 @@ docker compose exec api tail -n 3 /app/logs/audit.jsonl</code></pre>
   &quot;question&quot;: &quot;Patient information:\nAge: 29\n\nReported symptoms: sore throat for two days, eating and drinking normally\nClinical signs: no difficulty breathing or swallowing\nVital signs: temperature: 37.4, heart_rate: 76\nMedical history: none&quot;
 }</code></pre>
 </div>
-<p class="table-note" style="margin:-0.8rem 0 2rem">P3 dans les trois formats.</p>
+<p class="table-note" style="margin:-0.8rem 0 2rem">P3 sous les trois formes, mais l'explication en forme complète se répète : préférer la lombalgie, ou ce cas en une phrase libre.</p>
 <div class="code-panel" style="margin-bottom:1.5rem">
 <div class="code-panel-header"><span>Lombalgie après un déménagement</span><small>attendu : P3 · FR · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
 <pre style="white-space:pre-wrap;word-break:break-word"><code>{
@@ -227,15 +227,23 @@ docker compose exec api tail -n 3 /app/logs/audit.jsonl</code></pre>
   &quot;question&quot;: &quot;Informations patient:\nAge: 45\n\nReported symptoms: douleur du bas du dos depuis 3 jours après un déménagement, sans irradiation, sans trouble urinaire\nClinical signs: marche normale, force normale des jambes\nVital signs: temperature: 36.8, heart_rate: 72\nMedical history: aucun&quot;
 }</code></pre>
 </div>
-<p class="table-note" style="margin:-0.8rem 0 2rem">P3 dans les trois formats.</p>
+<p class="table-note" style="margin:-0.8rem 0 2rem">Cas P3 de la démo. P3 sous les trois formes, explication propre.</p>
 <div class="code-panel" style="margin-bottom:1.5rem">
-<div class="code-panel-header"><span>LIMITE · Douleur thoracique (infarctus)</span><small>attendu : P1 attendu · EN · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
+<div class="code-panel-header"><span>LIMITE · Douleur thoracique sans constantes</span><small>attendu : P1 · EN · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
 <pre style="white-space:pre-wrap;word-break:break-word"><code>{
   &quot;language&quot;: &quot;en&quot;,
-  &quot;question&quot;: &quot;Patient information:\nAge: 67\n\nReported symptoms: crushing chest pain for 40 minutes radiating to the left arm, sweating\nClinical signs: pale, clammy skin\nVital signs: heart_rate: 110, systolic_bp: 92, diastolic_bp: 60, spo2: 94\nMedical history: type 2 diabetes, smoker&quot;
+  &quot;question&quot;: &quot;Patient information:\nAge: 67\n\nReported symptoms: crushing chest pain for 40 minutes radiating to the left arm, sweating&quot;
 }</code></pre>
 </div>
-<p class="table-note" style="margin:-0.8rem 0 2rem">Le modèle répond P2 tout en écrivant « suggests a heart attack ». À montrer comme la limite connue, puis renvoyer à la section « Pourquoi le modèle se trompe ».</p></div>
+<p class="table-note" style="margin:-0.8rem 0 2rem">Forme minimale (âge et symptômes). Le modèle Base répond P2 tout en écrivant « suggests a heart attack » ; avec les constantes (forme complète), il répond P1. À montrer comme la limite connue, puis renvoyer à « Pourquoi le modèle se trompe ».</p>
+<div class="code-panel" style="margin-bottom:1.5rem">
+<div class="code-panel-header"><span>Fièvre et purpura extensif</span><small>attendu : P1 · FR · <button class="copy-btn" type="button" style="background:none;border:1px solid currentColor;border-radius:6px;color:inherit;cursor:pointer;padding:0.1rem 0.5rem;margin-left:0.4rem">Copier</button></small></div>
+<pre style="white-space:pre-wrap;word-break:break-word"><code>{
+  &quot;language&quot;: &quot;fr&quot;,
+  &quot;question&quot;: &quot;Informations patient:\nAge: 19\n\nReported symptoms: fièvre à 39,8 °C, maux de tête, taches violacées qui s&#x27;étendent sur les jambes, somnolence depuis ce matin\nClinical signs: purpura extensif, raideur de nuque\nVital signs: temperature: 39.8, heart_rate: 132, systolic_bp: 86, diastolic_bp: 50\nMedical history: aucun&quot;
+}</code></pre>
+</div>
+<p class="table-note" style="margin:-0.8rem 0 2rem">Cas de réserve, pour montrer la limite des explications. P1 avec la Base, mais l'explication invente une charge virale VIH et un traitement « contre le paludisme et le tétanos ».</p></div>
 </section>
 
 <!-- 06 QUESTIONS -->
@@ -247,14 +255,14 @@ docker compose exec api tail -n 3 /app/logs/audit.jsonl</code></pre>
 <thead><tr><th>Question</th><th>Ma réponse courte</th><th>Où le montrer</th></tr></thead>
 <tbody>
 <tr><td>Pourquoi un si petit modèle ?</td><td>Contrainte de la mission : entraînement sur 6 Go de VRAM et service peu coûteux. 1,7 milliard de paramètres en QLoRA tient sur ce matériel.</td><td><a href="experiments.html">SFT</a></td></tr>
-<tr><td>Le score est-il fiable ?</td><td>Test gelé de 500 cas jamais utilisé pour choisir, analyse de fuite, vérification après fusion (492/500 décisions identiques).</td><td><a href="resultats.html">Résultats</a></td></tr>
+<tr><td>Le score est-il fiable ?</td><td>Test gelé de 500 cas jamais utilisé pour choisir, analyse de fuite, vérification après fusion (492/500 décisions identiques) et via vLLM (500/500).</td><td><a href="resultats.html">Résultats</a></td></tr>
 <tr><td>À quoi sert le DPO s'il ne change pas le triage ?</td><td>La priorité est la même dans les deux réponses et s'annule dans la loss : le DPO ne règle que le style des explications, et l'effet mesuré est faible.</td><td><a href="resultats.html#dpo-realigne">DPO réaligné</a></td></tr>
-<tr><td>Pourquoi rate-t-il l'infarctus ?</td><td>Il a appris l'urgence à partir de mots alarmants ; infarctus et AVC sont rares dans le train et sans mot de gravité.</td><td><a href="resultats.html#pourquoi">Causes</a></td></tr>
+<tr><td>Pourquoi rate-t-il l'infarctus sans constantes ?</td><td>Il a appris l'urgence à partir de mots alarmants et de constantes ; les infarctus sont rares dans le train (30 sur 4 000). Avec les constantes, la Base le classe P1.</td><td><a href="resultats.html#pourquoi">Causes</a></td></tr>
 <tr><td>Que se passe-t-il si vLLM tombe ?</td><td>L'API renvoie une erreur 503 explicite, la disponibilité passe au rouge dans Grafana ; aucune priorité n'est inventée.</td><td><a href="architecture.html">Architecture</a></td></tr>
 <tr><td>Et les données de santé ?</td><td>Données publiques anonymisées (Presidio) ; en production : hébergement HDS, AIPD, contrôle humain.</td><td><a href="synthese.html">Synthèse</a></td></tr>
-<tr><td>Pourquoi pas Qwen3-1.7B-Base, comme prévu ?</td><td>La version post-entraînée connaît déjà le format de conversation de l'API et de vLLM ; avec 4 000 exemples, l'entraînement sert au triage, pas au format. Pas de comparaison à protocole égal : c'est une limite assumée.</td><td><a href="experiments.html#base">SFT</a></td></tr>
+<tr><td>Pourquoi d'abord l'instruct, puis la Base ?</td><td>La mission impose la Base. J'ai d'abord pris la version post-entraînée, qui connaît le format de conversation. La Base ne terminait pas ses réponses : &lt;|im_end|&gt; jamais entraîné (norme 0,375), LoRA ne touche pas les lignes de jetons. Correction, même niveau (453/500), sous-triage 7,2 → 5,4 %.</td><td><a href="base.html">Base / Instruct</a></td></tr>
 <tr><td>Peut-on auditer une décision ?</td><td>Oui : chaque appel laisse une ligne avec identifiant, horodatage, versions du modèle et du prompt, priorité et latence. Le texte du patient n'y est pas, seulement son empreinte.</td><td><a href="architecture.html">Architecture</a></td></tr>
-<tr><td>Est-il prêt pour la production ?</td><td>Le POC atteint ses onze objectifs. Avant déploiement, les cibles sont plus exigeantes : rappel P1 95 %, aucun P1 en P3, sous-triage 5 %, écart FR/EN 5 points, AIPD et HDS. C'est la marge de progression de la phase 0 et 1 ; d'ici là, pas de données réelles.</td><td><a href="synthese.html#go-no-go">Go / no-go</a></td></tr>
+<tr><td>Est-il prêt pour la production ?</td><td>Le POC atteint ses objectifs (sous-triage 5,4 %, rappel P1 93,4 %, P95 1,13 s via vLLM). Avant déploiement, les cibles sont plus exigeantes : rappel P1 95 %, aucun P1 en P3, sous-triage 5 %, écart FR/EN 5 points, AIPD et HDS. C'est la marge de progression de la phase 0 et 1 ; d'ici là, pas de données réelles.</td><td><a href="synthese.html#go-no-go">Go / no-go</a></td></tr>
 <tr><td>Où est le questionnaire adaptatif ?</td><td>Hors du POC : le modèle classe un cas déjà décrit. Le test des cas inédits montre qu'un cas complet donne de meilleures réponses, d'où le questionnaire en feuille de route.</td><td><a href="resultats.html">Résultats</a></td></tr>
 <tr><td>Combien ça coûte ?</td><td>Moins de 0,60 $ de l'heure pour le GPU de démonstration ; l'API tourne sur CPU.</td><td><a href="architecture.html#cloud">Cloud</a></td></tr>
 </tbody>
