@@ -12,11 +12,11 @@ Exemples (depuis la racine du projet) :
 
 Options d'analyse (mode hf) :
   --split dpo_validation   les 420 cas de validation DPO au lieu du test gelé (ou dpo_train)
-  --adapter <dossier>      base Qwen/Qwen3-1.7B (BF16) + adapter LoRA, au lieu du modèle fusionné
+  --adapter <dossier>      base Qwen/Qwen3-1.7B-Base (BF16) + adapter LoRA, au lieu du modèle fusionné
   ex. SFT seul : --split dpo_validation --adapter artifacts/finetuning_sft_dpo/models/
                  20261009-154320/sft_checkpoints/checkpoint-450
 
-Résultats : artifacts/finetuning_sft_dpo/metrics/20261009-154320/merged_eval/<mode>[_<split>][_<adapter>]/
+Résultats : artifacts/finetuning_sft_dpo/metrics/20261012-162715/merged_eval/<mode>[_<split>][_<adapter>]/
 """
 
 import argparse
@@ -37,15 +37,22 @@ from src.api.services.prompting import (  # noqa: E402
     parse_completion,
 )
 
-RUN_DIR = ROOT / "artifacts/finetuning_sft_dpo/metrics/20261009-154320"
+# Modèle évalué : Qwen3-1.7B-Base, SFT checkpoint-550 + DPO checkpoint-150 (run 20261012-162715).
+RUN_DIR = ROOT / "artifacts/finetuning_sft_dpo/metrics/20261012-162715"
 SPLITS = {
     "test": ROOT / "data/raw/datasets/splits/sft_test.jsonl",
     "dpo_validation": ROOT / "data/raw/datasets/splits/dpo_validation.jsonl",
     "dpo_train": ROOT / "data/raw/datasets/splits/dpo_train.jsonl",
 }
-BASE_MODEL = "Qwen/Qwen3-1.7B"  # base réelle de unsloth/Qwen3-1.7B-unsloth-bnb-4bit
-MODEL_PATH = ROOT / "artifacts/deployment/qwen3-triage-20261009-154320-aligned"
-REFERENCE = RUN_DIR / "dpo_predictions.jsonl"
+BASE_MODEL = "Qwen/Qwen3-1.7B-Base"  # base des adapters (mode --adapter)
+MODEL_PATH = ROOT / "artifacts/deployment/qwen3-triage-20261012-162715-base-dpo150"
+# Référence = modèle instruct précédemment livré (fusionné, même scoring, test gelé) :
+# la comparaison McNemar dit si le modèle Base fait réellement mieux.
+REFERENCE = (
+    ROOT / "artifacts/finetuning_sft_dpo/metrics/20261009-154320/merged_eval/hf/predictions.jsonl"
+)
+# Ancien modèle (instruct) : RUN_DIR .../20261009-154320, BASE_MODEL "Qwen/Qwen3-1.7B",
+# MODEL_PATH .../qwen3-triage-20261009-154320-aligned, REFERENCE .../20261009-154320/dpo_predictions.jsonl
 LABELS = (1, 2, 3)
 MAX_LENGTH = 2_048
 
@@ -322,9 +329,12 @@ def main() -> None:
     )
     if cmp:
         print(
-            f"Mêmes décisions que la référence : {cmp['same_decision']}/{cmp['rows']} "
-            f"(référence {cmp['reference_correct']}/{cmp['rows']} justes, McNemar p = "
-            f"{cmp['mcnemar_exact_p']:.3f})"
+            f"Mêmes décisions que la référence (instruct livré) : "
+            f"{cmp['same_decision']}/{cmp['rows']} · justes : nouveau "
+            f"{report['correct'] if 'correct' in report else round(report['accuracy'] * cmp['rows'])}"
+            f"/{cmp['rows']} vs référence {cmp['reference_correct']}/{cmp['rows']} · "
+            f"seul le nouveau juste : {cmp['merged_only_correct']} · seule la référence juste : "
+            f"{cmp['reference_only_correct']} · McNemar p = {cmp['mcnemar_exact_p']:.3f}"
         )
     if "latency_ms" in report:
         lat = report["latency_ms"]

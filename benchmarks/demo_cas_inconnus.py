@@ -20,7 +20,7 @@ Modes :
 Exemples (depuis la racine du projet) :
   uv run python benchmarks/demo_cas_inconnus.py --mode local
   uv run python benchmarks/demo_cas_inconnus.py --mode api --api-url http://<hote>:8000
-Résultats : artifacts/finetuning_sft_dpo/metrics/20261009-154320/demo_cas_inconnus/
+Résultats : artifacts/finetuning_sft_dpo/metrics/20261012-162715/demo_cas_inconnus/
 """
 
 import argparse
@@ -33,7 +33,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-OUT = ROOT / "artifacts/finetuning_sft_dpo/metrics/20261009-154320/demo_cas_inconnus"
+OUT = ROOT / "artifacts/finetuning_sft_dpo/metrics/20261012-162715/demo_cas_inconnus"
 HEADERS = {"fr": "Informations patient:", "en": "Patient information:"}
 VARIANTS = ("complet", "minimal", "libre")
 

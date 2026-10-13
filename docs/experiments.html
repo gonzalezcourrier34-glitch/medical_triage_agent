@@ -11,7 +11,7 @@
 <header class="header">
 <nav class="nav container">
 <a class="logo" href="index.html">MT<span>.</span>AI</a>
-<div class="nav-links"><a href="index.html">Projet</a><a href="data.html">Données</a><a class="active" href="experiments.html">SFT</a><a href="dpo.html">DPO</a><a href="architecture.html">Architecture</a><a href="resultats.html">Résultats</a><a href="synthese.html">Synthèse</a><a href="demo.html">Démo</a></div>
+<div class="nav-links"><a href="index.html">Projet</a><a href="data.html">Données</a><a class="active" href="experiments.html">SFT</a><a href="dpo.html">DPO</a><a href="base.html">Base / Instruct</a><a href="architecture.html">Architecture</a><a href="resultats.html">Résultats</a><a href="synthese.html">Synthèse</a><a href="demo.html">Démo</a></div>
 </nav>
 </header>
 <main>
@@ -40,6 +40,17 @@ et une décision finale que j'ai dû revoir.
 </div>
 </div>
 </section>
+<!-- MISE À JOUR BASE -->
+<section class="section">
+<div class="container">
+<div class="callout">
+<span class="eyebrow">MISE À JOUR · 13 OCTOBRE</span>
+<strong>Le modèle livré part désormais de Qwen3-1.7B-Base, comme le demande la mission.</strong>
+<p>Cette page raconte le parcours SFT sur la version instruct ; le meilleur SFT Base (run 20261012-162715, checkpoint-550) est détaillé sur la page de comparaison. Modèle servi : 453/500 cas justes, 90,62 % de F1 macro, 93,41 % de rappel P1 et 5,4 % de sous-triage (contre 7,2 % pour l'instruct), au même niveau global. La validation en ligne sur RunPod est à refaire avec ces poids. <a href="base.html">Comparaison complète Base / instruct</a>.</p>
+</div>
+</div>
+</section>
+
 
 <!-- =====================================================
      01 - DEMARCHE
@@ -113,8 +124,8 @@ Mon premier run m'a montré qu'une métrique mal choisie peut raconter une histo
 <div class="about-grid">
 <div class="large-text">Comment spécialiser Qwen3-1.7B sur une RTX 4050 Laptop ?</div>
 <div>
-<p>Le modèle Qwen3-1.7B est imposé par le cadre du projet. Mon travail n'était donc pas de choisir un modèle, mais de réussir à l'entraîner sur ma machine. J'ai chargé <code>unsloth/Qwen3-1.7B-unsloth-bnb-4bit</code>, la version 4 bits de <code>Qwen/Qwen3-1.7B</code> (le modèle post-entraîné, et non la variante <code>-Base</code>) : je l'ai vérifié au moment de la fusion, quand une erreur sur ce point a fait chuter les résultats (voir <a href="architecture.html#verif-fusion">architecture</a>). Un fine-tuning complet était impossible avec 6 Go de VRAM.</p>
-<p id="base"><strong>Un écart à la mission, que j'assume.</strong> La mission prévoit la variante <code>Qwen3-1.7B-Base</code>. J'ai entraîné la version post-entraînée, pour trois raisons. Elle connaît déjà le format de conversation (balises <code>&lt;|im_start|&gt;</code>, fin <code>&lt;|im_end|&gt;</code>) qu'utilisent l'API et vLLM. Avec 4 000 exemples SFT, je préfère que l'entraînement serve à apprendre le triage plutôt que le format de réponse. Et elle suit déjà des consignes en français comme en anglais. Je n'ai pas comparé les deux variantes à protocole égal : c'est une limite, et une expérience simple à ajouter (même dataset, mêmes hyperparamètres, même test gelé). Le seul chiffre dont je dispose montre que les deux variantes ne sont pas interchangeables : fusionner mon adapter dans la Base fait tomber le modèle de 459 à 417 cas justes sur 500.</p>
+<p>La mission impose <code>Qwen3-1.7B-Base</code>, le modèle seulement pré-entraîné. Pour un premier choix, j'ai préféré travailler avec sa version post-entraînée, qui connaît déjà le langage de conversation et suit des consignes : je voulais que mes premiers runs servent à apprendre le triage, pas le format de réponse. Mon travail n'était donc pas de comparer des LLM, mais de réussir à entraîner ce modèle sur ma machine. J'ai chargé <code>unsloth/Qwen3-1.7B-unsloth-bnb-4bit</code>, la version 4 bits de <code>Qwen/Qwen3-1.7B</code> (le modèle post-entraîné, et non la variante <code>-Base</code>) : je l'ai vérifié au moment de la fusion, quand une erreur sur ce point a fait chuter les résultats (voir <a href="architecture.html#verif-fusion">architecture</a>). Un fine-tuning complet était impossible avec 6 Go de VRAM.</p>
+<p id="base"><strong>Un écart à la mission, corrigé ensuite.</strong> La mission prévoit la variante <code>Qwen3-1.7B-Base</code>. J'ai d'abord entraîné la version post-entraînée, qui connaît déjà le format de conversation (balises <code>&lt;|im_start|&gt;</code>, fin <code>&lt;|im_end|&gt;</code>) qu'utilisent l'API et vLLM : les runs de cette page la concernent. J'ai ensuite repris le même pipeline sur la Base. Son premier essai ne terminait aucune réponse, parce que la Base n'a jamais appris le jeton <code>&lt;|im_end|&gt;</code> ; une fois ce jeton entraîné, elle atteint le même niveau et sous-trie moins. C'est elle que je livre : <a href="base.html">comparaison et diagnostic</a>.</p>
 <p>J'ai choisi QLoRA : les poids de la base sont quantifiés en 4 bits et gelés, et seuls de petits adapters LoRA sont entraînés. Une fois le modèle et les adapters chargés, le notebook mesurait <strong>1,40 Go de VRAM allouée</strong>, ce qui laissait de la place pour les activations et l'optimiseur.</p>
 <p>QLoRA ne règle pas tout : les séquences longues, les activations et l'optimiseur coûtent aussi de la mémoire. Je l'ai donc combiné avec les réglages ci-dessous.</p>
 </div>
@@ -968,7 +979,7 @@ Ma première décision a été de garder le second. Je suis revenu dessus après
 <table class="story-table params-table">
 <thead><tr><th>Paramètre</th><th>Valeur</th><th>Pourquoi</th></tr></thead>
 <tbody>
-<tr><td>Modèle</td><td><code>unsloth/Qwen3-1.7B-unsloth-bnb-4bit</code> (Qwen3-1.7B, 4 bits)</td><td>Modèle imposé, chargé directement quantifié.</td></tr>
+<tr><td>Modèle</td><td><code>unsloth/Qwen3-1.7B-unsloth-bnb-4bit</code> (Qwen3-1.7B, 4 bits)</td><td>Premier choix : la version post-entraînée du modèle imposé (Qwen3-1.7B-Base), qui connaît déjà le format de conversation ; chargée directement quantifiée.</td></tr>
 <tr><td>Données</td><td>4 000 train · 500 validation · 500 test</td><td>Dataset v2, split 80/10/10 d'un corpus de 5 000 exemples.</td></tr>
 <tr><td>Équilibre</td><td>50 % FR / 50 % EN · P1/P2/P3 à un tiers chacun</td><td>Aucune langue ni priorité favorisée par le volume.</td></tr>
 <tr><td>Longueur max</td><td>2 048 tokens</td><td>Couvrir les contextes enrichis sans couper la cible.</td></tr>

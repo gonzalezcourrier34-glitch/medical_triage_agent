@@ -11,7 +11,7 @@
 <header class="header">
 <nav class="nav container">
 <a class="logo" href="index.html">MT<span>.</span>AI</a>
-<div class="nav-links"><a href="index.html">Projet</a><a href="data.html">Données</a><a href="experiments.html">SFT</a><a href="dpo.html">DPO</a><a class="active" href="architecture.html">Architecture</a><a href="resultats.html">Résultats</a><a href="synthese.html">Synthèse</a><a href="demo.html">Démo</a></div>
+<div class="nav-links"><a href="index.html">Projet</a><a href="data.html">Données</a><a href="experiments.html">SFT</a><a href="dpo.html">DPO</a><a href="base.html">Base / Instruct</a><a class="active" href="architecture.html">Architecture</a><a href="resultats.html">Résultats</a><a href="synthese.html">Synthèse</a><a href="demo.html">Démo</a></div>
 </nav>
 </header>
 <main>
@@ -32,6 +32,7 @@ dans mon dépôt, et j'indique honnêtement ce qui fonctionne, ce qui est partie
 <div class="hero-actions">
 <a class="button primary" href="#vue">Vue d'ensemble</a>
 <a class="button secondary" href="#etat">État réel et suite</a>
+<a class="button secondary" href="#decisions">Outils, paramètres et décisions</a>
 </div>
 </div>
 </section>
@@ -172,7 +173,7 @@ Le seul lien entre les deux est l'adapter exporté.
 <div class="about-grid">
 <div class="large-text">QLoRA sous 6 Go, et un manifeste pour chaque run.</div>
 <div>
-<p>Qwen3-1.7B est chargé en 4 bits avec Unsloth (<code>unsloth/Qwen3-1.7B-unsloth-bnb-4bit</code>, la version 4 bits de <code>Qwen/Qwen3-1.7B</code>), et seuls des adapters LoRA (rang 16, alpha 32, 7 projections) sont entraînés. Le SFT est suivi du DPO, sur le même test gelé.</p>
+<p>Le modèle livré part de <code>Qwen/Qwen3-1.7B-Base</code>, chargé en 4 bits avec Unsloth ; seuls des adapters LoRA (rang 16, alpha 32, 7 projections) et les lignes des trois jetons spéciaux du chat sont entraînés. Le même pipeline a d'abord été mené sur la version instruct (<code>unsloth/Qwen3-1.7B-unsloth-bnb-4bit</code>) : la <a href="base.html">comparaison des deux</a> explique le choix. Le SFT est suivi du DPO, sur le même test gelé.</p>
 <p>Après avoir perdu la trace de certains anciens essais, j'ai rendu chaque run traçable : configuration, environnement (Python 3.13.2, PyTorch 2.11.0, CUDA 13.0), empreintes des splits et checkpoint retenu sont écrits dans un manifeste JSON et suivis dans le projet W&amp;B <code>medical-triage-qwen3</code>.</p>
 <p>Les dépendances sont séparées en groupes uv (<code>data</code>, <code>training</code>, <code>dev</code>, <code>ci</code>) : l'image de l'API n'embarque ni PyTorch ni les outils d'entraînement.</p>
 <a class="project-link" href="experiments.html">Voir les expérimentations SFT →</a>
@@ -582,6 +583,82 @@ Le seul lien entre les deux est l'adapter exporté.
 </section>
 
 <!-- NAVIGATION -->
+
+<!-- 11 OUTILS, PARAMÈTRES ET DÉCISIONS -->
+<section class="section section-alt" id="decisions">
+<div class="container">
+<p class="section-number">11</p>
+<h2>Outils, paramètres et décisions</h2>
+<p class="section-intro">Cette section rassemble en un seul endroit ce que j'ai utilisé, les réglages du modèle livré, et l'enchaînement des décisions qui y ont mené : pour chaque test, ce que j'ai observé et ce que j'ai changé.</p>
+
+<h3>Les outils</h3>
+<table class="story-table params-table">
+<thead><tr><th>Usage</th><th>Outil et version</th><th>Pourquoi celui-là</th></tr></thead>
+<tbody>
+<tr><td>Environnement</td><td>Python 3.13.2 · <code>uv</code> (groupes <code>data</code>, <code>training</code>, <code>dev</code>, <code>ci</code>, fichier de verrouillage)</td><td>Installations reproductibles et rapides ; l'image de l'API n'embarque que ses dépendances.</td></tr>
+<tr><td>Données</td><td>pandas 3.0.6 · datasets 4.3.0 · RapidFuzz 3.14.6 (quasi-doublons) · langdetect</td><td>Audit, dédoublonnage et découpage des 164 477 lignes sources.</td></tr>
+<tr><td>Confidentialité</td><td>Presidio 2.2.362 · spaCy 3.8.16 (modèles FR et EN)</td><td>Détection d'informations personnelles en deux langues, complétée par mes propres détecteurs (NIR, identifiant patient).</td></tr>
+<tr><td>Étiquetage</td><td>Moteur de règles <code>scr/triage</code> · grille FRENCH 1.2 (115 motifs)</td><td>Des priorités issues d'un protocole versionné, avec un niveau de confiance.</td></tr>
+<tr><td>Entraînement</td><td>PyTorch 2.11.0 (CUDA 13.0) · Transformers 5.5.0 · PEFT 0.19.1 · Unsloth 2026.9.12 · bitsandbytes 0.49.2 · Accelerate 1.15.0</td><td>QLoRA 4 bits sur 6 Go ; Unsloth réduit le temps et la mémoire ; PEFT apporte LoRA et l'entraînement de lignes de jetons.</td></tr>
+<tr><td>Suivi d'expériences</td><td>Weights &amp; Biases 0.23.1 · manifeste JSON par run</td><td>Courbes, configurations et empreintes des données pour chaque run.</td></tr>
+<tr><td>Matériel</td><td>RTX 4050 Laptop 6 Go (entraînement) · RTX 4000 Ada 20 Go sur RunPod (service)</td><td>Entraîner en local, servir sur une carte louée à l'heure.</td></tr>
+<tr><td>Service</td><td>vLLM 0.31.0 · FastAPI 0.142.1 · Pydantic 2.13.5 · Uvicorn 0.54.0</td><td>vLLM pour l'inférence (API compatible OpenAI) ; FastAPI pour valider, tracer et répondre.</td></tr>
+<tr><td>Conteneurs et observabilité</td><td>Docker Compose (profils) · prometheus-fastapi-instrumentator 7.1.0 · Prometheus · Grafana</td><td>Lancer seulement ce qu'il faut ; suivre trafic, latence et erreurs.</td></tr>
+<tr><td>Qualité et livraison</td><td>GitHub Actions · Ruff 0.17.0 · pytest 9.1.1 (couverture ≥ 90 %) · GHCR · Hugging Face Hub (dépôt privé)</td><td>Chaque push est vérifié ; l'image et les poids sont publiés de façon traçable.</td></tr>
+</tbody>
+</table>
+
+<h3>Les paramètres du modèle livré</h3>
+<table class="story-table params-table">
+<thead><tr><th>Paramètre</th><th>Valeur</th><th>Pourquoi</th></tr></thead>
+<tbody>
+<tr><td>Modèle de départ</td><td><code>Qwen/Qwen3-1.7B-Base</code>, 4 bits NF4, calcul BF16</td><td>Demandé par la mission ; 4 bits pour tenir dans 6 Go (<a href="base.html">comparaison avec l'instruct</a>).</td></tr>
+<tr><td>LoRA</td><td>r = 16 · α = 32 · dropout 0,05 · q, k, v, o, gate, up, down</td><td>Assez de capacité pour la tâche et le style des explications, environ 1 % des paramètres.</td></tr>
+<tr><td>Jetons spéciaux</td><td>Lignes de <code>&lt;|endoftext|&gt;</code>, <code>&lt;|im_start|&gt;</code>, <code>&lt;|im_end|&gt;</code> entraînées (6 144 paramètres)</td><td>Jamais entraînées dans la Base ; sans elles, le modèle ne termine pas ses réponses.</td></tr>
+<tr><td>Fin de réponse</td><td><code>&lt;|im_end|&gt;</code> puis <code>&lt;|endoftext|&gt;</code></td><td>Respecter le template Qwen, avec un filet de sécurité sur un jeton déjà maîtrisé.</td></tr>
+<tr><td>SFT · loss</td><td>Réponse assistant seule ; poids 5 sur la priorité, P1 et les jetons de fin</td><td>La priorité ne fait que quelques jetons : sans poids, elle pèse peu face à l'explication.</td></tr>
+<tr><td>SFT · optimisation</td><td>LR 2 × 10⁻⁴ cosine, warmup 5 % · batch 1 × accumulation 16 · AdamW 8 bits · clipping 1,0 · 2 048 jetons max</td><td>Valeurs usuelles pour LoRA ; batch effectif 16 sans dépasser la mémoire.</td></tr>
+<tr><td>SFT · sélection</td><td>Évaluation tous les 50 pas, meilleur F1 macro de validation, arrêt après 3 évaluations sans progrès · 4 époques prévues, arrêt à 2,8 · checkpoint-550</td><td>Choisir sans regarder le test ; ne pas payer des heures pour rien.</td></tr>
+<tr><td>DPO</td><td>β 0,1 · LR 5 × 10⁻⁶ cosine · 1 époque (210 pas) · batch 1 × accumulation 8 · référence pré-calculée · poids priorité 0,2, explication 1</td><td>Ajuster l'explication sans déplacer le triage ; une seule copie du modèle en mémoire.</td></tr>
+<tr><td>DPO · sélection</td><td>checkpoint-150, choisi sur la génération (ancrage, formules, copies) sur 60 cas</td><td>La loss DPO était saturée et ne départageait plus les checkpoints.</td></tr>
+<tr><td>Service</td><td>Fusion BF16 (<code>merge_and_unload</code>) · vLLM, contexte 2 048 · température 0 · arrêt sur 151645 et 151643 · <code>enable_thinking=False</code></td><td>Un modèle autonome, des réponses déterministes, la même mise en forme qu'à l'entraînement.</td></tr>
+</tbody>
+</table>
+
+<h3>Le fil des décisions</h3>
+<p>Chaque ligne est un test, ce qu'il m'a montré et ce que j'ai décidé. Le détail des runs est sur les pages <a href="experiments.html">SFT</a>, <a href="dpo.html">DPO</a> et <a href="base.html">Base / Instruct</a>.</p>
+<table class="story-table params-table">
+<thead><tr><th>Quand</th><th>Test</th><th>Constat</th><th>Décision et pourquoi</th></tr></thead>
+<tbody>
+<tr><td>25 sept.</td><td>Run 01 : priorité seule, extraction large</td><td>94,5 % de jetons corrects mais 52 % de bonnes priorités</td><td>Juger chaque run sur le F1 macro et le sous-triage, et mesurer la priorité par scoring conditionnel : la métrique de jetons racontait une histoire fausse.</td></tr>
+<tr><td>27 sept.</td><td>Run 02 : poids de loss 15 / 10 / 10 sur la priorité</td><td>+26 points de F1, mais réponses qui ne s'arrêtent pas</td><td>Garder une pondération de la priorité, en cherchant l'équilibre avec le texte et la fin de réponse.</td></tr>
+<tr><td>29 sept.</td><td>Run 03 : poids 3, poids sur le jeton de fin, warmup</td><td>−14 points, trois changements à la fois</td><td>Une variable à la fois, et lire les sorties avant de toucher aux réglages.</td></tr>
+<tr><td>Fin sept.</td><td>Cible PRIORITY + EXPLANATION</td><td>Explications qui décrivent le texte au lieu de justifier la priorité, présentes dans mes cibles</td><td>Réécrire les cibles : le modèle apprend exactement ce qu'on lui montre.</td></tr>
+<tr><td>1er–3 oct.</td><td>Runs 04 à 06 : patient projeté, Unsloth, réextraction, plus d'époques</td><td>F1 entre 66 et 72 % ; 5 époques n'apportent rien</td><td>Garder Unsloth (coût), abandonner la piste « plus d'époques », retravailler les données.</td></tr>
+<tr><td>7 oct.</td><td>Pipeline structuré</td><td>Runs difficiles à comparer après coup</td><td>Notebook unique, manifeste par run (configuration, empreintes SHA-256), W&amp;B, évaluation tous les 50 pas, arrêt anticipé.</td></tr>
+<tr><td>8 oct.</td><td>Run à 95,6 % de F1 en validation</td><td>+19 points en un jour avec un seul changement de données</td><td>Run écarté : fuite suspectée. Contrôles de chevauchement et de quasi-doublons ajoutés.</td></tr>
+<tr><td>9 oct.</td><td>Dataset v2, SFT pondéré contre non pondéré</td><td>Pondéré : 89,5 % de F1 en validation contre 86,8 %</td><td>Pondération retenue, après avoir vérifié que le DPO ne change rien au triage.</td></tr>
+<tr><td>25 sept.–10 oct.</td><td>Sept essais DPO</td><td>Jamais plus d'un point d'écart ; jusqu'à 11 h par essai</td><td>Référence pré-calculée (mémoire), une seule époque, effort porté sur les paires plutôt que sur la durée.</td></tr>
+<tr><td>10 oct.</td><td>Suivi du triage pendant le DPO</td><td>Étiquettes des paires conformes à FRENCH dans 42 % des cas</td><td>Suivre le triage sur la validation SFT, et chaque jeu seulement pour ce pour quoi il a été construit.</td></tr>
+<tr><td>Mise en service</td><td>Première fusion pour vLLM</td><td>459 → 417 cas justes : adapter fusionné dans la mauvaise base</td><td>Vérifier la base exacte et rejouer le test gelé après chaque fusion (<code>eval_test_gele.py</code>, McNemar) ; déclarer les deux jetons de fin dans <code>generation_config.json</code>.</td></tr>
+<tr><td>Service</td><td>API</td><td>Le LLM pourrait inventer une consigne</td><td>Recommandation fixe par priorité et par langue, hors du modèle ; moteur simulé pour la CI ; ports limités à la machine locale.</td></tr>
+<tr><td>12 oct.</td><td>Traçabilité des décisions</td><td>Aucune trace par requête</td><td>Journal d'audit JSONL : versions, priorité, latence, empreinte SHA-256 de l'entrée, jamais le texte patient.</td></tr>
+<tr><td>12 oct.</td><td>Paires DPO reconstruites selon FRENCH</td><td>Même triage, explications à peine différentes</td><td>DPO réaligné retenu : données conformes au protocole, effet honnêtement faible.</td></tr>
+<tr><td>12 oct.</td><td>Service vLLM sur RunPod</td><td>500/500 décisions identiques, P95 1,03 s</td><td>Version de vLLM figée (0.31.0) dans Compose et le template.</td></tr>
+<tr><td>12 oct.</td><td>SFT sur Qwen3-1.7B-Base</td><td>Bon triage, mais 0 réponse sur 9 terminée</td><td>Diagnostic : lignes de <code>&lt;|im_end|&gt;</code> jamais entraînées (norme 0,375). Correction : fin <code>&lt;|im_end|&gt;</code> + <code>&lt;|endoftext|&gt;</code>, lignes spéciales entraînées, poids 5.</td></tr>
+<tr><td>12 oct.</td><td>Nouveaux DPO sur un même SFT</td><td>Un DPO écrasait le précédent</td><td>Un dossier par DPO (checkpoints, adapter, métriques) identifié par son checkpoint source et sa date.</td></tr>
+<tr><td>13 oct.</td><td>Checkpoints DPO de la Base</td><td>Loss saturée, triage identique</td><td>Choisir sur la génération (<code>compare_checkpoints.py</code>) : checkpoint-150.</td></tr>
+<tr><td>13 oct.</td><td>Base fusionnée contre instruct fusionné</td><td>453 contre 453 cas justes ; sous-triage 5,4 % contre 7,2 %</td><td>Livrer la Base : conforme à la mission, même performance, erreurs moins dangereuses. Validation en ligne sur RunPod à refaire.</td></tr>
+</tbody>
+</table>
+<div class="callout subtle">
+<span class="eyebrow">CE QUI A VRAIMENT FAIT BOUGER LES RÉSULTATS</span>
+<strong>Les données et la supervision, pas les hyperparamètres.</strong>
+<p>Les gros gains viennent de la pondération de la priorité, de la réécriture des cibles et de la reconstruction du dataset. Les époques, le moteur ou le DPO n'ont jamais déplacé le F1 de plus de quelques points. Le passage à la Base l'a confirmé : une fois le jeton de fin réglé, le même pipeline donne le même niveau.</p>
+</div>
+</div>
+</section>
+
 <section class="section contact">
 <div class="container">
 <p class="eyebrow">PARCOURS DU PROJET</p>

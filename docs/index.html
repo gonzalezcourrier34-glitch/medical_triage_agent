@@ -11,7 +11,7 @@
 <header class="header">
 <nav class="nav container">
 <a class="logo" href="index.html">MT<span>.</span>AI</a>
-<div class="nav-links"><a class="active" href="index.html">Projet</a><a href="data.html">Données</a><a href="experiments.html">SFT</a><a href="dpo.html">DPO</a><a href="architecture.html">Architecture</a><a href="resultats.html">Résultats</a><a href="synthese.html">Synthèse</a><a href="demo.html">Démo</a></div>
+<div class="nav-links"><a class="active" href="index.html">Projet</a><a href="data.html">Données</a><a href="experiments.html">SFT</a><a href="dpo.html">DPO</a><a href="base.html">Base / Instruct</a><a href="architecture.html">Architecture</a><a href="resultats.html">Résultats</a><a href="synthese.html">Synthèse</a><a href="demo.html">Démo</a></div>
 </nav>
 </header>
 <main>
@@ -35,6 +35,17 @@ Sur un test gelé de 500 cas, mon modèle final atteint <strong>91,86 % de F1 ma
 </div>
 </div>
 </section>
+<!-- MISE À JOUR BASE -->
+<section class="section">
+<div class="container">
+<div class="callout">
+<span class="eyebrow">MISE À JOUR · 13 OCTOBRE</span>
+<strong>Le modèle livré part désormais de Qwen3-1.7B-Base, comme le demande la mission.</strong>
+<p>Le parcours décrit sur ce site a d'abord été mené sur la version instruct, puis repris sur la Base après correction de son jeton de fin. Modèle servi : 453/500 cas justes, 90,62 % de F1 macro, 93,41 % de rappel P1 et 5,4 % de sous-triage (contre 7,2 % pour l'instruct), au même niveau global. La validation en ligne sur RunPod est à refaire avec ces poids. <a href="base.html">Comparaison complète Base / instruct</a>.</p>
+</div>
+</div>
+</section>
+
 
 <!-- 01 LE PROJET -->
 <section class="section section-alt">
@@ -90,7 +101,7 @@ Sur un test gelé de 500 cas, mon modèle final atteint <strong>91,86 % de F1 ma
 <p class="section-number">03</p>
 <h2>Mes contraintes</h2>
 <div class="skills-grid">
-<div class="skill-group"><h3>Modèle imposé</h3><div class="constraint-value">Qwen3-1.7B</div><p class="constraint-text">Je ne compare pas plusieurs LLM : je spécialise celui-ci, dans sa version 4 bits Unsloth.</p></div>
+<div class="skill-group"><h3>Modèle imposé</h3><div class="constraint-value">Qwen3-1.7B-Base</div><p class="constraint-text">Je ne compare pas plusieurs LLM : je spécialise celui-ci, en 4 bits. J'ai d'abord travaillé avec sa version post-entraînée, qui connaît déjà le langage de conversation, puis je suis revenu à la Base, livrée.</p></div>
 <div class="skill-group"><h3>Matériel</h3><div class="constraint-value">RTX 4050 · 6 Go</div><p class="constraint-text">Tout l'entraînement tourne en local, ce qui impose QLoRA et un batch GPU de 1.</p></div>
 <div class="skill-group"><h3>Langues</h3><div class="constraint-value">FR + EN</div><p class="constraint-text">Les sources françaises et anglaises n'ont pas la même nature : c'est devenu un fil conducteur.</p></div>
 <div class="skill-group"><h3>Sécurité</h3><div class="constraint-value">Sous-triage minimal</div><p class="constraint-text">Un bon score global ne suffit pas : je suis les erreurs graves une par une.</p></div>
