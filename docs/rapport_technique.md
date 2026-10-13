@@ -273,7 +273,7 @@ Le 12 octobre, les 500 cas du test gelé ont été envoyés au pod vLLM depuis l
 
 | Mesure (vLLM, RunPod, 500 cas)          | Instruct (12 octobre)                                                                                  | Base (livré)                                                                             |
 |-----------------------------------------|--------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| Environnement                           | RTX 4000 Ada (20 Go, 0,28 \$/h), Europe                                                                | **[GPU à préciser]**, Europe                                                       |
+| Environnement                           | RTX 4000 Ada (20 Go, 0,28 \$/h), Europe                                                                | NVIDIA L4 (24 Go), Europe                                                                |
 | Service                                 | vLLM 0.31.0, BF16, contexte 2 048 jetons, température 0, arrêt sur \<\|im_end\|\> et \<\|endoftext\|\> |                                                                                          |
 | Démarrage                               | ≈ 2 min jusqu'au service prêt · moteur initialisé en 40 s · 3,5 Go de mémoire GPU                      | ≈ 1 min 30 s du lancement de vLLM au service prêt, téléchargement des poids Base compris |
 | Latence par requête                     | moyenne 792 ms · P50 801 ms · P95 1 028 ms · max 1 733 ms                                              | **moyenne 816 ms · P50 815 ms · P95 1 126 ms · max 1 842 ms**                            |
