@@ -242,18 +242,18 @@ réglages, puis explique pourquoi je livre la Base.
 <section class="section" id="runpod">
 <div class="container">
 <p class="section-number">09</p>
-<h2>Validation en ligne · à compléter</h2>
-<p class="section-intro">Les poids Base fusionnés sont publiés sur le dépôt Hugging Face privé <code>SteGONZALEZ/qwen3-triage-chsa</code> (la version instruct reste dans l'historique du dépôt). Il reste à rejouer le test gelé sur le service vLLM de RunPod, en génération, comme pour l'instruct.</p>
+<h2>Validation en ligne</h2>
+<p class="section-intro">Les poids Base fusionnés sont publiés sur le dépôt Hugging Face privé <code>SteGONZALEZ/qwen3-triage-chsa</code> (la version instruct reste dans l'historique du dépôt). Le 13 octobre, j'ai rejoué le test gelé sur le service vLLM de RunPod, en génération, comme pour l'instruct.</p>
 <table class="story-table params-table">
 <thead><tr><th>Mesure sur vLLM (RunPod, 500 cas)</th><th>Instruct (12 octobre)</th><th>Base</th></tr></thead>
 <tbody>
-<tr><td>Décisions identiques au modèle fusionné</td><td>500/500</td><td>à mesurer</td></tr>
-<tr><td>Cas justes · sous-triage</td><td>453 · 7,2 %</td><td>attendu 453 · 5,4 %</td></tr>
-<tr><td>Réponses invalides (fin de génération)</td><td>0</td><td>à mesurer</td></tr>
-<tr><td>Latence P95</td><td>1,03 s</td><td>à mesurer</td></tr>
+<tr><td>Décisions identiques au modèle fusionné</td><td>500/500</td><td><strong>500/500</strong></td></tr>
+<tr><td>Cas justes · sous-triage</td><td>453 · 7,2 %</td><td><strong>453 · 5,4 %</strong></td></tr>
+<tr><td>Réponses invalides (fin de génération)</td><td>0</td><td><strong>0</strong></td></tr>
+<tr><td>Latence P95</td><td>1,03 s</td><td><strong>1,13 s</strong> (moyenne 816 ms, 46 jetons par réponse)</td></tr>
 </tbody>
 </table>
-<p class="table-note">Commande : <code>uv run python benchmarks/eval_test_gele.py --mode vllm --vllm-url https://&lt;pod&gt;-8000.proxy.runpod.net/v1</code>. Ce test vérifie aussi que vLLM s'arrête bien sur <code>&lt;|im_end|&gt;</code> avec ce modèle.</p>
+<p class="table-note">Commande : <code>uv run python benchmarks/eval_test_gele.py --mode vllm --vllm-url https://&lt;pod&gt;-8000.proxy.runpod.net/v1</code>. Résultat : le modèle Base s'arrête bien sur <code>&lt;|im_end|&gt;</code> une fois servi, et prend exactement les mêmes décisions que par scoring. Démarrage d'environ 1 min 30 s, poids compris.</p>
 </div>
 </section>
 

@@ -269,17 +269,18 @@ Deux chaînes séparées : l'entraînement sur le poste, le service dans des con
 
 ## 11. Mesures en conditions réelles : service et cas inédits
 
-Le 12 octobre, les 500 cas du test gelé ont été envoyés au pod vLLM depuis le poste, à travers le proxy RunPod, comme le ferait l'API : la priorité est choisie en générant le texte, comme en production. La même mesure est à refaire avec les poids Base.
+Le 12 octobre, les 500 cas du test gelé ont été envoyés au pod vLLM depuis le poste, à travers le proxy RunPod, comme le ferait l'API : la priorité est choisie en générant le texte, comme en production. Je l'ai refaite le 13 octobre avec les poids Base : mêmes décisions que le modèle fusionné, aucune réponse illisible, et le modèle s'arrête bien sur `<|im_end|>`.
 
-| Mesure (vLLM, RunPod, 500 cas)          | Instruct (12 octobre)                                                                                         | Base (livré)                                          |
-|-----------------------------------------|---------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
-| Environnement                           | RTX 4000 Ada (20 Go, 0,28 \$/h), datacenter européen, vLLM 0.31.0, BF16, contexte 2 048 jetons, température 0 |                                                       |
-| Démarrage                               | ≈ 2 min jusqu'au service prêt · moteur initialisé en 40 s · 3,5 Go de mémoire GPU                             | **[à compléter]**                               |
-| Latence par requête                     | moyenne 792 ms · P50 801 ms · P95 1 028 ms · max 1 733 ms                                                     | **[à compléter]**                               |
-| Génération                              | 44 jetons par réponse en moyenne, ≈ 56 jetons/s                                                               | **[à compléter]**                               |
-| Cas justes · F1 · sous-triage           | 453 / 500 · 90,66 % · 7,2 %                                                                                   | attendu 453 · 90,62 % · 5,4 % **[à compléter]** |
-| Décisions identiques au modèle fusionné | 500 / 500                                                                                                     | **[à compléter]**                               |
-| Réponses sans priorité lisible          | 0 / 500                                                                                                       | **[à compléter]**                               |
+| Mesure (vLLM, RunPod, 500 cas)          | Instruct (12 octobre)                                                                                  | Base (livré)                                                                             |
+|-----------------------------------------|--------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| Environnement                           | RTX 4000 Ada (20 Go, 0,28 \$/h), Europe                                                                | **[GPU à préciser]**, Europe                                                       |
+| Service                                 | vLLM 0.31.0, BF16, contexte 2 048 jetons, température 0, arrêt sur \<\|im_end\|\> et \<\|endoftext\|\> |                                                                                          |
+| Démarrage                               | ≈ 2 min jusqu'au service prêt · moteur initialisé en 40 s · 3,5 Go de mémoire GPU                      | ≈ 1 min 30 s du lancement de vLLM au service prêt, téléchargement des poids Base compris |
+| Latence par requête                     | moyenne 792 ms · P50 801 ms · P95 1 028 ms · max 1 733 ms                                              | **moyenne 816 ms · P50 815 ms · P95 1 126 ms · max 1 842 ms**                            |
+| Génération                              | 44 jetons par réponse en moyenne, ≈ 56 jetons/s                                                        | 46 jetons par réponse en moyenne, ≈ 56 jetons/s                                          |
+| Cas justes · F1 · sous-triage           | 453 / 500 · 90,66 % · 7,2 %                                                                            | **453 / 500 · 90,62 % · 5,4 %**                                                          |
+| Décisions identiques au modèle fusionné | 500 / 500                                                                                              | **500 / 500**                                                                            |
+| Réponses sans priorité lisible          | 0 / 500                                                                                                | **0 / 500**                                                                              |
 
 ### Dix cas inédits, écrits pour la démonstration
 
@@ -301,19 +302,19 @@ Que le modèle servi en génération prend les mêmes décisions que le modèle 
 
 **Les objectifs du POC sont atteints. Les cibles de déploiement, plus exigeantes, fixent la marge de progression : tant qu'elles ne sont pas atteintes, le modèle ne traite pas de données réelles.**
 
-| Critère                     | Objectif POC                   | Modèle livré (Base)                                | POC     | Cible de déploiement          |
-|-----------------------------|--------------------------------|----------------------------------------------------|---------|-------------------------------|
-| Fidélité du modèle servi    | ≥ 98 % de décisions identiques | 98,4 % après fusion ; vLLM **[à compléter]** | atteint | 100 %                         |
-| Performance globale         | F1 macro ≥ 85 %                | 90,62 %                                            | atteint | ≥ 92 %                        |
-| Rappel des P1               | ≥ 90 %                         | 93,4 %                                             | atteint | ≥ 95 %                        |
-| P1 classés P3               | ≤ 5 % des P1                   | 3,0 % (5 sur 167)                                  | atteint | aucun                         |
-| Sous-triage                 | ≤ 10 %                         | 5,4 %                                              | atteint | ≤ 5 %                         |
-| Bilinguisme                 | ≥ 80 % par langue              | FR 84,8 % · EN 96,4 %                              | atteint | écart ≤ 5 points              |
-| Réponses invalides via vLLM | aucune sur 500                 | instruct 0 ; Base **[à compléter]**          |         | aucune sous charge            |
-| Latence                     | P95 ≤ 3 s                      | instruct 1,03 s ; Base **[à compléter]**     |         | P95 ≤ 2 s sous charge         |
-| Qualité du code             | CI verte, couverture ≥ 90 %    | CI verte, 40 tests                                 | atteint | tests de charge en CI         |
-| Traçabilité                 | chaque décision journalisée    | journal d'audit                                    | atteint | journal centralisé, HMAC      |
-| Données et conformité       | données publiques anonymisées  | Presidio FR / EN                                   | atteint | AIPD validée, hébergement HDS |
+| Critère                     | Objectif POC                   | Modèle livré (Base)                      | POC     | Cible de déploiement          |
+|-----------------------------|--------------------------------|------------------------------------------|---------|-------------------------------|
+| Fidélité du modèle servi    | ≥ 98 % de décisions identiques | 98,4 % après fusion ; 500 / 500 via vLLM | atteint | 100 %                         |
+| Performance globale         | F1 macro ≥ 85 %                | 90,62 %                                  | atteint | ≥ 92 %                        |
+| Rappel des P1               | ≥ 90 %                         | 93,4 %                                   | atteint | ≥ 95 %                        |
+| P1 classés P3               | ≤ 5 % des P1                   | 3,0 % (5 sur 167)                        | atteint | aucun                         |
+| Sous-triage                 | ≤ 10 %                         | 5,4 %                                    | atteint | ≤ 5 %                         |
+| Bilinguisme                 | ≥ 80 % par langue              | FR 84,8 % · EN 96,4 %                    | atteint | écart ≤ 5 points              |
+| Réponses invalides via vLLM | aucune sur 500                 | 0 sur 500                                | atteint | aucune sous charge            |
+| Latence                     | P95 ≤ 3 s                      | P95 1,13 s                               | atteint | P95 ≤ 2 s sous charge         |
+| Qualité du code             | CI verte, couverture ≥ 90 %    | CI verte, 40 tests                       | atteint | tests de charge en CI         |
+| Traçabilité                 | chaque décision journalisée    | journal d'audit                          | atteint | journal centralisé, HMAC      |
+| Données et conformité       | données publiques anonymisées  | Presidio FR / EN                         | atteint | AIPD validée, hébergement HDS |
 
 La mission demande de définir ces seuils sans les fixer : ce sont les miens. Les objectifs POC marquent le passage à un modèle exploitable (mes premiers runs étaient à 52 % de F1 et 21 % de sous-triage) ; les cibles de déploiement reprennent pour le sous-triage l'ordre de grandeur visé en traumatologie (5 % au plus) et devront être validées avec les urgentistes du CHSA.
 
