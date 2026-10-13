@@ -24,7 +24,7 @@ Ouvrir `index.html` dans un navigateur : aucune dépendance externe, aucun CDN, 
 - SFT : run `20261012-162715`, `checkpoint-550` (F1 macro de validation 90,93 %), lignes des jetons spéciaux entraînées
 - DPO : `dpo-ckpt550-20261012-195026`, `checkpoint-150`, choisi sur la génération (`benchmarks/compare_checkpoints.py`)
 - Modèle fusionné livré, test gelé de 500 cas : 453/500, F1 macro 90,62 %, sous-triage 5,40 %, rappel P1 93,41 % ; 492 décisions identiques à l'adapter, 500/500 via vLLM
-- Datasets (splits SFT et DPO, datasets complets, empreintes) : https://huggingface.co/datasets/SteGONZALEZ/medical_triage_agent
+- Datasets `sft.jsonl` et `dpo.jsonl` (découpage dans le champ `final_split`) : https://huggingface.co/datasets/SteGONZALEZ/medical_triage_agent
 - Poids : `artifacts/deployment/qwen3-triage-20261012-162715-base-dpo150` (BF16, 3,3 Go), produit par `notebooks/07_fusion_lora.ipynb`, publié sur le dépôt Hugging Face privé `SteGONZALEZ/qwen3-triage-chsa` et servi par vLLM. Le dossier `artifacts/` est exclu de Git.
 - Version précédente (instruct) : run `20261009-154320`, SFT `checkpoint-450` + DPO réaligné `checkpoint-200`, 453/500, sous-triage 7,20 %.
 
