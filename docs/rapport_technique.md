@@ -400,9 +400,8 @@ La prochaine étape n'est pas technique : c'est l'évaluation sur des cas réels
 | Instruct · Base        | Base : modèle seulement pré-entraîné sur du texte ; instruct : version déjà entraînée par l'éditeur à converser et suivre des consignes.         |
 | Jeton · embedding      | Le texte est découpé en jetons ; chaque jeton a une ligne de nombres (embedding) apprise au pré-entraînement.                                    |
 | F1 macro · sous-triage | Moyenne des F1 de P1, P2, P3 à poids égal ; part des patients classés à une priorité trop basse.                                                 |
-| Scoring conditionnel   | Mesurer la priorité en comparant la probabilité des trois réponses possibles, sans génération libre.                                             |
 | Fusion · vLLM          | Intégrer les matrices LoRA dans les poids du modèle ; vLLM est le serveur d'inférence qui sert ce modèle fusionné.                               |
 | Test gelé · McNemar    | 500 cas jamais utilisés pour un choix, mesurés une seule fois ; test statistique qui compare deux modèles cas par cas.                           |
 | AIPD · HDS             | Analyse d'impact sur la protection des données ; hébergement certifié pour les données de santé.                                                 |
 
-Détail des expériences, des scripts de mesure et du déploiement : site de documentation [gonzalezcourrier34-glitch.github.io/medical_triage_agent](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/) · code : [github.com/gonzalezcourrier34-glitch/medical_triage_agent](https://github.com/gonzalezcourrier34-glitch/medical_triage_agent).
+Datasets SFT et DPO publiés : [huggingface.co/datasets/SteGONZALEZ/medical_triage_agent](https://huggingface.co/datasets/SteGONZALEZ/medical_triage_agent). Détail des expériences, des scripts de mesure et du déploiement : site de documentation [gonzalezcourrier34-glitch.github.io/medical_triage_agent](https://gonzalezcourrier34-glitch.github.io/medical_triage_agent/) · code : [github.com/gonzalezcourrier34-glitch/medical_triage_agent](https://github.com/gonzalezcourrier34-glitch/medical_triage_agent).

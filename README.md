@@ -54,7 +54,7 @@ des données publiques anonymisées et un protocole d'évaluation qui sépare st
 | Étape | Choix |
 |---|---|
 | Données | 4 sources publiques FR/EN, audit, détection de données personnelles (Presidio), déduplication, étiquetage selon le protocole **FRENCH v1.2** |
-| Dataset | 5 000 cas équilibrés (50 % FR / 50 % EN, un tiers par priorité) : 4 000 train · 500 validation · 500 test gelé |
+| Dataset | 5 000 cas équilibrés (50 % FR / 50 % EN, un tiers par priorité) : 4 000 train · 500 validation · 500 test gelé ; 2 100 paires DPO (1 680 / 420), publiés sur [Hugging Face](https://huggingface.co/datasets/SteGONZALEZ/medical_triage_agent) |
 | SFT | `Qwen/Qwen3-1.7B-Base` en 4 bits, LoRA r=16 / α=32 sur 7 projections + lignes des 3 jetons du chat entraînées, loss pondérée × 5 sur la priorité et la fin de réponse ; checkpoint-550 |
 | DPO | 2 100 paires réalignées sur le protocole FRENCH, explications préférées réécrites, centrées sur l'explication (la priorité est identique dans les deux réponses), β = 0,1 ; checkpoint-150 livré, choisi sur la qualité des réponses générées |
 | Service | LoRA fusionné dans Qwen3-1.7B-Base (BF16), servi par vLLM derrière une API FastAPI |
